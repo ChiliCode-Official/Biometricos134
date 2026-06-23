@@ -3,12 +3,12 @@
   "name": "Control de Biométricos - Notaría 134",
   "icons": [
     {
-      "src": "chilicode.png",
+      "src": "app_icon.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "chilicode.png",
+      "src": "app_icon.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
