@@ -91,11 +91,11 @@ function getData() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ensureAuxiliarySheets();
   
-  var biometrics = getBiometricsState(ss);
   var logs = getLogsFromEstadisticas(ss);
   var inkLogs = getSheetDataAsJson(ss.getSheetByName("LOG_TINTAS"));
   var internetLogs = getSheetDataAsJson(ss.getSheetByName("LOG_INTERNET"));
   var users = getUsersFromSheet(ss);
+  var biometrics = getBiometricsState(ss, logs, internetLogs);
 
   return {
     success: true,
@@ -113,64 +113,169 @@ function safeString(val) {
   return val.toString().trim();
 }
 
-// 1. Obtener el estado actual de los 8 biométricos leyendo sus pestañas "BIO 1" a "BIO 8"
-function getBiometricsState(ss) {
-  var biometrics = [];
-  for (var i = 1; i <= 8; i++) {
-    var sheet = ss.getSheetByName("BIO " + i);
-    if (sheet) {
-      // Leer el rango completo de una sola vez para maximizar velocidad (de 11 llamadas a 1)
-      var grid = sheet.getRange("B4:F15").getValues();
-      
-      var holder = safeString(grid[0][0]);       // B4 (Fila 4, Col B)
-      var bam_telefono = safeString(grid[0][3]); // E4 (Fila 4, Col E)
-      var internet_plan = safeString(grid[0][4]);// F4 (Fila 4, Col F)
-      var exitDate = grid[4][4];                        // F8 (Fila 8, Col F)
-      
-      // Especificaciones de hardware (Filas 12, 13, 14, 15)
-      var laptop_marca = safeString(grid[8][0]);  // B12 (Fila 12, Col B)
-      var laptop_modelo = safeString(grid[8][1]); // C12 (Fila 12, Col C)
-      var laptop_serie = safeString(grid[8][2]);  // D12 (Fila 12, Col D)
-      
-      var impresora_marca = safeString(grid[9][0]);  // B13 (Fila 13, Col B)
-      var impresora_modelo = safeString(grid[9][1]); // C13 (Fila 13, Col C)
-      var impresora_serie = safeString(grid[9][2]);  // D13 (Fila 13, Col D)
-      
-      var biometrico_lector = safeString(grid[10][0]); // B14 (Fila 14, Col B)
-      var biometrico_serie = safeString(grid[10][2]);  // D14 (Fila 14, Col D)
-      
-      var router_modelo = safeString(grid[11][0]); // B15 (Fila 15, Col B)
-      var router_imei = safeString(grid[11][2]);   // D15 (Fila 15, Col D)
-      
-      var status = (holder === "") ? "Disponible" : "Ocupado";
-      var timeFormatted = "";
-      if (exitDate instanceof Date) {
-        timeFormatted = Utilities.formatDate(exitDate, Session.getScriptTimeZone(), "HH:mm");
-      } else if (exitDate) {
-        timeFormatted = exitDate.toString();
-      }
-      
-      biometrics.push({
-        biometrico: i,
-        status: status,
-        holder: holder,
-        time: timeFormatted,
-        bam_telefono: bam_telefono,
-        internet_plan: internet_plan,
-        laptop_marca: laptop_marca,
-        laptop_modelo: laptop_modelo,
-        laptop_serie: laptop_serie,
-        impresora_marca: impresora_marca,
-        impresora_modelo: impresora_modelo,
-        impresora_serie: impresora_serie,
-        biometrico_lector: biometrico_lector,
-        biometrico_serie: biometrico_serie,
-        router_modelo: router_modelo,
-        router_imei: router_imei
-      });
+// 1. Obtener el estado actual de los 8 biométricos de manera ultra rápida usando datos base y logs en memoria
+function getBiometricsState(ss, logs, internetLogs) {
+  var baseBiometrics = [
+    {
+      biometrico: 1,
+      bam_telefono: "55 13 92 13 97",
+      internet_plan: "928 mg hasta el 26/10/2024",
+      laptop_marca: "HP",
+      laptop_modelo: "EliteBook 840 CORE I5",
+      laptop_serie: "5CG5502662",
+      impresora_marca: "HP",
+      impresora_modelo: "OfficeJet 200",
+      impresora_serie: "TH118950DH",
+      biometrico_lector: "U.are.U 5300",
+      biometrico_serie: "N902C300771",
+      router_modelo: "4G LTE",
+      router_imei: "IMEI:865298031325378"
+    },
+    {
+      biometrico: 2,
+      bam_telefono: "55 37 16 67 30",
+      internet_plan: "",
+      laptop_marca: "LENOVO",
+      laptop_modelo: "IdeaPad S145",
+      laptop_serie: "PF2Y20EN",
+      impresora_marca: "HP",
+      impresora_modelo: "OFFICE JET 200",
+      impresora_serie: "TH118950JF",
+      biometrico_lector: "U.are.U",
+      biometrico_serie: "N902C300772",
+      router_modelo: "4G ELITE",
+      router_imei: "865298031325593"
+    },
+    {
+      biometrico: 3,
+      bam_telefono: "55 21 12 29 45",
+      internet_plan: "742 mb",
+      laptop_marca: "HP",
+      laptop_modelo: "240 G8",
+      laptop_serie: "5CG1436JCV",
+      impresora_marca: "EPSON",
+      impresora_modelo: "WF-100",
+      impresora_serie: "WKHK007540",
+      biometrico_lector: "HID Digital Personal 4500",
+      biometrico_serie: "P52E10517",
+      router_modelo: "4G LTE",
+      router_imei: "866645058868022"
+    },
+    {
+      biometrico: 4,
+      bam_telefono: "55 74 82 60 26",
+      internet_plan: "",
+      laptop_marca: "HP",
+      laptop_modelo: "240 G8",
+      laptop_serie: "5CG1436JCC",
+      impresora_marca: "EPSON",
+      impresora_modelo: "WF-100",
+      impresora_serie: "WKHK007600",
+      biometrico_lector: "HID",
+      biometrico_serie: "olt_6_10518",
+      router_modelo: "4G ELITE",
+      router_imei: "866645058868410"
+    },
+    {
+      biometrico: 5,
+      bam_telefono: "55 22 99 60 18",
+      internet_plan: "",
+      laptop_marca: "HP 240 G8",
+      laptop_modelo: "CORE I5",
+      laptop_serie: "5CG1320D09",
+      impresora_marca: "EPSON",
+      impresora_modelo: "WF-100",
+      impresora_serie: "WKHK007063",
+      biometrico_lector: "HID (P52E10600)",
+      biometrico_serie: "olt_10_10600",
+      router_modelo: "4G LTE",
+      router_imei: "IMEI:866645058867610"
+    },
+    {
+      biometrico: 6,
+      bam_telefono: "55 61 55 38 52",
+      internet_plan: "1.99 Gb",
+      laptop_marca: "HP",
+      laptop_modelo: "240 G8",
+      laptop_serie: "5CG61320BN2",
+      impresora_marca: "EPSON",
+      impresora_modelo: "WF-100",
+      impresora_serie: "WKHK007514",
+      biometrico_lector: "HID (P520E10597)",
+      biometrico_serie: "olt_7_10597",
+      router_modelo: "4G LT",
+      router_imei: "866645058867289"
+    },
+    {
+      biometrico: 7,
+      bam_telefono: "55 47 85 81 57",
+      internet_plan: "331 mb",
+      laptop_marca: "HP",
+      laptop_modelo: "ProBook 440 G8",
+      laptop_serie: "5CD21752QG",
+      impresora_marca: "EPSON",
+      impresora_modelo: "WF-100",
+      impresora_serie: "WKHK007948",
+      biometrico_lector: "HID",
+      biometrico_serie: "P520E10598",
+      router_modelo: "4G LTE",
+      router_imei: "866645058867354"
+    },
+    {
+      biometrico: 8,
+      bam_telefono: "55 49 16 78 44",
+      internet_plan: "",
+      laptop_marca: "HP",
+      laptop_modelo: "ProBook 640 G2",
+      laptop_serie: "5GC7192GQM",
+      impresora_marca: "EPSON",
+      impresora_modelo: "WF-100",
+      impresora_serie: "WKHK005642",
+      biometrico_lector: "HID",
+      biometrico_serie: "P520E10599",
+      router_modelo: "4G LTE (Genérico)",
+      router_imei: "866645058867321"
     }
-  }
-  return biometrics;
+  ];
+
+  return baseBiometrics.map(function(bio) {
+    // 1. Obtener plan más reciente de internetLogs
+    if (internetLogs && internetLogs.length > 0) {
+      var latestPlan = "";
+      for (var j = internetLogs.length - 1; j >= 0; j--) {
+        if (parseInt(internetLogs[j].biometrico) === bio.biometrico) {
+          latestPlan = internetLogs[j].plan;
+          break;
+        }
+      }
+      if (latestPlan) {
+        bio.internet_plan = latestPlan;
+      }
+    }
+
+    // 2. Determinar estado y holder según los logs en memoria
+    var status = "Disponible";
+    var holder = "";
+    var timeFormatted = "";
+
+    if (logs && logs.length > 0) {
+      for (var k = logs.length - 1; k >= 0; k--) {
+        var log = logs[k];
+        if (parseInt(log.biometrico) === bio.biometrico && log.estado === "Activo") {
+          status = "Ocupado";
+          holder = log.usuario;
+          timeFormatted = log.hora_salida_solicitada;
+          break;
+        }
+      }
+    }
+
+    bio.status = status;
+    bio.holder = holder;
+    bio.time = timeFormatted;
+
+    return bio;
+  });
 }
 
 // 2. Reconstruir el historial dinámicamente escaneando la pestaña original "ESTADISTICAS"
@@ -178,7 +283,11 @@ function getLogsFromEstadisticas(ss) {
   var sheet = ss.getSheetByName("ESTADISTICAS");
   if (!sheet) return [];
   
-  var data = sheet.getDataRange().getValues();
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 6) return [];
+  
+  // Leer únicamente el rango de columnas A hasta S (19 columnas) para evitar leer celdas vacías a la derecha
+  var data = sheet.getRange(1, 1, lastRow, 19).getValues();
   var logs = [];
   
   // Fila 1 a 5 son cabeceras en el excel original.
@@ -225,11 +334,14 @@ function getUsersFromSheet(ss) {
   var sheet = ss.getSheetByName("USUARIOS");
   if (!sheet) return CONFIG.USUARIOS; // Fallback
   
-  var data = sheet.getDataRange().getValues();
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 4) return CONFIG.USUARIOS;
+  
+  // Leer únicamente la columna B (usuarios) desde la fila 4 (índice 4, columna 2) para maximizar velocidad
+  var values = sheet.getRange(4, 2, lastRow - 3, 1).getValues();
   var usersList = [];
-  // Fila 4 en adelante contiene los nombres en Columna B (índice 1)
-  for (var i = 3; i < data.length; i++) {
-    var name = data[i][1]; // Columna B
+  for (var i = 0; i < values.length; i++) {
+    var name = values[i][0];
     if (name && name.toString().trim() !== "") {
       usersList.push(name.toString().trim());
     }
@@ -366,16 +478,19 @@ function returnBiometric(id, usuarioRetorno, biometrico) {
   
   // 3. Si no tenemos una fila válida, buscarla dinámicamente de abajo hacia arriba en ESTADISTICAS
   if (rowIdx === -1) {
-    var data = estSheet.getDataRange().getValues();
-    for (var i = data.length - 1; i >= 5; i--) {
-      var row = data[i];
-      var usuario = row[0];
-      var salidaVal = row[colSalidaNum - 1]; // 0-based index
-      var entradaVal = row[colEntradaNum - 1]; // 0-based index
-      
-      if (usuario && usuario.toString().trim() !== "" && salidaVal && (!entradaVal || entradaVal.toString().trim() === "")) {
-        rowIdx = i + 1; // 1-based row number
-        break;
+    var lastRow = estSheet.getLastRow();
+    if (lastRow >= 6) {
+      var data = estSheet.getRange(1, 1, lastRow, colEntradaNum).getValues();
+      for (var i = data.length - 1; i >= 5; i--) {
+        var row = data[i];
+        var usuario = row[0];
+        var salidaVal = row[colSalidaNum - 1]; // 0-based index
+        var entradaVal = row[colEntradaNum - 1]; // 0-based index
+        
+        if (usuario && usuario.toString().trim() !== "" && salidaVal && (!entradaVal || entradaVal.toString().trim() === "")) {
+          rowIdx = i + 1; // 1-based row number
+          break;
+        }
       }
     }
   }
@@ -385,7 +500,11 @@ function returnBiometric(id, usuarioRetorno, biometrico) {
   
   if (rowIdx !== -1) {
     estSheet.getRange(rowIdx, colEntradaNum).setValue(now);
-    usuarioOriginal = estSheet.getRange(rowIdx, 1).getValue().toString();
+    if (typeof data !== "undefined" && data[rowIdx - 1]) {
+      usuarioOriginal = data[rowIdx - 1][0].toString();
+    } else {
+      usuarioOriginal = estSheet.getRange(rowIdx, 1).getValue().toString();
+    }
   }
   
   // B. Limpiar la responsiva en la hoja BIO X correspondiente (si es del 1 al 8)

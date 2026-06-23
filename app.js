@@ -449,9 +449,16 @@ async function sendAction(action, payload) {
     setButtonsState(false);
     showToast("Sincronizando con la nube...");
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    
     const queryParams = new URLSearchParams({ action: action, ...payload, _t: Date.now() }).toString();
-    fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?${queryParams}`)
+    fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?${queryParams}`, {
+      redirect: 'follow',
+      signal: controller.signal
+    })
       .then(response => {
+        clearTimeout(timeoutId);
         if (!response.ok) throw new Error("Fallo de red al conectar GAS");
         return response.json();
       })
@@ -484,10 +491,15 @@ async function sendAction(action, payload) {
         hideToast();
       })
       .catch(err => {
+        clearTimeout(timeoutId);
         console.error("Error al guardar en la nube:", err);
         setButtonsState(true);
         hideToast();
-        showToast("Error al sincronizar: " + err.message);
+        if (err.name === 'AbortError') {
+          showToast("Error: Tiempo de espera agotado (15s). Se guardó de forma local.");
+        } else {
+          showToast("Error al sincronizar: " + err.message);
+        }
       });
   } else {
     showToast("Registrado localmente.");
@@ -954,9 +966,11 @@ async function confirmReservation() {
 // Devolver un biométrico
 async function triggerReturn(logId, biometrico) {
   if (confirm("¿Confirmas la entrega/retorno de este equipo biométrico a su lugar?")) {
-    const userRetorno = state.currentUser.role === "admin" ? "Administrador" : state.currentUser.name;
+    const role = (state.currentUser && state.currentUser.role) ? state.currentUser.role : "admin";
+    const name = (state.currentUser && state.currentUser.name) ? state.currentUser.name : "Administrador";
+    const userRetorno = role === "admin" ? "Administrador" : name;
     const res = await sendAction("return", {
-      id: logId,
+      id: logId || "",
       biometrico: biometrico,
       usuario_retorno: userRetorno
     });
