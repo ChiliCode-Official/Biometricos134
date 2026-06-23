@@ -1363,21 +1363,21 @@ function handleExcelFileSelect(e) {
 async function exportToExcel() {
   const dateStr = getTodayDateString().replace(/-/g, "");
 
-  // Si no tenemos el buffer precargado, intentar descargarlo en el momento
+  // Si no tenemos la plantilla precargada en buffer, la pedimos del archivo subido originalmente
   if (!state.originalWorkbookBuffer) {
     try {
-      showLoadingToast("Descargando plantilla de Excel...");
+      showLoadingToast("Buscando plantilla de Excel original...");
       const response = await fetch('RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx');
       if (response.ok) {
         state.originalWorkbookBuffer = await response.arrayBuffer();
         hideToast();
       } else {
-        throw new Error("No se pudo descargar el archivo de plantilla");
+        throw new Error("No se pudo autodescargar la plantilla original. Asegúrate de haber importado el Excel primero en el administrador.");
       }
     } catch (err) {
-      console.warn("No se pudo cargar la plantilla, usando exportación de respaldo:", err);
+      console.warn("Fallo al intentar descargar plantilla automáticamente:", err);
       hideToast();
-      exportToExcelFallback();
+      alert("Error: Para poder exportar con el formato del jefe, primero debes importar/arrastrar el archivo original 'RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx' en la zona de importación.");
       return;
     }
   }
@@ -1418,104 +1418,10 @@ async function exportToExcel() {
       }
     }
 
-    // 2. Actualizar la pestaña ESTADISTICAS
+    // 2. Actualizar la pestaña ESTADISTICAS usando las funciones del ayudante
     const estSheet = workbook.sheet("ESTADISTICAS");
     if (estSheet) {
-      // Limpiar registros antiguos desde la fila 6 a la 1000 para las columnas A a S (1 a 19)
-      for (let r = 6; r <= 1000; r++) {
-        for (let c = 1; c <= 19; c++) {
-          estSheet.row(r).cell(c).value(null);
-        }
-      }
-
-      // Escribir los registros ordenados cronológicamente
-      state.logs.forEach((log, idx) => {
-        const r = 6 + idx;
-        
-        // Col A: Pasante (c = 1)
-        const cellA = estSheet.row(r).cell(1);
-        cellA.value(log.usuario);
-        if (r > 6) {
-          try { cellA.style(estSheet.row(6).cell(1).style()); } catch(e){}
-        }
-        
-        let x = parseInt(log.biometrico);
-        if (isNaN(x)) {
-          x = 9; // General
-        }
-        
-        // Columna Salida: 2 * x (ej: Bio 1 en Col B=2, Bio 2 en Col D=4...)
-        const colSalida = 2 * x;
-        const cellSalida = estSheet.row(r).cell(colSalida);
-        const cleanExitDateStr = (log.fecha_salida + " " + log.hora_salida_real).replace(/-/g, "/");
-        cellSalida.value(cleanExitDateStr);
-        if (r > 6) {
-          try { cellSalida.style(estSheet.row(6).cell(colSalida).style()); } catch(e){}
-        }
-        
-        // Columna Entrada: 2 * x + 1 (ej: Bio 1 en Col C=3, Bio 2 en Col E=5...)
-        if (log.estado === "Entregado") {
-          const colEntrada = 2 * x + 1;
-          const cellEntrada = estSheet.row(r).cell(colEntrada);
-          const cleanReturnDateStr = (log.fecha_entrada + " " + log.hora_entrada).replace(/-/g, "/");
-          cellEntrada.value(cleanReturnDateStr);
-          if (r > 6) {
-            try { cellEntrada.style(estSheet.row(6).cell(colEntrada).style()); } catch(e){}
-          }
-        }
-
-        // --- Inyectar anotaciones del jefe (Cambios de tinta / Recargas BAM) directamente en la fila de ESTADISTICAS ---
-        // Revisamos si en este biométrico y fecha aproximada hubo un cambio de tinta registrado
-        const matchingInk = state.inkLogs.find(ink => {
-          return ink.biometrico == log.biometrico && ink.fecha.startsWith(log.fecha_salida);
-        });
-        if (matchingInk) {
-          // Escribir el texto en la celda de la derecha o combinar si el formato del jefe lo requiere
-          // Escribimos la observación (ej: "CAMBIO DE CARTUCHO NEGRO") en la columna de entrada de la derecha para que destaque visualmente como en la imagen
-          const colEntrada = 2 * x + 1;
-          const cellEntrada = estSheet.row(r).cell(colEntrada);
-          cellEntrada.value(matchingInk.observaciones || "CAMBIO DE CARTUCHO");
-          try {
-            // Aplicar fondo amarillo como el de la captura del jefe
-            cellEntrada.style("fill", "FFFF00");
-          } catch(e){}
-        }
-
-        // Revisamos si en este biométrico y fecha hubo una recarga BAM asignada
-        const matchingNet = state.internetLogs.find(net => {
-          return net.biometrico == log.biometrico && net.fecha.startsWith(log.fecha_salida);
-        });
-        if (matchingNet) {
-          const colEntrada = 2 * x + 1;
-          const cellEntrada = estSheet.row(r).cell(colEntrada);
-          cellEntrada.value(matchingNet.observaciones || `RECARGA BAM: ${matchingNet.plan}`);
-          try {
-            cellEntrada.style("fill", "FFFF00");
-          } catch(e){}
-        }
-      });
-
-      // Limpiar columnas W y X de registros de resumen (filas 6 a 1000)
-      for (let r = 6; r <= 1000; r++) {
-        estSheet.row(r).cell(23).value(null);
-        estSheet.row(r).cell(24).value(null);
-      }
-
-      // Actualizar listado de usuarios de las columnas W (23) y X (24) (Resumen)
-      state.users.forEach((user, idx) => {
-        const r = 6 + idx;
-        const cellW = estSheet.row(r).cell(23);
-        cellW.value(user);
-        if (r > 6) {
-          try { cellW.style(estSheet.row(6).cell(23).style()); } catch(e){}
-        }
-
-        const cellX = estSheet.row(r).cell(24);
-        cellX.formula(`COUNTIF($A$6:$A$1000, W${r})`);
-        if (r > 6) {
-          try { cellX.style(estSheet.row(6).cell(24).style()); } catch(e){}
-        }
-      });
+      writeEstadisticasData(estSheet, state);
     }
 
     // 3. Actualizar la pestaña USUARIOS
@@ -1537,65 +1443,8 @@ async function exportToExcel() {
       });
     }
 
-    // 4. Agregar/Actualizar pestañas auxiliares LOG_TINTAS y LOG_INTERNET para no perder los históricos
-    // LOG_TINTAS
-    let inkSheet = workbook.sheet("LOG_TINTAS");
-    if (!inkSheet) {
-      inkSheet = workbook.addSheet("LOG_TINTAS");
-      // Cabeceras con estilo básico
-      const headers = ["id", "biometrico", "fecha", "usuario", "observaciones"];
-      headers.forEach((h, cIdx) => {
-        const cell = inkSheet.row(1).cell(cIdx + 1);
-        cell.value(h);
-        cell.style({ bold: true, fill: "1C1C1E", fontColor: "FFFFFF" });
-      });
-    } else {
-      // Limpiar hasta la fila 1000
-      for (let r = 2; r <= 1000; r++) {
-        for (let c = 1; c <= 5; c++) {
-          inkSheet.row(r).cell(c).value(null);
-        }
-      }
-    }
-    // Escribir logs de tintas
-    state.inkLogs.forEach((log, idx) => {
-      const r = 2 + idx;
-      inkSheet.row(r).cell(1).value(log.id);
-      inkSheet.row(r).cell(2).value(log.biometrico);
-      inkSheet.row(r).cell(3).value(log.fecha);
-      inkSheet.row(r).cell(4).value(log.usuario);
-      inkSheet.row(r).cell(5).value(log.observaciones || "");
-    });
-
-    // LOG_INTERNET
-    let netSheet = workbook.sheet("LOG_INTERNET");
-    if (!netSheet) {
-      netSheet = workbook.addSheet("LOG_INTERNET");
-      // Cabeceras con estilo básico
-      const headers = ["id", "biometrico", "fecha", "usuario", "plan", "observaciones"];
-      headers.forEach((h, cIdx) => {
-        const cell = netSheet.row(1).cell(cIdx + 1);
-        cell.value(h);
-        cell.style({ bold: true, fill: "1C1C1E", fontColor: "FFFFFF" });
-      });
-    } else {
-      // Limpiar hasta la fila 1000
-      for (let r = 2; r <= 1000; r++) {
-        for (let c = 1; c <= 6; c++) {
-          netSheet.row(r).cell(c).value(null);
-        }
-      }
-    }
-    // Escribir logs de internet
-    state.internetLogs.forEach((log, idx) => {
-      const r = 2 + idx;
-      netSheet.row(r).cell(1).value(log.id);
-      netSheet.row(r).cell(2).value(log.biometrico);
-      netSheet.row(r).cell(3).value(log.fecha);
-      netSheet.row(r).cell(4).value(log.usuario);
-      netSheet.row(r).cell(5).value(log.plan);
-      netSheet.row(r).cell(6).value(log.observaciones || "");
-    });
+    // 4. Escribir las pestañas auxiliares con formato profesional usando las funciones del ayudante
+    writeAuxiliarySheets(workbook, state);
 
     // 5. Descargar archivo
     const blob = await workbook.outputAsync();
@@ -1613,8 +1462,7 @@ async function exportToExcel() {
   } catch (err) {
     console.error("Fallo durante la exportación con xlsx-populate:", err);
     hideToast();
-    showToast("Error de formato. Generando Excel básico de respaldo...");
-    exportToExcelFallback();
+    alert("Error de Formato Excel: " + err.message + "\n\nPor favor asegúrate de haber importado el Excel de tu jefe en el gestor antes de descargar.");
   }
 }
 

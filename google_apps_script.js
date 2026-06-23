@@ -258,6 +258,21 @@ function requestBiometric(biometrico, usuario, horaSalida) {
     }
   }
   
+  // --- Envío de Correo al Administrador en tiempo real ---
+  try {
+    var subject = "🚨 Solicitud de Biométrico " + biometrico + " - " + usuario;
+    var body = "Hola Admin,\n\nSe ha registrado una nueva solicitud de equipo:\n\n" +
+               "• Equipo: Biométrico " + biometrico + "\n" +
+               "• Usuario: " + usuario + "\n" +
+               "• Fecha y hora: " + Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm") + "\n" +
+               "• Hora de salida programada: " + (horaSalida ? horaSalida : "Al momento") + "\n\n" +
+               "Este correo se envió automáticamente desde el Control de Biométricos N134.";
+               
+    MailApp.sendEmail("sistemas@notaria134.com.mx", subject, body);
+  } catch (mailErr) {
+    Logger.log("Error al enviar correo de solicitud: " + mailErr.toString());
+  }
+  
   return { success: true };
 }
 
@@ -281,6 +296,9 @@ function returnBiometric(id, usuarioRetorno) {
     var now = new Date();
     estSheet.getRange(rowIdx, colEntradaNum).setValue(now);
     
+    // Leer el nombre del usuario asignado en esa fila (Columna A = 1)
+    var usuarioOriginal = estSheet.getRange(rowIdx, 1).getValue().toString();
+    
     // B. Limpiar la responsiva en la hoja BIO X correspondiente (si es del 1 al 8)
     if (x >= 1 && x <= 8) {
       var bioSheet = ss.getSheetByName("BIO " + x);
@@ -289,6 +307,21 @@ function returnBiometric(id, usuarioRetorno) {
         bioSheet.getRange("F8").setValue("");   // Limpiar fecha
         bioSheet.getRange("A54").setValue("");  // Limpiar firma
       }
+    }
+    
+    // --- Envío de Correo al Administrador de Devolución ---
+    try {
+      var subject = "✅ Biométrico " + x + " Entregado - " + usuarioOriginal;
+      var body = "Hola Admin,\n\nEl equipo ha sido marcado como devuelto:\n\n" +
+                 "• Equipo: Biométrico " + x + "\n" +
+                 "• Usuario que lo tenía: " + usuarioOriginal + "\n" +
+                 "• Marcado como devuelto por: " + (usuarioRetorno ? usuarioRetorno : "Usuario") + "\n" +
+                 "• Fecha y hora de retorno: " + Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm") + "\n\n" +
+                 "El equipo ya se encuentra disponible de nuevo en el rack.";
+                 
+      MailApp.sendEmail("sistemas@notaria134.com.mx", subject, body);
+    } catch (mailErr) {
+      Logger.log("Error al enviar correo de retorno: " + mailErr.toString());
     }
     
     return { success: true };
