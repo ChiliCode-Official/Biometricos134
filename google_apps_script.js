@@ -28,7 +28,7 @@ function doGet(e) {
       if (action === "request") {
         result = requestBiometric(e.parameter.biometrico, e.parameter.usuario, e.parameter.hora_salida);
       } else if (action === "return") {
-        result = returnBiometric(e.parameter.id, e.parameter.usuario_retorno);
+        result = returnBiometric(e.parameter.id, e.parameter.usuario_retorno, e.parameter.biometrico);
       } else if (action === "logInk") {
         result = logInkChange(e.parameter.biometrico, e.parameter.usuario, e.parameter.observaciones);
       } else if (action === "logInternet") {
@@ -65,7 +65,7 @@ function doPost(e) {
     if (action === "request") {
       result = requestBiometric(params.biometrico, params.usuario, params.hora_salida);
     } else if (action === "return") {
-      result = returnBiometric(params.id, params.usuario_retorno);
+      result = returnBiometric(params.id, params.usuario_retorno, params.biometrico);
     } else if (action === "logInk") {
       result = logInkChange(params.biometrico, params.usuario, params.observaciones);
     } else if (action === "logInternet") {
@@ -113,26 +113,28 @@ function getBiometricsState(ss) {
   for (var i = 1; i <= 8; i++) {
     var sheet = ss.getSheetByName("BIO " + i);
     if (sheet) {
-      // Leer celdas combinadas de información
-      var bam_telefono = sheet.getRange("E4").getValue().toString().trim();
-      var internet_plan = sheet.getRange("F4").getValue().toString().trim();
-      var holder = sheet.getRange("B4").getValue().toString().trim();
-      var exitDate = sheet.getRange("F8").getValue();
+      // Leer el rango completo de una sola vez para maximizar velocidad (de 11 llamadas a 1)
+      var grid = sheet.getRange("B4:F15").getValues();
       
-      // Leer especificaciones de hardware de las filas 12, 13, 14, 15
-      var laptop_marca = sheet.getRange("B12").getValue().toString().trim();
-      var laptop_modelo = sheet.getRange("C12").getValue().toString().trim();
-      var laptop_serie = sheet.getRange("D12").getValue().toString().trim();
+      var holder = grid[0][0].toString().trim();       // B4 (Fila 4, Col B)
+      var bam_telefono = grid[0][3].toString().trim(); // E4 (Fila 4, Col E)
+      var internet_plan = grid[0][4].toString().trim();// F4 (Fila 4, Col F)
+      var exitDate = grid[4][4];                        // F8 (Fila 8, Col F)
       
-      var impresora_marca = sheet.getRange("B13").getValue().toString().trim();
-      var impresora_modelo = sheet.getRange("C13").getValue().toString().trim();
-      var impresora_serie = sheet.getRange("D13").getValue().toString().trim();
+      // Especificaciones de hardware (Filas 12, 13, 14, 15)
+      var laptop_marca = grid[8][0].toString().trim();  // B12 (Fila 12, Col B)
+      var laptop_modelo = grid[8][1].toString().trim(); // C12 (Fila 12, Col C)
+      var laptop_serie = grid[8][2].toString().trim();  // D12 (Fila 12, Col D)
       
-      var biometrico_lector = sheet.getRange("B14").getValue().toString().trim();
-      var biometrico_serie = sheet.getRange("D14").getValue().toString().trim();
+      var impresora_marca = grid[9][0].toString().trim();  // B13 (Fila 13, Col B)
+      var impresora_modelo = grid[9][1].toString().trim(); // C13 (Fila 13, Col C)
+      var impresora_serie = grid[9][2].toString().trim();  // D13 (Fila 13, Col D)
       
-      var router_modelo = sheet.getRange("B15").getValue().toString().trim();
-      var router_imei = sheet.getRange("D15").getValue().toString().trim();
+      var biometrico_lector = grid[10][0].toString().trim(); // B14 (Fila 14, Col B)
+      var biometrico_serie = grid[10][2].toString().trim();  // D14 (Fila 14, Col D)
+      
+      var router_modelo = grid[11][0].toString().trim(); // B15 (Fila 15, Col B)
+      var router_imei = grid[11][2].toString().trim();   // D15 (Fila 15, Col D)
       
       var status = (holder === "") ? "Disponible" : "Ocupado";
       var timeFormatted = "";
@@ -305,57 +307,83 @@ function requestBiometric(biometrico, usuario, horaSalida) {
 }
 
 // 5. Registrar devolución (Escribe directamente en ESTADISTICAS y limpia BIO X)
-function returnBiometric(id, usuarioRetorno) {
+function returnBiometric(id, usuarioRetorno, biometrico) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   
-  // El ID contiene el formato "ROW-{rowIndex}-{biometricIndex}"
-  var parts = id.split("-");
-  if (parts.length === 3) {
-    var rowIdx = parseInt(parts[1]);
-    var x = parseInt(parts[2]);
-    
-    // Columna Entrada (1-based para getRange): Col C (3) para Bio 1, Col E (5) para Bio 2, etc.
-    var colEntradaNum = 2 * x + 1;
-    
-    // A. Registrar en la hoja ESTADISTICAS
-    var estSheet = ss.getSheetByName("ESTADISTICAS");
-    if (!estSheet) return { success: false, error: "No se encontró la hoja ESTADISTICAS" };
-    
-    var now = new Date();
-    estSheet.getRange(rowIdx, colEntradaNum).setValue(now);
-    
-    // Leer el nombre del usuario asignado en esa fila (Columna A = 1)
-    var usuarioOriginal = estSheet.getRange(rowIdx, 1).getValue().toString();
-    
-    // B. Limpiar la responsiva en la hoja BIO X correspondiente (si es del 1 al 8)
-    if (x >= 1 && x <= 8) {
-      var bioSheet = ss.getSheetByName("BIO " + x);
-      if (bioSheet) {
-        bioSheet.getRange("B4").setValue("");   // Limpiar usuario
-        bioSheet.getRange("F8").setValue("");   // Limpiar fecha
-        bioSheet.getRange("A54").setValue("");  // Limpiar firma
-      }
-    }
-    
-    // --- Envío de Correo al Administrador de Devolución ---
-    try {
-      var subject = "✅ Biométrico " + x + " Entregado - " + usuarioOriginal;
-      var body = "Hola Admin,\n\nEl equipo ha sido marcado como devuelto:\n\n" +
-                 "• Equipo: Biométrico " + x + "\n" +
-                 "• Usuario que lo tenía: " + usuarioOriginal + "\n" +
-                 "• Marcado como devuelto por: " + (usuarioRetorno ? usuarioRetorno : "Usuario") + "\n" +
-                 "• Fecha y hora de retorno: " + Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm") + "\n\n" +
-                 "El equipo ya se encuentra disponible de nuevo en el rack.";
-                 
-      MailApp.sendEmail("sistemas@notaria134.com.mx", subject, body);
-    } catch (mailErr) {
-      Logger.log("Error al enviar correo de retorno: " + mailErr.toString());
-    }
-    
-    return { success: true };
+  var rowIdx = -1;
+  var x = -1;
+  
+  // 1. Intentar parsear el ID oficial (ROW-{rowIndex}-{biometricIndex})
+  var parts = id ? id.toString().split("-") : [];
+  if (parts.length === 3 && parts[0] === "ROW") {
+    rowIdx = parseInt(parts[1]);
+    x = parseInt(parts[2]);
+  } else {
+    // 2. Si no es un ID oficial, usamos el biometrico
+    x = parseInt(biometrico);
   }
   
-  return { success: false, error: "ID de registro de retorno inválido." };
+  if (isNaN(x) || x < 1 || x > 9) {
+    return { success: false, error: "ID o número de biométrico inválido para devolución." };
+  }
+  
+  // A. Registrar en la hoja ESTADISTICAS
+  var estSheet = ss.getSheetByName("ESTADISTICAS");
+  if (!estSheet) return { success: false, error: "No se encontró la hoja ESTADISTICAS" };
+  
+  var colSalidaNum = 2 * x;
+  var colEntradaNum = 2 * x + 1;
+  
+  // 3. Si no tenemos una fila válida, buscarla dinámicamente de abajo hacia arriba en ESTADISTICAS
+  if (rowIdx === -1) {
+    var data = estSheet.getDataRange().getValues();
+    for (var i = data.length - 1; i >= 5; i--) {
+      var row = data[i];
+      var usuario = row[0];
+      var salidaVal = row[colSalidaNum - 1]; // 0-based index
+      var entradaVal = row[colEntradaNum - 1]; // 0-based index
+      
+      if (usuario && usuario.toString().trim() !== "" && salidaVal && (!entradaVal || entradaVal.toString().trim() === "")) {
+        rowIdx = i + 1; // 1-based row number
+        break;
+      }
+    }
+  }
+  
+  var now = new Date();
+  var usuarioOriginal = "Usuario";
+  
+  if (rowIdx !== -1) {
+    estSheet.getRange(rowIdx, colEntradaNum).setValue(now);
+    usuarioOriginal = estSheet.getRange(rowIdx, 1).getValue().toString();
+  }
+  
+  // B. Limpiar la responsiva en la hoja BIO X correspondiente (si es del 1 al 8)
+  if (x >= 1 && x <= 8) {
+    var bioSheet = ss.getSheetByName("BIO " + x);
+    if (bioSheet) {
+      bioSheet.getRange("B4").setValue("");   // Limpiar usuario
+      bioSheet.getRange("F8").setValue("");   // Limpiar fecha
+      bioSheet.getRange("A54").setValue("");  // Limpiar firma
+    }
+  }
+  
+  // --- Envío de Correo al Administrador de Devolución ---
+  try {
+    var subject = "✅ Biométrico " + x + " Entregado - " + usuarioOriginal;
+    var body = "Hola Admin,\n\nEl equipo ha sido marcado como devuelto:\n\n" +
+               "• Equipo: Biométrico " + x + "\n" +
+               "• Usuario que lo tenía: " + usuarioOriginal + "\n" +
+               "• Marcado como devuelto por: " + (usuarioRetorno ? usuarioRetorno : "Usuario") + "\n" +
+               "• Fecha y hora de retorno: " + Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm") + "\n\n" +
+               "El equipo ya se encuentra disponible de nuevo en el rack.";
+               
+    MailApp.sendEmail("sistemas@notaria134.com.mx", subject, body);
+  } catch (mailErr) {
+    Logger.log("Error al enviar correo de retorno: " + mailErr.toString());
+  }
+  
+  return { success: true };
 }
 
 // 6. Registrar tintas en una pestaña dedicada LOG_TINTAS

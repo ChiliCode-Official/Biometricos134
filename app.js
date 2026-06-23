@@ -727,7 +727,7 @@ function createBiometricCard(bio, role) {
             }
           })() : 
           (bio.holder === state.currentUser?.name ? 
-            `<button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}')">Entregar Biométrico</button>` : 
+            `<button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', ${bio.biometrico})">Entregar Biométrico</button>` : 
             `<button class="btn btn-secondary" disabled>No Disponible</button>`
           )
         ) : 
@@ -736,7 +736,7 @@ function createBiometricCard(bio, role) {
           `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Asignar Equipo</button>` : 
           `
           <button class="btn btn-primary" onclick="triggerPrintResponsive('${bio.logId}')">Visualizar e Imprimir</button>
-          <button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}')">Marcar como Entregado</button>
+          <button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', ${bio.biometrico})">Marcar como Entregado</button>
           `
         )
       }
@@ -786,7 +786,7 @@ function renderAdminDashboard() {
         <td>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem;" onclick="triggerPrintResponsive('${log.id}')">Carta</button>
-            ${!isReturned ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem; background-color:#86868B;" onclick="triggerReturn('${log.id}')">Retorno</button>` : ''}
+            ${!isReturned ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem; background-color:#86868B;" onclick="triggerReturn('${log.id}', ${log.biometrico})">Retorno</button>` : ''}
           </div>
         </td>
       `;
@@ -944,11 +944,12 @@ async function confirmReservation() {
 }
 
 // Devolver un biométrico
-async function triggerReturn(logId) {
+async function triggerReturn(logId, biometrico) {
   if (confirm("¿Confirmas la entrega/retorno de este equipo biométrico a su lugar?")) {
     const userRetorno = state.currentUser.role === "admin" ? "Administrador" : state.currentUser.name;
     const res = await sendAction("return", {
       id: logId,
+      biometrico: biometrico,
       usuario_retorno: userRetorno
     });
   }
