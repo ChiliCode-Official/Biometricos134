@@ -223,6 +223,11 @@ async function loadDatabase() {
       if (progressContainer && progressBar) progressBar.style.width = "85%";
       
       if (db.success) {
+        if (db.version !== "v2") {
+          setTimeout(() => {
+            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la aplicación no responderá al marcar como entregado o solicitar equipos.\n\nPor favor, actualiza tu script en Google Sheets con la última versión de google_apps_script.js y asegúrate de crear una NUEVA IMPLEMENTACIÓN (Aplicación Web) en el menú.");
+          }, 1000);
+        }
         state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
         // Si no hay usuarios en la nube, precargar del config.js
         if (state.users.length === 0) state.users = CONFIG.USUARIOS;
@@ -452,6 +457,9 @@ async function sendAction(action, payload) {
       })
       .then(db => {
         if (db && db.success) {
+          if (db.version !== "v2") {
+            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la acción de retorno no se aplicó en Google Sheets.\n\nPor favor, actualiza tu script en Google Sheets con la última versión de google_apps_script.js y asegúrate de crear una NUEVA IMPLEMENTACIÓN (Aplicación Web) en el menú.");
+          }
           state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
           if (state.users.length === 0) state.users = CONFIG.USUARIOS;
 
@@ -479,7 +487,7 @@ async function sendAction(action, payload) {
         console.error("Error al guardar en la nube:", err);
         setButtonsState(true);
         hideToast();
-        showToast("Error al sincronizar. Cambios guardados localmente.");
+        showToast("Error al sincronizar: " + err.message);
       });
   } else {
     showToast("Registrado localmente.");

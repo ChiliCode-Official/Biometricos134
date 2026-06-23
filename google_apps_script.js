@@ -99,6 +99,7 @@ function getData() {
 
   return {
     success: true,
+    version: "v2",
     biometrics: biometrics,
     logs: logs,
     inkLogs: inkLogs,
