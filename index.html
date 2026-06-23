@@ -88,9 +88,25 @@
       </header>
 
       <div class="content-section">
+        <!-- Quick Round-Robin Request Panel -->
+        <div class="quick-sequential-box glass" style="padding: 24px; margin-bottom: 30px; text-align: center; border-left: 5px solid var(--accent); background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);">
+          <h3 style="font-size: 1.3rem; margin-bottom: 8px; font-family: var(--font-heading);">Asignación Equitativa de Equipos</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 16px;">Para equilibrar el desgaste de los equipos, el sistema asignará el biométrico de manera rotativa.</p>
+          
+          <div id="sequential-suggested-container" class="suggested-bio-badge" style="display: inline-block; padding: 12px 24px; border-radius: 12px; background-color: var(--accent-light); color: var(--accent); font-weight: 700; font-size: 1.2rem; margin-bottom: 20px;">
+            Siguiente sugerido: <span id="suggested-bio-name">Cargando...</span>
+          </div>
+          
+          <div>
+            <button id="btn-request-sequential" class="btn btn-primary btn-lg" style="padding: 16px 32px; font-size: 1.1rem; box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25);">
+              ⚡ Solicitar Asignación Sugerida
+            </button>
+          </div>
+        </div>
+
         <div class="section-title">
-          <h3>Solicitar Equipo Biométrico</h3>
-          <p>Selecciona uno de los 8 equipos disponibles e indica tu hora de salida.</p>
+          <h3>Estado Actual de los Equipos</h3>
+          <p>A continuación se muestra la disponibilidad actual de los 8 biométricos para tu referencia.</p>
         </div>
 
         <div id="user-biometrics-grid" class="biometrics-grid">

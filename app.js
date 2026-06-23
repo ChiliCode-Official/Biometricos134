@@ -1447,7 +1447,6 @@ async function exportToExcel() {
         // Columna Salida: 2 * x (ej: Bio 1 en Col B=2, Bio 2 en Col D=4...)
         const colSalida = 2 * x;
         const cellSalida = estSheet.row(r).cell(colSalida);
-        // Usar formato limpio de string de fecha local para evitar desajustes de zona horaria en Excel
         const cleanExitDateStr = (log.fecha_salida + " " + log.hora_salida_real).replace(/-/g, "/");
         cellSalida.value(cleanExitDateStr);
         if (r > 6) {
@@ -1463,6 +1462,36 @@ async function exportToExcel() {
           if (r > 6) {
             try { cellEntrada.style(estSheet.row(6).cell(colEntrada).style()); } catch(e){}
           }
+        }
+
+        // --- Inyectar anotaciones del jefe (Cambios de tinta / Recargas BAM) directamente en la fila de ESTADISTICAS ---
+        // Revisamos si en este biométrico y fecha aproximada hubo un cambio de tinta registrado
+        const matchingInk = state.inkLogs.find(ink => {
+          return ink.biometrico == log.biometrico && ink.fecha.startsWith(log.fecha_salida);
+        });
+        if (matchingInk) {
+          // Escribir el texto en la celda de la derecha o combinar si el formato del jefe lo requiere
+          // Escribimos la observación (ej: "CAMBIO DE CARTUCHO NEGRO") en la columna de entrada de la derecha para que destaque visualmente como en la imagen
+          const colEntrada = 2 * x + 1;
+          const cellEntrada = estSheet.row(r).cell(colEntrada);
+          cellEntrada.value(matchingInk.observaciones || "CAMBIO DE CARTUCHO");
+          try {
+            // Aplicar fondo amarillo como el de la captura del jefe
+            cellEntrada.style("fill", "FFFF00");
+          } catch(e){}
+        }
+
+        // Revisamos si en este biométrico y fecha hubo una recarga BAM asignada
+        const matchingNet = state.internetLogs.find(net => {
+          return net.biometrico == log.biometrico && net.fecha.startsWith(log.fecha_salida);
+        });
+        if (matchingNet) {
+          const colEntrada = 2 * x + 1;
+          const cellEntrada = estSheet.row(r).cell(colEntrada);
+          cellEntrada.value(matchingNet.observaciones || `RECARGA BAM: ${matchingNet.plan}`);
+          try {
+            cellEntrada.style("fill", "FFFF00");
+          } catch(e){}
         }
       });
 

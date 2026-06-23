@@ -404,7 +404,7 @@ textarea:focus {
   max-height: 200px;
   overflow-y: auto;
   list-style: none;
-  z-index: 100;
+  z-index: 2000;
   text-align: left;
 }
 
