@@ -917,13 +917,6 @@ async function confirmReservation() {
       usuario: userToAssign,
       hora_salida: exitTime
     });
-
-    if (res.success && state.currentUser.role === "user") {
-      // Auto-cerrar sesión de usuario para agilizar uso en iPad común de la notaría
-      setTimeout(() => {
-        logout();
-      }, 3000);
-    }
   }
 }
 
@@ -935,10 +928,6 @@ async function triggerReturn(logId) {
       id: logId,
       usuario_retorno: userRetorno
     });
-
-    if (res.success && state.currentUser.role === "user") {
-      setTimeout(() => logout(), 3000);
-    }
   }
 }
 
