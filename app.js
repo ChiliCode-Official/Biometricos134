@@ -62,7 +62,9 @@ async function initApp() {
   }
 
   // 3. Cargar Base de Datos (Nube) de forma asíncrona sin bloquear la UI
+  setButtonsState(false); // Deshabilitar botones durante la carga
   loadDatabase().then(() => {
+    setButtonsState(true); // Habilitar botones al terminar de cargar
     renderBiometrics();
     updateSequentialSuggestion();
     if (state.currentUser && state.currentUser.role === "admin") {
@@ -202,12 +204,24 @@ function setupEventListeners() {
 
 // Cargar Base de datos
 async function loadDatabase() {
+  const progressContainer = document.getElementById("loading-progress-container");
+  const progressBar = document.getElementById("loading-progress-bar");
+  
   if (state.connectionMode === "online") {
     try {
+      if (progressContainer && progressBar) {
+        progressContainer.style.display = "block";
+        progressBar.style.width = "15%";
+      }
+      
       const response = await fetch(CONFIG.GOOGLE_SHEET_API_URL);
+      if (progressContainer && progressBar) progressBar.style.width = "50%";
+      
       if (!response.ok) throw new Error("Fallo de red al conectar GAS");
       
       const db = await response.json();
+      if (progressContainer && progressBar) progressBar.style.width = "85%";
+      
       if (db.success) {
         state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
         // Si no hay usuarios en la nube, precargar del config.js
@@ -223,10 +237,19 @@ async function loadDatabase() {
 
         updateConnectionBar("online", "Conectado a la Base de Datos de Google Sheets");
         saveLocalBackup(); // Guardar copia local de respaldo
+        
+        if (progressContainer && progressBar) {
+          progressBar.style.width = "100%";
+          setTimeout(() => {
+            progressContainer.style.display = "none";
+            progressBar.style.width = "0%";
+          }, 600);
+        }
         return;
       }
     } catch (err) {
       console.error("Error al sincronizar con Google Sheets, cayendo en respaldo local:", err);
+      if (progressContainer) progressContainer.style.display = "none";
     }
   }
 
@@ -1584,4 +1607,31 @@ function parseDateString(dateStr) {
     };
   }
   return { year: 2026, month: 6, day: 23 };
+}
+
+// Habilitar o deshabilitar todos los botones principales de la aplicación durante procesos de carga/sincronización
+function setButtonsState(enabled) {
+  const selectors = [
+    "#btn-login-user",
+    "#btn-login-admin",
+    "#btn-request-sequential",
+    "#btn-confirm-reservation",
+    "#btn-export-excel",
+    ".card-actions button",
+    ".logout-btn",
+    "input",
+    "select",
+    "button"
+  ];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      if (enabled) {
+        el.removeAttribute("disabled");
+        if (el.tagName === "BUTTON") el.style.opacity = "1";
+      } else {
+        el.setAttribute("disabled", "true");
+        if (el.tagName === "BUTTON") el.style.opacity = "0.5";
+      }
+    });
+  });
 }
