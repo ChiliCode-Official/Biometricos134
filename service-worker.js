@@ -1,4 +1,4 @@
-const CACHE_NAME = 'n134-biometricos-v1';
+const CACHE_NAME = 'n134-biometricos-v2';
 const ASSETS = [
   'index.html',
   'styles.css',
@@ -35,27 +35,35 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Estrategia de red: Cache con caída a Red (Network Fallback)
-// Si no hay red, sirve el recurso desde caché
+// Estrategia de red: Network First para archivos locales para evitar cache atascada,
+// y Cache First para recursos externos y complementos.
 self.addEventListener('fetch', (e) => {
-  // Evitar interceptar solicitudes HTTP del Google Script API
+  // Evitar interceptar solicitudes HTTP del Google Script API o descargas externas
   if (e.request.url.includes('script.google.com') || e.request.url.includes('googleusercontent.com')) {
     return;
   }
 
-  e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Devolver respuesta cacheada e intentar actualizar la caché en segundo plano si está conectado
-        fetch(e.request).then((networkResponse) => {
-          if (networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, networkResponse));
+  const isLocalAsset = ASSETS.some(asset => e.request.url.includes(asset)) || 
+                       e.request.url.endsWith('/') || 
+                       e.request.url.endsWith('index.html');
+
+  if (isLocalAsset || e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const resClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, resClone));
           }
-        }).catch(() => {/* Ignorar errores al actualizar caché sin conexión */});
-        
-        return cachedResponse;
-      }
-      return fetch(e.request);
-    })
-  );
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    e.respondWith(
+      caches.match(e.request).then((cachedResponse) => {
+        return cachedResponse || fetch(e.request);
+      })
+    );
+  }
 });
