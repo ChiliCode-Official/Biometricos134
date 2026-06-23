@@ -280,16 +280,21 @@ function recalculateBiometricStates() {
     b.logId = "";
   });
 
-  // Recorrer logs de uso y buscar los activos
+  // Recorrer logs de uso y aplicar el estado secuencialmente
   state.logs.forEach(log => {
-    if (log.estado === "Activo") {
-      const bioNum = parseInt(log.biometrico);
-      const bio = state.biometrics.find(b => b.biometrico == bioNum);
-      if (bio) {
+    const bioNum = parseInt(log.biometrico);
+    const bio = state.biometrics.find(b => b.biometrico == bioNum);
+    if (bio) {
+      if (log.estado === "Activo") {
         bio.status = "Ocupado";
         bio.holder = log.usuario;
         bio.time = log.hora_salida_solicitada;
         bio.logId = log.id;
+      } else if (log.estado === "Entregado") {
+        bio.status = "Disponible";
+        bio.holder = "";
+        bio.time = "";
+        bio.logId = "";
       }
     }
   });
