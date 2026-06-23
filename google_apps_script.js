@@ -38,7 +38,7 @@ function doGet(e) {
       }
       
       if (result && result.success) {
-        return handleResponse(getData());
+        return handleResponse({ success: true, version: "v2" });
       } else {
         return handleResponse(result);
       }
@@ -74,6 +74,9 @@ function doPost(e) {
       result = { success: false, error: "Acción no reconocida" };
     }
     
+    if (result && result.success) {
+      result.version = "v2";
+    }
     return handleResponse(result);
   } catch (err) {
     return handleResponse({ success: false, error: err.toString() });
@@ -442,6 +445,7 @@ function requestBiometric(biometrico, usuario, horaSalida) {
     Logger.log("Error al enviar correo de solicitud: " + mailErr.toString());
   }
   
+  SpreadsheetApp.flush();
   return { success: true };
 }
 
@@ -532,6 +536,7 @@ function returnBiometric(id, usuarioRetorno, biometrico) {
     Logger.log("Error al enviar correo de retorno: " + mailErr.toString());
   }
   
+  SpreadsheetApp.flush();
   return { success: true };
 }
 
@@ -543,6 +548,7 @@ function logInkChange(biometrico, usuario, observaciones) {
   var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
   
   sheet.appendRow([id, biometrico, dateStr, usuario, observaciones]);
+  SpreadsheetApp.flush();
   return { success: true };
 }
 
@@ -564,6 +570,7 @@ function logInternetPlan(biometrico, usuario, plan, observaciones) {
     }
   }
   
+  SpreadsheetApp.flush();
   return { success: true };
 }
 

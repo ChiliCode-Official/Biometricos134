@@ -214,7 +214,14 @@ async function loadDatabase() {
         progressBar.style.width = "15%";
       }
       
-      const response = await fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?_t=${Date.now()}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
+      const response = await fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?_t=${Date.now()}`, {
+        redirect: 'follow',
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       if (progressContainer && progressBar) progressBar.style.width = "50%";
       
       if (!response.ok) throw new Error("Fallo de red al conectar GAS");
@@ -450,7 +457,7 @@ async function sendAction(action, payload) {
     showToast("Sincronizando con la nube...");
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
     
     const queryParams = new URLSearchParams({ action: action, ...payload, _t: Date.now() }).toString();
     fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?${queryParams}`, {
@@ -465,15 +472,18 @@ async function sendAction(action, payload) {
       .then(db => {
         if (db && db.success) {
           if (db.version !== "v2") {
-            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la acción de retorno no se aplicó en Google Sheets.\n\nPor favor, actualiza tu script en Google Sheets con la última versión de google_apps_script.js y asegúrate de crear una NUEVA IMPLEMENTACIÓN (Aplicación Web) en el menú.");
+            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la acción no se aplicó en Google Sheets.\n\nPor favor, actualiza tu script.");
           }
-          state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
-          if (state.users.length === 0) state.users = CONFIG.USUARIOS;
+          
+          if (db.logs) {
+            state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
+            if (state.users.length === 0) state.users = CONFIG.USUARIOS;
 
-          state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
-          state.logs = db.logs;
-          state.inkLogs = db.inkLogs;
-          state.internetLogs = db.internetLogs;
+            state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
+            state.logs = db.logs;
+            state.inkLogs = db.inkLogs;
+            state.internetLogs = db.internetLogs;
+          }
           
           recalculateBiometricStates();
           updateConnectionBar("online", "Conectado a la Base de Datos de Google Sheets");

@@ -4,7 +4,7 @@ const CONFIG = {
   // Pegar aquí la URL de la Web App obtenida de Google Apps Script.
   // Ejemplo: "https://script.google.com/macros/s/AKfycbz.../exec"
   // Si está vacío, la app funcionará en modo DEMO (LocalStorage local).
-  GOOGLE_SHEET_API_URL: "https://script.google.com/macros/s/AKfycbxUs4TRAAFjs2zJ408CQvSul20oNg1UOJ50NqhBIGB4s_ZLDe7t1EaBKOFqPnyk8SVhww/exec", 
+  GOOGLE_SHEET_API_URL: "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec", 
 
   // PIN de Acceso para el Administrador
   ADMIN_PIN: "134134",
