@@ -36,6 +36,12 @@ async function initApp() {
     updateConnectionBar("demo", "Modo Demostración (Local) - Edita config.js para conectar Google Sheets");
   }
 
+  // Cargar base local de inmediato para respuesta instantánea antes de red
+  loadLocalDatabase();
+  renderBiometrics();
+  populateExitTimeDropdown();
+  updateSequentialSuggestion();
+
   // Intentar precargar la plantilla de Excel original en segundo plano
   try {
     const response = await fetch('RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx');
@@ -55,8 +61,14 @@ async function initApp() {
     console.warn("No se pudo precargar la plantilla Excel automáticamente:", err);
   }
 
-  // 3. Cargar Base de Datos (Cloud o Local)
-  await loadDatabase();
+  // 3. Cargar Base de Datos (Nube) de forma asíncrona sin bloquear la UI
+  loadDatabase().then(() => {
+    renderBiometrics();
+    updateSequentialSuggestion();
+    if (state.currentUser && state.currentUser.role === "admin") {
+      renderAdminDashboard();
+    }
+  });
 
   // 4. Mostrar vista según sesión
   if (state.currentUser) {
@@ -66,13 +78,6 @@ async function initApp() {
     }
   } else {
     showView("login-view");
-  }
-
-  // 5. Cargar UI dinámica
-  renderBiometrics();
-  populateExitTimeDropdown();
-  if (state.currentUser && state.currentUser.role === "admin") {
-    renderAdminDashboard();
   }
 }
 
@@ -86,18 +91,14 @@ function setupEventListeners() {
   const userSearchInput = document.getElementById("user-search");
   userSearchInput.addEventListener("input", handleUserSearch);
   userSearchInput.addEventListener("focus", () => {
-    if (userSearchInput.value.trim() !== "") {
-      document.getElementById("user-results").classList.remove("hidden");
-    }
+    handleUserSearch({ target: userSearchInput });
   });
 
   // Autocomplete Admin User Search in assignment modal
   const adminSelectUserInput = document.getElementById("admin-select-user");
   adminSelectUserInput.addEventListener("input", handleAdminUserSearch);
   adminSelectUserInput.addEventListener("focus", () => {
-    if (adminSelectUserInput.value.trim() !== "") {
-      document.getElementById("admin-user-results").classList.remove("hidden");
-    }
+    handleAdminUserSearch({ target: adminSelectUserInput });
   });
   
   // Close autocompletes on click outside
@@ -107,6 +108,19 @@ function setupEventListeners() {
       document.getElementById("admin-user-results").classList.add("hidden");
     }
   });
+
+  // Botón para solicitar asignación sugerida (Usuario)
+  const btnRequestSequential = document.getElementById("btn-request-sequential");
+  if (btnRequestSequential) {
+    btnRequestSequential.addEventListener("click", () => {
+      const suggestNum = getNextSequentialBiometric();
+      if (suggestNum) {
+        openRequestModal(suggestNum);
+      } else {
+        showToast("No hay equipos disponibles en este momento.");
+      }
+    });
+  }
 
   // Login Trigger Buttons
   document.getElementById("btn-login-user").addEventListener("click", loginAsUser);
@@ -213,12 +227,10 @@ async function loadDatabase() {
       }
     } catch (err) {
       console.error("Error al sincronizar con Google Sheets, cayendo en respaldo local:", err);
-      showToast("Error de conexión. Trabajando en modo local.");
     }
   }
 
-  // Caer en LocalStorage
-  state.connectionMode = "demo";
+  // Respaldo local
   updateConnectionBar("demo", "Modo Local (Respaldo/Sin conexión) - Cambios guardados en navegador");
   loadLocalDatabase();
 }
@@ -288,47 +300,78 @@ function saveLocalBackup() {
   localStorage.setItem("n134_local_db", JSON.stringify(dbToSave));
 }
 
-// Enviar comandos al Backend (Google Sheets o local)
-async function sendAction(action, payload) {
-  if (state.connectionMode === "online") {
-    try {
-      showLoadingToast("Enviando cambios...");
-      const response = await fetch(CONFIG.GOOGLE_SHEET_API_URL, {
-        method: "POST",
-        mode: "no-cors", // Para evitar problemas CORS simples con GAS
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: action, ...payload })
-      });
-      
-      // Con no-cors no podemos leer la respuesta JSON directamente, por seguridad del navegador.
-      // Así que forzamos una recarga silenciosa de la base de datos tras 1.2 segundos para actualizar UI.
-      setTimeout(async () => {
-        await loadDatabase();
-        renderBiometrics();
-        if (state.currentUser.role === "admin") renderAdminDashboard();
-        hideToast();
-        showToast("Registro completado y sincronizado.");
-      }, 1200);
-      return { success: true };
-    } catch (err) {
-      console.error("Error al enviar acción a la nube, guardando local:", err);
-      showToast("Fallo de red. Cambios guardados localmente.");
+// Lógica de desglose rotativo secuencial ("Gasto a la par")
+function getNextSequentialBiometric() {
+  // 1. Encontrar el número del último biométrico asignado en el historial logs
+  let lastAssignedNum = 0;
+  // Recorremos los logs de atrás hacia adelante para ver el último biométrico solicitado
+  for (let i = state.logs.length - 1; i >= 0; i--) {
+    const num = parseInt(state.logs[i].biometrico);
+    if (!isNaN(num) && num >= 1 && num <= 8) {
+      lastAssignedNum = num;
+      break;
     }
   }
 
-  // Lógica local de fallback para modo Demo
+  // 2. Determinar la secuencia a partir del último biométrico
+  // Si no hay asignación previa, empezamos en 1
+  let currentNum = lastAssignedNum === 0 ? 1 : (lastAssignedNum % 8) + 1;
+
+  // 3. Probar disponibilidad en secuencia circular
+  for (let step = 0; step < 8; step++) {
+    const bio = state.biometrics.find(b => b.biometrico == currentNum);
+    if (bio && bio.status === "Disponible") {
+      return currentNum;
+    }
+    currentNum = (currentNum % 8) + 1;
+  }
+
+  // Si ninguno está disponible, retornar null
+  return null;
+}
+
+// Actualiza el texto en la UI con el biométrico sugerido
+function updateSequentialSuggestion() {
+  const suggestSpan = document.getElementById("suggested-bio-name");
+  const container = document.getElementById("sequential-suggested-container");
+  const btn = document.getElementById("btn-request-sequential");
+  
+  if (!suggestSpan) return;
+
+  const nextBio = getNextSequentialBiometric();
+  if (nextBio) {
+    suggestSpan.innerText = `Biométrico ${nextBio}`;
+    container.style.backgroundColor = "var(--accent-light)";
+    container.style.color = "var(--accent)";
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = `⚡ Solicitar Biométrico ${nextBio}`;
+    }
+  } else {
+    suggestSpan.innerText = "Ninguno disponible (Todos ocupados)";
+    container.style.backgroundColor = "var(--color-error-bg)";
+    container.style.color = "var(--color-error)";
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = "❌ Todos los Equipos Ocupados";
+    }
+  }
+}
+
+// Enviar comandos al Backend en segundo plano sin bloquear al usuario
+async function sendAction(action, payload) {
+  // Lógica local INMEDIATA para que la app se sienta instantánea
+  let localLogId = "LOG-" + new Date().getTime();
   if (action === "request") {
-    const id = "LOG-" + new Date().getTime();
     const dateStr = getTodayDateString();
     const timeStr = getNowTimeString();
     
-    // Registrar log
     state.logs.push({
-      id: id,
+      id: localLogId,
       biometrico: payload.biometrico,
       usuario: payload.usuario,
       fecha_salida: dateStr,
-      hora_salida_solicitada: payload.hora_salida,
+      hora_salida_solicitada: payload.hora_salida || "Al momento",
       hora_salida_real: timeStr,
       fecha_entrada: "",
       hora_entrada: "",
@@ -360,16 +403,42 @@ async function sendAction(action, payload) {
       plan: payload.plan,
       observaciones: payload.observaciones
     });
-    // Actualizar el plan del equipo localmente
     const bio = state.biometrics.find(b => b.biometrico == payload.biometrico);
     if (bio) bio.internet_plan = payload.plan;
   }
 
+  // Guardar local, refrescar UI y sugerencias secuenciales
   saveLocalBackup();
   recalculateBiometricStates();
   renderBiometrics();
-  if (state.currentUser.role === "admin") renderAdminDashboard();
-  showToast("Registrado localmente.");
+  updateSequentialSuggestion();
+  if (state.currentUser && state.currentUser.role === "admin") {
+    renderAdminDashboard();
+  }
+
+  // Procesar llamada a Google Sheets en segundo plano
+  if (state.connectionMode === "online") {
+    showToast("Registrando en base de datos...");
+    fetch(CONFIG.GOOGLE_SHEET_API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: action, ...payload })
+    }).then(() => {
+      // Sincronización silenciosa pasados 2 segundos
+      setTimeout(async () => {
+        await loadDatabase();
+        renderBiometrics();
+        updateSequentialSuggestion();
+        if (state.currentUser && state.currentUser.role === "admin") renderAdminDashboard();
+      }, 2000);
+    }).catch(err => {
+      console.error("Error asíncrono al guardar en la nube:", err);
+    });
+  } else {
+    showToast("Registrado localmente.");
+  }
+
   return { success: true };
 }
 
@@ -390,9 +459,14 @@ function switchLoginTab(role) {
   }
 }
 
+// Normalización de texto para búsqueda (ignora acentos)
+function normalizeText(text) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 // Búsqueda autocompletado de usuarios
 function handleUserSearch(e) {
-  const query = e.target.value.toLowerCase().trim();
+  const query = normalizeText(e.target.value);
   const list = document.getElementById("user-results");
   const loginBtn = document.getElementById("btn-login-user");
   list.innerHTML = "";
@@ -403,14 +477,16 @@ function handleUserSearch(e) {
     return;
   }
 
-  // Filtrar nombres
-  const matches = state.users.filter(u => u.toLowerCase().includes(query)).slice(0, 5);
+  // Filtrar nombres por coincidencia parcial en cualquier posición
+  const matches = state.users.filter(u => normalizeText(u).includes(query)).slice(0, 5);
   
   if (matches.length > 0) {
     list.classList.remove("hidden");
     matches.forEach(name => {
       const li = document.createElement("li");
       li.innerText = name;
+      li.style.padding = "12px 16px";
+      li.style.cursor = "pointer";
       li.addEventListener("click", () => {
         document.getElementById("user-search").value = name;
         list.classList.add("hidden");
@@ -426,7 +502,7 @@ function handleUserSearch(e) {
 
 // Búsqueda autocompletado para el administrador en el modal
 function handleAdminUserSearch(e) {
-  const query = e.target.value.toLowerCase().trim();
+  const query = normalizeText(e.target.value);
   const list = document.getElementById("admin-user-results");
   list.innerHTML = "";
   
@@ -435,14 +511,16 @@ function handleAdminUserSearch(e) {
     return;
   }
 
-  // Filtrar nombres
-  const matches = state.users.filter(u => u.toLowerCase().includes(query)).slice(0, 5);
+  // Filtrar nombres por coincidencia parcial en cualquier posición
+  const matches = state.users.filter(u => normalizeText(u).includes(query)).slice(0, 5);
   
   if (matches.length > 0) {
     list.classList.remove("hidden");
     matches.forEach(name => {
       const li = document.createElement("li");
       li.innerText = name;
+      li.style.padding = "12px 16px";
+      li.style.cursor = "pointer";
       li.addEventListener("click", () => {
         document.getElementById("admin-select-user").value = name;
         list.classList.add("hidden");
@@ -468,6 +546,7 @@ function loginAsUser() {
   document.getElementById("display-user-name").innerText = name;
   showView("user-view");
   renderBiometrics();
+  updateSequentialSuggestion();
   showToast(`Sesión iniciada como ${name}`);
 }
 
@@ -481,6 +560,7 @@ function loginAsAdmin() {
     showView("admin-view");
     renderBiometrics();
     renderAdminDashboard();
+    updateSequentialSuggestion();
     showToast("Sesión de administrador iniciada.");
     document.getElementById("admin-pin").value = "";
   } else {
@@ -499,6 +579,7 @@ function logout() {
   document.getElementById("btn-login-user").disabled = true;
   
   showView("login-view");
+  updateSequentialSuggestion();
   showToast("Sesión cerrada.");
 }
 
@@ -1366,8 +1447,9 @@ async function exportToExcel() {
         // Columna Salida: 2 * x (ej: Bio 1 en Col B=2, Bio 2 en Col D=4...)
         const colSalida = 2 * x;
         const cellSalida = estSheet.row(r).cell(colSalida);
-        const exitDate = new Date((log.fecha_salida + " " + log.hora_salida_real).replace(/-/g, "/"));
-        cellSalida.value(exitDate);
+        // Usar formato limpio de string de fecha local para evitar desajustes de zona horaria en Excel
+        const cleanExitDateStr = (log.fecha_salida + " " + log.hora_salida_real).replace(/-/g, "/");
+        cellSalida.value(cleanExitDateStr);
         if (r > 6) {
           try { cellSalida.style(estSheet.row(6).cell(colSalida).style()); } catch(e){}
         }
@@ -1376,8 +1458,8 @@ async function exportToExcel() {
         if (log.estado === "Entregado") {
           const colEntrada = 2 * x + 1;
           const cellEntrada = estSheet.row(r).cell(colEntrada);
-          const returnDate = new Date((log.fecha_entrada + " " + log.hora_entrada).replace(/-/g, "/"));
-          cellEntrada.value(returnDate);
+          const cleanReturnDateStr = (log.fecha_entrada + " " + log.hora_entrada).replace(/-/g, "/");
+          cellEntrada.value(cleanReturnDateStr);
           if (r > 6) {
             try { cellEntrada.style(estSheet.row(6).cell(colEntrada).style()); } catch(e){}
           }
