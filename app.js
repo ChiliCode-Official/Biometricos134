@@ -441,22 +441,28 @@ async function sendAction(action, payload) {
 
   // Procesar llamada a Google Sheets en segundo plano
   if (state.connectionMode === "online") {
-    showToast("Registrando en base de datos...");
+    setButtonsState(false);
+    showToast("Sincronizando con la nube...");
     fetch(CONFIG.GOOGLE_SHEET_API_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: action, ...payload })
-    }).then(() => {
-      // Sincronización silenciosa pasados 2 segundos
-      setTimeout(async () => {
-        await loadDatabase();
-        renderBiometrics();
-        updateSequentialSuggestion();
-        if (state.currentUser && state.currentUser.role === "admin") renderAdminDashboard();
-      }, 2000);
+    }).then(async () => {
+      // Recargar base de datos inmediatamente
+      await loadDatabase();
+      renderBiometrics();
+      updateSequentialSuggestion();
+      if (state.currentUser && state.currentUser.role === "admin") {
+        renderAdminDashboard();
+      }
+      setButtonsState(true);
+      hideToast();
     }).catch(err => {
-      console.error("Error asíncrono al guardar en la nube:", err);
+      console.error("Error al guardar en la nube:", err);
+      setButtonsState(true);
+      hideToast();
+      showToast("Error de red. Guardado localmente.");
     });
   } else {
     showToast("Registrado localmente.");
