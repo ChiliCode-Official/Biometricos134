@@ -673,7 +673,14 @@ function createBiometricCard(bio, role) {
     <div class="card-actions">
       ${role === "user" ? 
         (isAvailable ? 
-          `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Solicitar Salida</button>` : 
+          (() => {
+            const nextBio = getNextSequentialBiometric();
+            if (nextBio == bio.biometrico) {
+              return `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Solicitar Salida</button>`;
+            } else {
+              return `<button class="btn btn-secondary" style="opacity: 0.6; cursor: not-allowed;" onclick="showToast('Por favor solicita el Biométrico ${nextBio || 'disponible'}, asignado por desgaste para uso a la par.')">Solicitar Salida</button>`;
+            }
+          })() : 
           (bio.holder === state.currentUser?.name ? 
             `<button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}')">Entregar Biométrico</button>` : 
             `<button class="btn btn-secondary" disabled>No Disponible</button>`
@@ -822,6 +829,14 @@ let selectedBiometricNum = null;
 
 // Abrir modal de reserva
 function openRequestModal(bioNum) {
+  if (state.currentUser && state.currentUser.role === "user") {
+    const nextBio = getNextSequentialBiometric();
+    if (nextBio && nextBio != bioNum) {
+      showToast(`Acceso denegado: Debes solicitar el Biométrico ${nextBio}.`);
+      return;
+    }
+  }
+
   selectedBiometricNum = bioNum;
   const bio = state.biometrics.find(b => b.biometrico == bioNum);
   

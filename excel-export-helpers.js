@@ -73,8 +73,6 @@ function writeEstadisticasData(estSheet, state) {
   for (let r = 6; r <= 1500; r++) {
     for (let c = 1; c <= 19; c++) {
       estSheet.row(r).cell(c).value(null);
-      try { estSheet.row(r).cell(c).style("fill", undefined); } catch(e){}
-      try { estSheet.row(r).cell(c).style("bold", false); } catch(e){}
     }
   }
 
@@ -155,8 +153,10 @@ function writeEstadisticasData(estSheet, state) {
         const cellEntrada = estSheet.row(r).cell(colEntrada);
         cellEntrada.value(matchingInk.observaciones || "CAMBIO DE CARTUCHO");
         try {
-          cellEntrada.style("fill", "FFFF00");
-          cellEntrada.style("bold", true);
+          cellEntrada.style({
+            fill: "FFFF00",
+            bold: true
+          });
         } catch(e){}
       }
 
@@ -173,9 +173,11 @@ function writeEstadisticasData(estSheet, state) {
       // Aplicar fondo amarillo y negrita a TODA la fila (columnas A a S = 1 a 19)
       for (let c = 1; c <= 19; c++) {
         try {
-          estSheet.row(r).cell(c).style("fill", "FFFF00");
-          estSheet.row(r).cell(c).style("bold", true);
-          estSheet.row(r).cell(c).style("fontSize", 10);
+          estSheet.row(r).cell(c).style({
+            fill: "FFFF00",
+            bold: true,
+            fontSize: 10
+          });
         } catch(e){}
       }
     }
