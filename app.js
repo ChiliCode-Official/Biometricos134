@@ -30,7 +30,7 @@ async function initApp() {
   // 2. Determinar modo de conexión
   if (CONFIG.GOOGLE_SHEET_API_URL && CONFIG.GOOGLE_SHEET_API_URL.trim() !== "") {
     state.connectionMode = "online";
-    updateConnectionBar("loading", "Sincronizando con Google Sheets...");
+    updateConnectionBar("loading", "Revisando biométricos disponibles...");
   } else {
     state.connectionMode = "demo";
     updateConnectionBar("demo", "Modo Demostración (Local) - Edita config.js para conectar Google Sheets");
@@ -209,7 +209,7 @@ async function loadDatabase() {
       
       const db = await response.json();
       if (db.success) {
-        state.users = db.users.map(u => u.nombre);
+        state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
         // Si no hay usuarios en la nube, precargar del config.js
         if (state.users.length === 0) state.users = CONFIG.USUARIOS;
 
@@ -471,14 +471,10 @@ function handleUserSearch(e) {
   const loginBtn = document.getElementById("btn-login-user");
   list.innerHTML = "";
   
-  if (query === "") {
-    list.classList.add("hidden");
-    loginBtn.disabled = true;
-    return;
-  }
-
-  // Filtrar nombres por coincidencia parcial en cualquier posición
-  const matches = state.users.filter(u => normalizeText(u).includes(query)).slice(0, 5);
+  // Si está vacío, mostrar los primeros 5 usuarios por defecto para que puedan seleccionar
+  const matches = query === "" 
+    ? state.users.slice(0, 5)
+    : state.users.filter(u => normalizeText(u).includes(query)).slice(0, 5);
   
   if (matches.length > 0) {
     list.classList.remove("hidden");
@@ -487,7 +483,9 @@ function handleUserSearch(e) {
       li.innerText = name;
       li.style.padding = "12px 16px";
       li.style.cursor = "pointer";
-      li.addEventListener("click", () => {
+      li.addEventListener("mousedown", (evt) => {
+        // Usar mousedown para que ocurra antes del blur del input
+        evt.preventDefault();
         document.getElementById("user-search").value = name;
         list.classList.add("hidden");
         loginBtn.disabled = false;
@@ -521,7 +519,8 @@ function handleAdminUserSearch(e) {
       li.innerText = name;
       li.style.padding = "12px 16px";
       li.style.cursor = "pointer";
-      li.addEventListener("click", () => {
+      li.addEventListener("mousedown", (evt) => {
+        evt.preventDefault();
         document.getElementById("admin-select-user").value = name;
         list.classList.add("hidden");
       });
