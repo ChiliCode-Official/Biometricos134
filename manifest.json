@@ -3,14 +3,15 @@
   "name": "Control de Biométricos - Notaría 134",
   "icons": [
     {
-      "src": "https://developer.apple.com/assets/elements/icons/ios/apple-touch-icon.png",
+      "src": "chilicode.png",
       "type": "image/png",
-      "sizes": "180x180"
+      "sizes": "192x192"
     },
     {
-      "src": "https://developer.apple.com/assets/elements/icons/ios/apple-touch-icon.png",
+      "src": "chilicode.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "index.html",

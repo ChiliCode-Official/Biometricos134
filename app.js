@@ -246,17 +246,37 @@ function setupEventListeners() {
     }
   });
 
-  // Botón para solicitar asignación sugerida (Usuario)
   const btnRequestSequential = document.getElementById("btn-request-sequential");
   if (btnRequestSequential) {
-    btnRequestSequential.addEventListener("click", () => {
+    let seqHoldTimer;
+    const holdDuration = 1500;
+    
+    const startSeqHold = (e) => {
+      if (btnRequestSequential.disabled) return;
       const suggestNum = getNextSequentialBiometric();
-      if (suggestNum) {
+      if (!suggestNum) return;
+      
+      e.preventDefault();
+      btnRequestSequential.classList.add("holding");
+      seqHoldTimer = setTimeout(() => {
+        btnRequestSequential.classList.remove("holding");
         openRequestModal(suggestNum);
-      } else {
-        showToast("No hay equipos disponibles en este momento.");
-      }
-    });
+      }, holdDuration);
+    };
+    
+    const stopSeqHold = () => {
+      if (btnRequestSequential.disabled) return;
+      btnRequestSequential.classList.remove("holding");
+      clearTimeout(seqHoldTimer);
+    };
+
+    btnRequestSequential.addEventListener("mousedown", startSeqHold);
+    btnRequestSequential.addEventListener("touchstart", startSeqHold, {passive: false});
+    
+    btnRequestSequential.addEventListener("mouseup", stopSeqHold);
+    btnRequestSequential.addEventListener("mouseleave", stopSeqHold);
+    btnRequestSequential.addEventListener("touchend", stopSeqHold);
+    btnRequestSequential.addEventListener("touchcancel", stopSeqHold);
   }
 
   // Login Trigger Buttons
@@ -546,6 +566,7 @@ function updateSequentialSuggestion() {
   const suggestSpan = document.getElementById("suggested-bio-name");
   const container = document.getElementById("sequential-suggested-container");
   const btn = document.getElementById("btn-request-sequential");
+  const btnText = document.getElementById("btn-request-sequential-text");
   
   if (!suggestSpan) return;
 
@@ -556,7 +577,8 @@ function updateSequentialSuggestion() {
     container.style.color = "var(--accent)";
     if (btn) {
       btn.disabled = false;
-      btn.innerText = `⚡ Solicitar Biométrico ${nextBio}`;
+      if (btnText) btnText.innerText = `⚡ Mantén para Solicitar Biométrico ${nextBio}`;
+      btn.setAttribute("data-bio", nextBio);
     }
   } else {
     suggestSpan.innerText = "Ninguno disponible (Todos ocupados)";
@@ -564,7 +586,8 @@ function updateSequentialSuggestion() {
     container.style.color = "var(--color-error)";
     if (btn) {
       btn.disabled = true;
-      btn.innerText = "❌ Todos los Equipos Ocupados";
+      if (btnText) btnText.innerText = "❌ Todos los Equipos Ocupados";
+      btn.removeAttribute("data-bio");
     }
   }
 }
