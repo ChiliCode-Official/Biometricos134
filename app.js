@@ -214,7 +214,7 @@ async function loadDatabase() {
         progressBar.style.width = "15%";
       }
       
-      const response = await fetch(CONFIG.GOOGLE_SHEET_API_URL);
+      const response = await fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?_t=${Date.now()}`);
       if (progressContainer && progressBar) progressBar.style.width = "50%";
       
       if (!response.ok) throw new Error("Fallo de red al conectar GAS");
@@ -449,7 +449,7 @@ async function sendAction(action, payload) {
     setButtonsState(false);
     showToast("Sincronizando con la nube...");
     
-    const queryParams = new URLSearchParams({ action: action, ...payload }).toString();
+    const queryParams = new URLSearchParams({ action: action, ...payload, _t: Date.now() }).toString();
     fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?${queryParams}`)
       .then(response => {
         if (!response.ok) throw new Error("Fallo de red al conectar GAS");
