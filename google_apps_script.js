@@ -18,6 +18,34 @@
  */
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.action) {
+    try {
+      var action = e.parameter.action;
+      var result = {};
+      
+      ensureAuxiliarySheets();
+      
+      if (action === "request") {
+        result = requestBiometric(e.parameter.biometrico, e.parameter.usuario, e.parameter.hora_salida);
+      } else if (action === "return") {
+        result = returnBiometric(e.parameter.id, e.parameter.usuario_retorno);
+      } else if (action === "logInk") {
+        result = logInkChange(e.parameter.biometrico, e.parameter.usuario, e.parameter.observaciones);
+      } else if (action === "logInternet") {
+        result = logInternetPlan(e.parameter.biometrico, e.parameter.usuario, e.parameter.plan, e.parameter.observaciones);
+      } else {
+        result = { success: false, error: "Acción no reconocida" };
+      }
+      
+      if (result && result.success) {
+        return handleResponse(getData());
+      } else {
+        return handleResponse(result);
+      }
+    } catch (err) {
+      return handleResponse({ success: false, error: err.toString() });
+    }
+  }
   return handleResponse(getData());
 }
 

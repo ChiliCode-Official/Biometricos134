@@ -443,27 +443,44 @@ async function sendAction(action, payload) {
   if (state.connectionMode === "online") {
     setButtonsState(false);
     showToast("Sincronizando con la nube...");
-    fetch(CONFIG.GOOGLE_SHEET_API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: action, ...payload })
-    }).then(async () => {
-      // Recargar base de datos inmediatamente
-      await loadDatabase();
-      renderBiometrics();
-      updateSequentialSuggestion();
-      if (state.currentUser && state.currentUser.role === "admin") {
-        renderAdminDashboard();
-      }
-      setButtonsState(true);
-      hideToast();
-    }).catch(err => {
-      console.error("Error al guardar en la nube:", err);
-      setButtonsState(true);
-      hideToast();
-      showToast("Error de red. Guardado localmente.");
-    });
+    
+    const queryParams = new URLSearchParams({ action: action, ...payload }).toString();
+    fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?${queryParams}`)
+      .then(response => {
+        if (!response.ok) throw new Error("Fallo de red al conectar GAS");
+        return response.json();
+      })
+      .then(db => {
+        if (db && db.success) {
+          state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
+          if (state.users.length === 0) state.users = CONFIG.USUARIOS;
+
+          state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
+          state.logs = db.logs;
+          state.inkLogs = db.inkLogs;
+          state.internetLogs = db.internetLogs;
+          
+          recalculateBiometricStates();
+          updateConnectionBar("online", "Conectado a la Base de Datos de Google Sheets");
+          saveLocalBackup();
+        } else {
+          throw new Error((db && db.error) || "Error desconocido");
+        }
+        
+        renderBiometrics();
+        updateSequentialSuggestion();
+        if (state.currentUser && state.currentUser.role === "admin") {
+          renderAdminDashboard();
+        }
+        setButtonsState(true);
+        hideToast();
+      })
+      .catch(err => {
+        console.error("Error al guardar en la nube:", err);
+        setButtonsState(true);
+        hideToast();
+        showToast("Error al sincronizar. Cambios guardados localmente.");
+      });
   } else {
     showToast("Registrado localmente.");
   }
