@@ -13,6 +13,57 @@ let state = {
   users: []               // Lista de usuarios (pasantes)
 };
 
+// --- Theme & Install App Logic ---
+let deferredPrompt;
+
+function initTheme() {
+  const savedTheme = localStorage.getItem("n134_theme");
+  if (savedTheme) {
+    document.body.className = savedTheme === 'dark' ? 'dark-theme' : 'light-theme';
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.body.className = 'dark-theme';
+  } else {
+    document.body.className = 'light-theme';
+  }
+}
+
+window.setTheme = function(theme) {
+  if (theme === 'dark') {
+    document.body.className = 'dark-theme';
+    localStorage.setItem("n134_theme", "dark");
+  } else {
+    document.body.className = 'light-theme';
+    localStorage.setItem("n134_theme", "light");
+  }
+  showToast("Tema actualizado a " + (theme === 'dark' ? "Oscuro" : "Claro"));
+};
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const installSection = document.getElementById('install-app-section');
+  if (installSection) installSection.style.display = 'block';
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
+  const installBtn = document.getElementById('btn-install-app');
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          console.log('App instalada');
+          document.getElementById('install-app-section').style.display = 'none';
+        }
+        deferredPrompt = null;
+      }
+    });
+  }
+});
+
+
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
   initApp();
@@ -207,6 +258,9 @@ async function loadDatabase() {
   const progressContainer = document.getElementById("loading-progress-container");
   const progressBar = document.getElementById("loading-progress-bar");
   
+  // Renderizar Skeletons iniciales
+  renderSkeletons();
+
   if (state.connectionMode === "online") {
     try {
       if (progressContainer && progressBar) {
@@ -396,6 +450,29 @@ function updateSequentialSuggestion() {
       btn.innerText = "❌ Todos los Equipos Ocupados";
     }
   }
+}
+
+// Renderiza Skeletons mientras se carga la app
+function renderSkeletons() {
+  const grids = ["user-biometrics-grid", "admin-biometrics-grid"];
+  grids.forEach(gridId => {
+    const grid = document.getElementById(gridId);
+    if (grid) {
+      grid.innerHTML = "";
+      for(let i = 0; i < 8; i++) {
+        grid.innerHTML += `
+          <div class="skeleton">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-btn"></div>
+          </div>
+        `;
+      }
+    }
+  });
 }
 
 // Enviar comandos al Backend en segundo plano sin bloquear al usuario
@@ -684,7 +761,7 @@ function updateConnectionBar(mode, text) {
 
 function createActiveEquipmentChecklist(bio) {
   const card = document.createElement("div");
-  card.className = "bio-card glass";
+  card.className = "bio-card glass fade-in";
   card.style.border = "2px solid var(--accent)";
   
   const checklistId = `checklist-${bio.biometrico}`;
@@ -767,13 +844,27 @@ function renderBiometrics() {
   if (userActiveSection) {
     userActiveSection.style.display = hasActiveEquipment ? "block" : "none";
   }
+
+  // Lógica para ocultar secciones completas si el usuario tiene un equipo activo
+  if (state.currentUser && state.currentUser.role === "user") {
+    const quickBox = document.querySelector(".quick-sequential-box");
+    const othersSection = document.getElementById("user-others-section");
+    
+    if (hasActiveEquipment) {
+      if (quickBox) quickBox.style.display = "none";
+      if (othersSection) othersSection.style.display = "none";
+    } else {
+      if (quickBox) quickBox.style.display = "block";
+      if (othersSection) othersSection.style.display = "block";
+    }
+  }
 }
 
 // Construye la tarjeta de biométrico dinámicamente
 function createBiometricCard(bio, role) {
   const card = document.createElement("div");
-  card.className = "bio-card glass";
-
+  card.className = "bio-card glass fade-in";
+  card.id = `bio-card-${bio.biometrico}`;
   const isAvailable = bio.status === "Disponible";
   const statusClass = isAvailable ? "available" : "occupied";
   const statusText = isAvailable ? "Disponible" : "Ocupado";

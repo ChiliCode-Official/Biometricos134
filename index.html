@@ -89,7 +89,10 @@
           <p class="subtitle">Bienvenido,</p>
           <h2 id="display-user-name">Usuario</h2>
         </div>
-        <button class="btn btn-secondary logout-btn">Cerrar Sesión</button>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-secondary" onclick="showView('profile-view')" style="padding: 10px; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;" title="Perfil">👤</button>
+          <button class="btn btn-secondary logout-btn">Cerrar Sesión</button>
+        </div>
       </header>
 
       <div class="content-section">
@@ -119,16 +122,46 @@
             </div>
           </div>
   
-          <div class="section-title">
-          <h3>Estado Actual de los Equipos</h3>
-          <p>A continuación se muestra la disponibilidad actual de los 8 biométricos para tu referencia.</p>
-        </div>
+          <div id="user-others-section">
+            <div class="section-title">
+              <h3>Estado Actual de los Equipos</h3>
+              <p>A continuación se muestra la disponibilidad actual de los 8 biométricos para tu referencia.</p>
+            </div>
+    
+            <div id="user-biometrics-grid" class="biometrics-grid">
+              <!-- Dynamically populated user biometric cards -->
+            </div>
+          </div>
+      </div>
+    </section>
 
-        <div id="user-biometrics-grid" class="biometrics-grid">
-          <!-- Dynamically populated user biometric cards -->
+    <!-- 3. PROFILE VIEW -->
+    <section id="profile-view" class="view-panel">
+      <header class="app-header">
+        <div class="user-info">
+          <h2 style="font-family: var(--font-heading);">Mi Perfil</h2>
+        </div>
+        <button class="btn btn-secondary" onclick="showView(state.currentUser && state.currentUser.role === 'admin' ? 'admin-view' : 'user-view')">Volver</button>
+      </header>
+      <div class="content-section">
+        <div class="glass" style="padding: 24px; border-radius: 16px; margin-bottom: 20px;">
+          <h3>Aspecto de la Aplicación</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 15px;">Selecciona el tema de tu preferencia. Esto se guardará en tu dispositivo.</p>
+          
+          <div style="display: flex; gap: 15px;">
+            <button id="btn-theme-light" class="btn btn-primary" onclick="setTheme('light')" style="flex: 1;">☀️ Modo Claro</button>
+            <button id="btn-theme-dark" class="btn btn-secondary" onclick="setTheme('dark')" style="flex: 1;">🌙 Modo Oscuro</button>
+          </div>
+        </div>
+        
+        <div id="install-app-section" class="glass" style="padding: 24px; border-radius: 16px; display: none;">
+          <h3>Instalar Aplicación</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 15px;">Instala esta aplicación en tu dispositivo para un acceso rápido y experiencia de pantalla completa.</p>
+          <button id="btn-install-app" class="btn btn-primary" style="width: 100%;">📱 Instalar App</button>
         </div>
       </div>
     </section>
+
 
     <!-- 3. ADMIN DASHBOARD VIEW -->
     <section id="admin-view" class="view-panel">
@@ -139,7 +172,10 @@
         </div>
         <div class="header-actions">
           <button id="btn-excel-actions" class="btn btn-secondary">Gestionar Excel</button>
-          <button class="btn btn-secondary logout-btn">Cerrar Sesión</button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="showView('profile-view')" style="padding: 10px; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;" title="Perfil">👤</button>
+            <button class="btn btn-secondary logout-btn">Cerrar Sesión</button>
+          </div>
         </div>
       </header>
 
@@ -405,6 +441,15 @@
   <div id="print-area">
     <!-- Clean page to inject the formatted document -->
   </div>
+
+  <!-- ChiliCode Watermark -->
+  <a href="https://chilicode-official.github.io/ChiliCode/" target="_blank" class="chilicode-watermark">
+    <img src="chilicode.png" alt="ChiliCode Logo" class="chilicode-logo">
+    <div class="chilicode-text">
+      <span>Desarrollado por <strong>ChiliCode</strong></span>
+      <small>Luis Rodrigo Gonzalez</small>
+    </div>
+  </a>
 
   <!-- Scripts -->
   <script src="config.js?v=2"></script>
