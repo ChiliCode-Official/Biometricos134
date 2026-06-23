@@ -1456,6 +1456,37 @@ body.light-theme .skeleton::before {
   border-radius: 8px;
   margin-top: auto;
 }
+
+/* Hold to Confirm Button */
+.hold-to-confirm-btn {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.hold-to-confirm-btn .progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  transition: width 0.1s linear;
+}
+
+.hold-to-confirm-btn.holding .progress-fill {
+  width: 100%;
+  transition: width 1.5s linear;
+}
+
+.hold-to-confirm-btn span {
+  position: relative;
+  z-index: 2;
+}
+
 @media print {
   .chilicode-watermark {
     display: none !important;

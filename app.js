@@ -19,24 +19,53 @@ let deferredPrompt;
 function initTheme() {
   const savedTheme = localStorage.getItem("n134_theme");
   if (savedTheme) {
-    document.body.className = savedTheme === 'dark' ? 'dark-theme' : 'light-theme';
+    setTheme(savedTheme);
   } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.body.className = 'dark-theme';
+    setTheme('dark');
   } else {
-    document.body.className = 'light-theme';
+    setTheme('light');
+  }
+  
+  const savedColor = localStorage.getItem("n134_accent_color");
+  if (savedColor) {
+    setAccentColor(savedColor, false);
   }
 }
 
-window.setTheme = function(theme) {
-  if (theme === 'dark') {
-    document.body.className = 'dark-theme';
-    localStorage.setItem("n134_theme", "dark");
+function setTheme(themeName) {
+  if (themeName === 'dark') {
+    document.body.classList.remove('light-theme');
+    document.body.classList.add('dark-theme');
+    document.getElementById('btn-theme-dark').style.border = "2px solid var(--accent)";
+    document.getElementById('btn-theme-light').style.border = "none";
   } else {
-    document.body.className = 'light-theme';
-    localStorage.setItem("n134_theme", "light");
+    document.body.classList.remove('dark-theme');
+    document.body.classList.add('light-theme');
+    document.getElementById('btn-theme-light').style.border = "2px solid var(--accent)";
+    document.getElementById('btn-theme-dark').style.border = "none";
   }
-  showToast("Tema actualizado a " + (theme === 'dark' ? "Oscuro" : "Claro"));
-};
+  localStorage.setItem("n134_theme", themeName);
+}
+
+function setAccentColor(colorHex, save = true) {
+  document.documentElement.style.setProperty('--accent', colorHex);
+  // Calculate a lighter version for hover states / backgrounds
+  document.documentElement.style.setProperty('--accent-light', colorHex + '20'); // 20% opacity approx
+  const picker = document.getElementById("accent-color-picker");
+  if(picker) picker.value = colorHex;
+  
+  if (save) {
+    localStorage.setItem("n134_accent_color", colorHex);
+  }
+}
+
+function resetAccentColor() {
+  document.documentElement.style.removeProperty('--accent');
+  document.documentElement.style.removeProperty('--accent-light');
+  localStorage.removeItem("n134_accent_color");
+  const picker = document.getElementById("accent-color-picker");
+  if(picker) picker.value = "#007AFF"; // Default blue
+}
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -70,8 +99,63 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
 });
 
+// --- PTR Variables ---
+let ptrStartY = 0;
+let ptrCurrentY = 0;
+let isPulling = false;
+const ptrIndicator = document.getElementById('pull-to-refresh-indicator');
+
+// --- Offline Queue ---
+let offlineQueue = JSON.parse(localStorage.getItem('n134_offline_queue')) || [];
+
+function updateOfflineBadge() {
+  const cnt = offlineQueue.length;
+  const userBadge = document.getElementById('user-offline-badge');
+  const adminBadge = document.getElementById('admin-offline-badge');
+  if (userBadge) {
+    userBadge.style.display = cnt > 0 ? 'inline-block' : 'none';
+    userBadge.innerText = `☁️ ${cnt} pte.`;
+  }
+  if (adminBadge) {
+    adminBadge.style.display = cnt > 0 ? 'inline-block' : 'none';
+    adminBadge.innerText = `☁️ ${cnt} pte.`;
+  }
+}
+
+async function processOfflineQueue() {
+  if (state.connectionMode !== "online" || offlineQueue.length === 0) return;
+  if (!navigator.onLine) return; // Prevent processing if totally offline
+  
+  showToast(`Sincronizando ${offlineQueue.length} acciones pendientes...`);
+  const queueToProcess = [...offlineQueue];
+  offlineQueue = [];
+  localStorage.setItem('n134_offline_queue', JSON.stringify(offlineQueue));
+  updateOfflineBadge();
+  
+  let successCount = 0;
+  for (const item of queueToProcess) {
+    try {
+      const queryParams = new URLSearchParams({ action: item.action, ...item.payload, _t: Date.now() }).toString();
+      const res = await fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?${queryParams}`);
+      if (res.ok) successCount++;
+    } catch (e) {
+      console.error("Fallo re-intento de offline item:", item);
+      offlineQueue.push(item); // Vuelve a la cola si falla
+    }
+  }
+  localStorage.setItem('n134_offline_queue', JSON.stringify(offlineQueue));
+  updateOfflineBadge();
+  if (successCount > 0) {
+    loadDatabase(); // Actualizar todo tras sincronizar exitosamente
+    showToast(`${successCount} acciones sincronizadas correctamente con la nube.`);
+  }
+}
+
+window.addEventListener('online', processOfflineQueue);
+
 // --- Core App Init ---
 async function initApp() {
+  updateOfflineBadge();
   // 1. Detectar si hay sesión guardada en localStorage
   const savedSession = localStorage.getItem("n134_session");
   if (savedSession) {
@@ -247,6 +331,39 @@ function setupEventListeners() {
 
   // History Filter Search
   document.getElementById("history-search").addEventListener("input", filterHistoryTable);
+  
+  // Pull to Refresh Listeners
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY === 0) {
+      ptrStartY = e.touches[0].clientY;
+      isPulling = true;
+    }
+  }, {passive: true});
+
+  document.addEventListener('touchmove', e => {
+    if (!isPulling || window.scrollY > 0) return;
+    ptrCurrentY = e.touches[0].clientY;
+    const distance = ptrCurrentY - ptrStartY;
+    if (distance > 0 && distance < 150 && ptrIndicator) {
+      ptrIndicator.style.transform = `translateY(${distance - 60}px)`;
+    }
+  }, {passive: false});
+
+  document.addEventListener('touchend', e => {
+    if (!isPulling) return;
+    isPulling = false;
+    const distance = ptrCurrentY - ptrStartY;
+    if (distance > 60 && ptrIndicator) {
+      ptrIndicator.style.transform = `translateY(0px)`;
+      loadDatabase().then(() => {
+        ptrIndicator.style.transform = `translateY(-100%)`;
+      });
+    } else if (ptrIndicator) {
+      ptrIndicator.style.transform = `translateY(-100%)`;
+    }
+    ptrStartY = 0;
+    ptrCurrentY = 0;
+  });
 }
 
 /* ==========================================================================
@@ -587,10 +704,16 @@ async function sendAction(action, payload) {
         console.error("Error al guardar en la nube:", err);
         setButtonsState(true);
         hideToast();
+        
+        // Push to offline queue
+        offlineQueue.push({ action: action, payload: payload });
+        localStorage.setItem('n134_offline_queue', JSON.stringify(offlineQueue));
+        updateOfflineBadge();
+        
         if (err.name === 'AbortError') {
-          showToast("Error: Tiempo de espera agotado (15s). Se guardó de forma local.");
+          showToast("Red muy lenta. Acción guardada en la nube pendiente (Offline).");
         } else {
-          showToast("Error al sincronizar: " + err.message);
+          showToast("Sin internet. Acción guardada en cola local (Offline).");
         }
       });
   } else {
@@ -793,9 +916,52 @@ function createActiveEquipmentChecklist(bio) {
     </div>
     
     <div class="card-actions">
-      <button id="btn-return-${bio.biometrico}" class="btn btn-primary" disabled onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')" style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">Confirmar Devolución</button>
+      <button id="btn-return-${bio.biometrico}" class="btn btn-primary hold-to-confirm-btn" disabled 
+              style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">
+        <div class="progress-fill"></div>
+        <span>Mantén presionado para Entregar</span>
+      </button>
     </div>
   `;
+  
+  // Attach Hold-to-Confirm logic after element is created (done in render loop or here)
+  setTimeout(() => {
+    const btn = document.getElementById(`btn-return-${bio.biometrico}`);
+    if (!btn) return;
+    
+    let holdTimer;
+    const holdDuration = 1500; // 1.5 seconds
+    
+    const startHold = (e) => {
+      if (btn.disabled) return;
+      e.preventDefault(); // Prevent touch scroll/click issues
+      btn.classList.add("holding");
+      holdTimer = setTimeout(() => {
+        btn.classList.remove("holding");
+        triggerReturn(bio.logId, bio.biometrico);
+        // Shoot confetti on success!
+        if(typeof confetti === 'function') {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: [getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()] });
+        }
+      }, holdDuration);
+    };
+    
+    const stopHold = () => {
+      if (btn.disabled) return;
+      btn.classList.remove("holding");
+      clearTimeout(holdTimer);
+    };
+    
+    btn.addEventListener("mousedown", startHold);
+    btn.addEventListener("touchstart", startHold, {passive: false});
+    
+    btn.addEventListener("mouseup", stopHold);
+    btn.addEventListener("mouseleave", stopHold);
+    btn.addEventListener("touchend", stopHold);
+    btn.addEventListener("touchcancel", stopHold);
+    
+  }, 0);
+  
   return card;
 }
 
