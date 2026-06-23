@@ -1,0 +1,22 @@
+{
+  "short_name": "Biometria134",
+  "name": "Control de Biométricos - Notaría 134",
+  "icons": [
+    {
+      "src": "https://developer.apple.com/assets/elements/icons/ios/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    },
+    {
+      "src": "https://developer.apple.com/assets/elements/icons/ios/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#F5F5F7",
+  "theme_color": "#1C1C1E",
+  "display": "standalone",
+  "orientation": "portrait",
+  "description": "Aplicación para el control y asignación de equipos biométricos de la Notaría 134"
+}

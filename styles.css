@@ -1,0 +1,1260 @@
+/* ==========================================================================
+   DESIGN SYSTEM - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
+   Apple-Inspired Clean & Modern UI
+   ========================================================================== */
+
+/* --- Custom Properties (Apple Palette) --- */
+:root {
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* Light Mode Colors */
+  --bg-system: #F5F5F7;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FAFAFC;
+  --accent: #0071E3;
+  --accent-light: rgba(0, 113, 227, 0.1);
+  --text-primary: #1D1D1F;
+  --text-secondary: #86868B;
+  --text-tertiary: #AEAEB2;
+  --border: #E5E5EA;
+  --border-light: rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+  
+  /* Status Colors */
+  --color-available: #34C759;
+  --color-available-bg: rgba(52, 199, 89, 0.1);
+  --color-occupied: #FF9500;
+  --color-occupied-bg: rgba(255, 149, 0, 0.1);
+  --color-error: #FF3B30;
+  --color-error-bg: rgba(255, 59, 48, 0.1);
+  
+  --transition-smooth: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --border-radius-sm: 8px;
+  --border-radius-md: 14px;
+  --border-radius-lg: 20px;
+}
+
+/* --- Dark Mode Override --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-system: #000000;
+    --bg-card: #1C1C1E;
+    --bg-card-hover: #2C2C2E;
+    --text-primary: #F5F5F7;
+    --text-secondary: #86868B;
+    --text-tertiary: #48484A;
+    --border: #2C2C2E;
+    --border-light: rgba(255, 255, 255, 0.05);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+    --accent-light: rgba(0, 113, 227, 0.2);
+  }
+}
+
+/* --- Reset & Global --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-system);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+  transition: background-color 0.3s ease;
+}
+
+/* --- Layout Container --- */
+#app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Typography --- */
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.4rem; }
+h4 { font-size: 1.1rem; }
+
+/* --- Helper Classes --- */
+.glass {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--border-radius-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.text-center { text-align: center; }
+.hidden { display: none !important; }
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 550;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  border: none;
+  text-decoration: none;
+  gap: 8px;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: #0077ED;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+}
+
+.btn-secondary {
+  background-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-card-hover);
+}
+
+/* --- Form Fields --- */
+.input-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+input[type="text"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--bg-system);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  transition: var(--transition-smooth);
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  background-color: var(--bg-card);
+  box-shadow: 0 0 0 4px var(--accent-light);
+}
+
+/* --- Badges --- */
+.badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-admin {
+  background-color: var(--accent-light);
+  color: var(--accent);
+}
+
+/* --- Connection Status Bar --- */
+.connection-bar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 1000;
+  background-color: rgba(28, 28, 30, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #FFFFFF;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition-smooth);
+}
+
+.connection-bar.online {
+  background-color: rgba(52, 199, 89, 0.95);
+}
+
+.connection-bar.demo {
+  background-color: rgba(0, 113, 227, 0.95);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #FF3B30;
+  display: inline-block;
+  animation: pulse 1.5s infinite;
+}
+
+.connection-bar.online .status-dot {
+  background-color: #FFFFFF;
+  animation: none;
+}
+
+.connection-bar.demo .status-dot {
+  background-color: #FFFFFF;
+  animation: none;
+}
+
+/* --- Toast Notification --- */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background-color: rgba(28, 28, 30, 0.9);
+  color: #FFFFFF;
+  padding: 16px 28px;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 2000;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  text-align: center;
+  pointer-events: none;
+  min-width: 300px;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ==========================================================================
+   VIEWS CONTROLLERS
+   ========================================================================== */
+.view-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  animation: fadeIn 0.4s ease;
+}
+
+.view-panel.active {
+  display: flex;
+}
+
+/* --- 1. Login View --- */
+#login-view {
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 40px;
+  border-radius: var(--border-radius-lg);
+  text-align: center;
+}
+
+.logo-area {
+  margin-bottom: 32px;
+}
+
+.apple-logo-sim {
+  width: 64px;
+  height: 64px;
+  background-color: var(--accent);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.4rem;
+  margin: 0 auto 16px auto;
+  box-shadow: 0 6px 16px rgba(0, 113, 227, 0.3);
+}
+
+.logo-area h1 {
+  font-size: 1.8rem;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.logo-area p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.role-selector {
+  display: flex;
+  background-color: var(--bg-system);
+  padding: 4px;
+  border-radius: var(--border-radius-md);
+  margin-bottom: 30px;
+}
+
+.role-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  color: var(--text-secondary);
+}
+
+.role-tab.active {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.login-form {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.login-form.active {
+  display: block;
+}
+
+/* Autocomplete List */
+.search-container {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+  z-index: 100;
+  text-align: left;
+}
+
+.autocomplete-list li {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: var(--transition-smooth);
+}
+
+.autocomplete-list li:hover {
+  background-color: var(--bg-system);
+}
+
+/* ==========================================================================
+   APP HEADER & NAVIGATION
+   ========================================================================== */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 30px;
+}
+
+.app-header h2 {
+  font-size: 1.6rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   BIOMETRIC CARDS GRID
+   ========================================================================== */
+.section-title {
+  margin-bottom: 20px;
+}
+
+.section-title h3 {
+  font-size: 1.3rem;
+  color: var(--text-primary);
+}
+
+.section-title p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.biometrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Biometric Card Details */
+.bio-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  transition: var(--transition-smooth);
+}
+
+.bio-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.bio-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.bio-title-box h4 {
+  font-size: 1.25rem;
+  font-family: var(--font-heading);
+}
+
+.bio-phone-number {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* State Badge */
+.state-pill {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.state-pill.available {
+  background-color: var(--color-available-bg);
+  color: var(--color-available);
+}
+
+.state-pill.occupied {
+  background-color: var(--color-occupied-bg);
+  color: var(--color-occupied);
+}
+
+/* Hardware Box */
+.hw-info-box {
+  background-color: var(--bg-system);
+  border-radius: var(--border-radius-md);
+  padding: 14px;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+  margin-bottom: 20px;
+}
+
+.hw-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.hw-icon {
+  font-weight: bold;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  width: 14px;
+}
+
+.hw-desc {
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.hw-desc span {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  display: block;
+}
+
+/* User Holder Info */
+.holder-box {
+  margin-top: auto;
+  border-top: 1px dashed var(--border);
+  padding-top: 14px;
+  font-size: 0.85rem;
+}
+
+.holder-label {
+  color: var(--text-secondary);
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.holder-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.holder-time {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  display: block;
+  margin-top: 2px;
+}
+
+.card-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   ADMIN TABS & PAGES
+   ========================================================================== */
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 30px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tab-link {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-smooth);
+  white-space: nowrap;
+}
+
+.tab-link:hover {
+  color: var(--text-primary);
+}
+
+.tab-link.active {
+  color: var(--accent);
+}
+
+.tab-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--accent);
+  border-radius: 3px;
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Stats Bar */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-num {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Logistics Sections (Ink/BAM) */
+.logistics-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .logistics-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.log-form-box {
+  padding: 24px;
+}
+
+.log-form-box h4 {
+  margin-bottom: 4px;
+}
+
+.form-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.log-history-box {
+  padding: 24px;
+}
+
+.log-history-box h4 {
+  margin-bottom: 20px;
+}
+
+/* Table Design */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+  background-color: var(--bg-card);
+}
+
+th {
+  background-color: var(--bg-system);
+  padding: 14px 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background-color: var(--bg-card-hover);
+}
+
+/* General History Page */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.search-filter input {
+  padding: 8px 16px;
+  border-radius: var(--border-radius-sm);
+  width: 250px;
+}
+
+.history-container {
+  padding: 24px;
+}
+
+/* ==========================================================================
+   MODALS
+   ========================================================================== */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1500;
+  display: none; /* Controlled by JS */
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 30px;
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-large {
+  max-width: 800px;
+  height: 85vh;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: var(--transition-smooth);
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  margin-bottom: 24px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+/* Drag & Drop Area */
+.excel-drag-drop {
+  border: 2px dashed var(--text-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  color: var(--text-secondary);
+}
+
+.excel-drag-drop:hover, .excel-drag-drop.dragover {
+  border-color: var(--accent);
+  background-color: var(--accent-light);
+  color: var(--accent);
+}
+
+.excel-drag-drop svg {
+  margin-bottom: 12px;
+}
+
+.excel-drag-drop p {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.excel-drag-drop span {
+  font-size: 0.85rem;
+}
+
+.import-status {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9rem;
+}
+
+.import-status.success {
+  background-color: var(--color-available-bg);
+  color: var(--color-available);
+}
+
+.import-status.error {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.hardware-bullet-list {
+  background-color: var(--bg-system);
+  border-radius: var(--border-radius-md);
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.hardware-bullet-list ul {
+  list-style: none;
+}
+
+.hardware-bullet-list li {
+  margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   PRINT PREVIEW & PAPER
+   ========================================================================== */
+.print-preview-body {
+  background-color: var(--bg-system);
+  border-radius: var(--border-radius-md);
+  padding: 20px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+}
+
+#responsiva-paper-container {
+  background-color: #FFFFFF;
+  color: #000000;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #D2D2D7;
+  width: 100%;
+  max-width: 21.59cm; /* Letter size width */
+  margin: 0 auto;
+  padding: 2.5cm;
+  font-family: 'Times New Roman', Times, serif; /* Traditional Legal Font */
+  font-size: 11pt;
+  line-height: 1.4;
+  text-align: justify;
+}
+
+.responsiva-header {
+  text-align: center;
+  margin-bottom: 1.5cm;
+  border-bottom: 2px solid #000000;
+  padding-bottom: 10px;
+}
+
+.responsiva-header h2 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 16pt;
+  font-weight: bold;
+}
+
+.responsiva-header h3 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 14pt;
+  margin-top: 5px;
+}
+
+.responsiva-meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1cm;
+}
+
+.responsiva-meta-table td {
+  border: 1px solid #000000;
+  padding: 8px 12px;
+  background-color: transparent !important;
+  color: #000000;
+}
+
+.responsiva-meta-table td.label-td {
+  font-weight: bold;
+  width: 25%;
+}
+
+.responsiva-section-title {
+  font-weight: bold;
+  font-size: 12pt;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #000000;
+}
+
+.responsiva-hw-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1cm;
+}
+
+.responsiva-hw-table th, .responsiva-hw-table td {
+  border: 1px solid #000000;
+  padding: 6px 10px;
+  font-size: 10pt;
+  background-color: transparent !important;
+  color: #000000;
+}
+
+.responsiva-hw-table th {
+  font-weight: bold;
+  text-align: center;
+}
+
+.responsiva-legal-text {
+  font-size: 8.5pt;
+  line-height: 1.3;
+  margin-bottom: 1.5cm;
+  text-align: justify;
+}
+
+.responsiva-footer {
+  text-align: center;
+  margin-top: 1cm;
+}
+
+.responsiva-signature-box {
+  width: 60%;
+  margin: 0 auto;
+  border-top: 1px solid #000000;
+  padding-top: 8px;
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   PRINT-ONLY AREA RULES
+   ========================================================================== */
+#print-area {
+  display: none;
+}
+
+@media print {
+  /* Hide all regular UI */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only print-area and its contents */
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  
+  #print-area {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Paper specific styling overrides */
+  #responsiva-paper-container-print {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 1.5cm !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 10pt !important;
+    line-height: 1.3 !important;
+  }
+
+  .responsiva-header {
+    margin-bottom: 0.8cm !important;
+  }
+
+  .responsiva-legal-text {
+    font-size: 8pt !important;
+    margin-bottom: 0.8cm !important;
+  }
+
+  .responsiva-signature-box {
+    margin-top: 0.5cm !important;
+  }
+
+  @page {
+    size: letter;
+    margin: 1.5cm;
+  }
+}
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (Mobile adjustments)
+   ========================================================================== */
+@media (max-width: 600px) {
+  #app-container {
+    padding: 12px;
+  }
+  
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .header-actions button {
+    flex: 1;
+  }
+  
+  .stats-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .biometrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .login-card {
+    padding: 24px 16px;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 20px;
+  }
+}
+
+/* ==========================================================================
+   EXCEL GRID SHEET STYLING
+   ========================================================================== */
+.excel-responsiva-sheet {
+  font-family: Arial, Helvetica, sans-serif !important;
+  color: #000000 !important;
+  background-color: #FFFFFF !important;
+  padding: 10px;
+  border-radius: var(--border-radius-sm);
+}
+
+.excel-grid-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  border: 1.8px solid #000000 !important;
+  background-color: #FFFFFF !important;
+}
+
+.excel-grid-table td {
+  border: 0.8px solid #999999 !important;
+  padding: 5px 8px !important;
+  font-size: 8.5pt !important;
+  font-family: Arial, sans-serif !important;
+  color: #000000 !important;
+  vertical-align: middle !important;
+  height: 24px !important;
+  background-color: #FFFFFF !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.excel-grid-table .logo-cell {
+  border: 1.8px solid #000000 !important;
+  text-align: center !important;
+  padding: 4px !important;
+}
+
+.excel-grid-table .main-title {
+  border: 1.8px solid #000000 !important;
+  font-weight: bold !important;
+  font-size: 15pt !important;
+  text-align: center !important;
+}
+
+.excel-grid-table .sub-title {
+  border: 1.8px solid #000000 !important;
+  font-weight: bold !important;
+  font-size: 13pt !important;
+  text-align: center !important;
+}
+
+.excel-grid-table .label-cell {
+  font-weight: bold !important;
+  font-size: 8.5pt !important;
+}
+
+.excel-grid-table .value-cell {
+  font-size: 9pt !important;
+}
+
+.excel-grid-table .highlight-cell {
+  font-weight: bold !important;
+}
+
+.excel-grid-table .centered-cell {
+  text-align: center !important;
+}
+
+.excel-grid-table .italic-cell {
+  font-style: italic !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  font-size: 8.5pt !important;
+}
+
+.excel-grid-table .section-header {
+  background-color: #D9D9D9 !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  font-size: 9pt !important;
+  border-top: 1.8px solid #000000 !important;
+  border-bottom: 1.8px solid #000000 !important;
+}
+
+.excel-grid-table .header-row td {
+  font-weight: bold !important;
+  text-align: center !important;
+  background-color: #F2F2F2 !important;
+  border-bottom: 1.8px solid #000000 !important;
+}
+
+.excel-grid-table .obs-cell {
+  font-size: 7.5pt !important;
+  line-height: 1.3 !important;
+  text-align: justify !important;
+  vertical-align: top !important;
+  padding: 8px !important;
+}
+
+.excel-grid-table .font-bold {
+  font-weight: bold !important;
+}
+
+.excel-grid-table .spacer-row td {
+  border-left: 0.8px solid #999999 !important;
+  border-right: 0.8px solid #999999 !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  height: 8px !important;
+  padding: 0 !important;
+}
