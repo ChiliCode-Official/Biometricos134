@@ -682,23 +682,91 @@ function updateConnectionBar(mode, text) {
   textSpan.innerText = text;
 }
 
+function createActiveEquipmentChecklist(bio) {
+  const card = document.createElement("div");
+  card.className = "bio-card glass";
+  card.style.border = "2px solid var(--accent)";
+  
+  const checklistId = `checklist-${bio.biometrico}`;
+  
+  card.innerHTML = `
+    <div class="bio-card-header" style="background: var(--accent-light); margin: -20px -20px 15px -20px; padding: 15px 20px; border-radius: 12px 12px 0 0;">
+      <div class="bio-title-box">
+        <h4 style="color: var(--accent); font-size: 1.1rem; font-weight: 700;">Biométrico ${bio.biometrico} Asignado</h4>
+      </div>
+    </div>
+    
+    <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
+      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+        <span>💻 Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
+      </label>
+      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+        <span>🖨️ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
+      </label>
+      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+        <span>☝️ Lector ${bio.biometrico_lector}</span>
+      </label>
+      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+        <span>📶 Router BAM ${bio.router_modelo}</span>
+      </label>
+    </div>
+    
+    <div class="card-actions">
+      <button id="btn-return-${bio.biometrico}" class="btn btn-primary" disabled onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')" style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">Confirmar Devolución</button>
+    </div>
+  `;
+  return card;
+}
+
+window.checkReturnChecklist = function(biometricoNum) {
+  const container = document.getElementById(`checklist-${biometricoNum}`);
+  if (!container) return;
+  const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  
+  const btn = document.getElementById(`btn-return-${biometricoNum}`);
+  if (btn) {
+    btn.disabled = !allChecked;
+  }
+};
+
 // Renderizar tarjetas de los biométricos
 function renderBiometrics() {
   const userGrid = document.getElementById("user-biometrics-grid");
   const adminGrid = document.getElementById("admin-biometrics-grid");
+  const userActiveSection = document.getElementById("user-active-equipment-section");
+  const userActiveGrid = document.getElementById("user-active-equipment-container");
   
-  userGrid.innerHTML = "";
-  adminGrid.innerHTML = "";
+  if (userGrid) userGrid.innerHTML = "";
+  if (adminGrid) adminGrid.innerHTML = "";
+  if (userActiveGrid) userActiveGrid.innerHTML = "";
+
+  let hasActiveEquipment = false;
 
   state.biometrics.forEach(bio => {
     // 1. Crear tarjeta para Usuarios
     const userCard = createBiometricCard(bio, "user");
-    userGrid.appendChild(userCard);
+    if (userGrid) userGrid.appendChild(userCard);
 
     // 2. Crear tarjeta para Administrador
     const adminCard = createBiometricCard(bio, "admin");
-    adminGrid.appendChild(adminCard);
+    if (adminGrid) adminGrid.appendChild(adminCard);
+
+    // 3. Crear tarjeta activa con checklist si el usuario actual es el poseedor
+    if (state.currentUser && state.currentUser.role === "user" && bio.status === "Ocupado" && bio.holder === state.currentUser.name) {
+      hasActiveEquipment = true;
+      const activeCard = createActiveEquipmentChecklist(bio);
+      if (userActiveGrid) userActiveGrid.appendChild(activeCard);
+    }
   });
+
+  if (userActiveSection) {
+    userActiveSection.style.display = hasActiveEquipment ? "block" : "none";
+  }
 }
 
 // Construye la tarjeta de biométrico dinámicamente
@@ -762,7 +830,7 @@ function createBiometricCard(bio, role) {
             }
           })() : 
           (bio.holder === state.currentUser?.name ? 
-            `<button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')">Entregar Biométrico</button>` : 
+            `<button class="btn btn-secondary" disabled>En posesión (Ver Mis Equipos arriba)</button>` : 
             `<button class="btn btn-secondary" disabled>No Disponible</button>`
           )
         ) : 
