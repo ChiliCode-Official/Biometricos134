@@ -107,6 +107,11 @@ function getData() {
   };
 }
 
+function safeString(val) {
+  if (val === null || val === undefined) return "";
+  return val.toString().trim();
+}
+
 // 1. Obtener el estado actual de los 8 biométricos leyendo sus pestañas "BIO 1" a "BIO 8"
 function getBiometricsState(ss) {
   var biometrics = [];
@@ -116,25 +121,25 @@ function getBiometricsState(ss) {
       // Leer el rango completo de una sola vez para maximizar velocidad (de 11 llamadas a 1)
       var grid = sheet.getRange("B4:F15").getValues();
       
-      var holder = grid[0][0].toString().trim();       // B4 (Fila 4, Col B)
-      var bam_telefono = grid[0][3].toString().trim(); // E4 (Fila 4, Col E)
-      var internet_plan = grid[0][4].toString().trim();// F4 (Fila 4, Col F)
+      var holder = safeString(grid[0][0]);       // B4 (Fila 4, Col B)
+      var bam_telefono = safeString(grid[0][3]); // E4 (Fila 4, Col E)
+      var internet_plan = safeString(grid[0][4]);// F4 (Fila 4, Col F)
       var exitDate = grid[4][4];                        // F8 (Fila 8, Col F)
       
       // Especificaciones de hardware (Filas 12, 13, 14, 15)
-      var laptop_marca = grid[8][0].toString().trim();  // B12 (Fila 12, Col B)
-      var laptop_modelo = grid[8][1].toString().trim(); // C12 (Fila 12, Col C)
-      var laptop_serie = grid[8][2].toString().trim();  // D12 (Fila 12, Col D)
+      var laptop_marca = safeString(grid[8][0]);  // B12 (Fila 12, Col B)
+      var laptop_modelo = safeString(grid[8][1]); // C12 (Fila 12, Col C)
+      var laptop_serie = safeString(grid[8][2]);  // D12 (Fila 12, Col D)
       
-      var impresora_marca = grid[9][0].toString().trim();  // B13 (Fila 13, Col B)
-      var impresora_modelo = grid[9][1].toString().trim(); // C13 (Fila 13, Col C)
-      var impresora_serie = grid[9][2].toString().trim();  // D13 (Fila 13, Col D)
+      var impresora_marca = safeString(grid[9][0]);  // B13 (Fila 13, Col B)
+      var impresora_modelo = safeString(grid[9][1]); // C13 (Fila 13, Col C)
+      var impresora_serie = safeString(grid[9][2]);  // D13 (Fila 13, Col D)
       
-      var biometrico_lector = grid[10][0].toString().trim(); // B14 (Fila 14, Col B)
-      var biometrico_serie = grid[10][2].toString().trim();  // D14 (Fila 14, Col D)
+      var biometrico_lector = safeString(grid[10][0]); // B14 (Fila 14, Col B)
+      var biometrico_serie = safeString(grid[10][2]);  // D14 (Fila 14, Col D)
       
-      var router_modelo = grid[11][0].toString().trim(); // B15 (Fila 15, Col B)
-      var router_imei = grid[11][2].toString().trim();   // D15 (Fila 15, Col D)
+      var router_modelo = safeString(grid[11][0]); // B15 (Fila 15, Col B)
+      var router_imei = safeString(grid[11][2]);   // D15 (Fila 15, Col D)
       
       var status = (holder === "") ? "Disponible" : "Ocupado";
       var timeFormatted = "";
@@ -233,18 +238,39 @@ function getUsersFromSheet(ss) {
   return usersList.length > 0 ? usersList : CONFIG.USUARIOS;
 }
 
-// Formatear fechas/números seriales de Excel
+// Formatear fechas/números seriales de Excel (Optimizado en JS puro para evitar lentitud de Utilities.formatDate)
 function formatDate(val, format) {
+  var d;
   if (val instanceof Date) {
-    return Utilities.formatDate(val, Session.getScriptTimeZone(), format);
-  }
-  if (typeof val === "number") {
+    d = val;
+  } else if (typeof val === "number") {
     var baseDate = new Date(1899, 11, 30);
     var dateMs = baseDate.getTime() + val * 24 * 60 * 60 * 1000;
-    var d = new Date(dateMs);
-    return Utilities.formatDate(d, Session.getScriptTimeZone(), format);
+    d = new Date(dateMs);
+  } else {
+    return val ? val.toString() : "";
   }
-  return val ? val.toString() : "";
+  
+  var yyyy = d.getFullYear();
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  var hh = String(d.getHours()).padStart(2, '0');
+  var min = String(d.getMinutes()).padStart(2, '0');
+  var ss = String(d.getSeconds()).padStart(2, '0');
+  
+  if (format === "yyyy-MM-dd") {
+    return yyyy + "-" + mm + "-" + dd;
+  }
+  if (format === "HH:mm") {
+    return hh + ":" + min;
+  }
+  if (format === "HH:mm:ss") {
+    return hh + ":" + min + ":" + ss;
+  }
+  if (format === "yyyy-MM-dd HH:mm:ss") {
+    return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + min + ":" + ss;
+  }
+  return d.toString();
 }
 
 // 4. Registrar salida (Escribe directamente en ESTADISTICAS y en BIO X)
@@ -321,6 +347,9 @@ function returnBiometric(id, usuarioRetorno, biometrico) {
   } else {
     // 2. Si no es un ID oficial, usamos el biometrico
     x = parseInt(biometrico);
+    if (isNaN(x) && biometrico === "General") {
+      x = 9;
+    }
   }
   
   if (isNaN(x) || x < 1 || x > 9) {
