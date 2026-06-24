@@ -438,7 +438,7 @@ async function loadDatabase() {
         // Calcular estado de biometria dinámicamente con base en LOG_USO activo
         recalculateBiometricStates();
 
-        updateConnectionBar("online", "Conectado a la Base de Datos de Google Sheets");
+        updateConnectionBar("online", "Conectado con disponibilidad de biométricos");
         saveLocalBackup(); // Guardar copia local de respaldo
         
         if (progressContainer && progressBar) {
@@ -708,7 +708,7 @@ async function sendAction(action, payload) {
           }
           
           recalculateBiometricStates();
-          updateConnectionBar("online", "Conectado a la Base de Datos de Google Sheets");
+          updateConnectionBar("online", "Conectado con disponibilidad de biométricos");
           saveLocalBackup();
         } else {
           throw new Error((db && db.error) || "Error desconocido");
