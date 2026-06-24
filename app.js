@@ -76,6 +76,15 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
+  
+  // Detect iOS Safari
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  
+  if (isIos && !isStandalone) {
+    const iosSection = document.getElementById('ios-install-section');
+    if (iosSection) iosSection.style.display = 'block';
+  }
   const installBtn = document.getElementById('btn-install-app');
   if (installBtn) {
     installBtn.addEventListener('click', async () => {
