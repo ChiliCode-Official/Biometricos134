@@ -1059,7 +1059,9 @@ function renderBiometrics() {
     if (adminGrid) adminGrid.appendChild(adminCard);
 
     // 3. Crear tarjeta activa con checklist si el usuario actual es el poseedor
-    if (state.currentUser && state.currentUser.role === "user" && bio.status === "Ocupado" && bio.holder === state.currentUser.name) {
+    if (state.currentUser && state.currentUser.role === "user" && 
+       (bio.status === "Ocupado" || bio.status === "Pendiente") && 
+       bio.holder === state.currentUser.name) {
       hasActiveEquipment = true;
       const activeCard = createActiveEquipmentChecklist(bio);
       if (userActiveGrid) userActiveGrid.appendChild(activeCard);

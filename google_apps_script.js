@@ -37,6 +37,8 @@ function doGet(e) {
         result = cancelBiometric(e.parameter.id, e.parameter.biometrico);
       } else if (action === "confirm") {
         result = confirmBiometric(e.parameter.id, e.parameter.biometrico);
+      } else if (action === "getDatabase") {
+        return handleResponse(getData());
       } else {
         result = { success: false, error: "Acción no reconocida" };
       }
@@ -78,6 +80,8 @@ function doPost(e) {
       result = cancelBiometric(params.id, params.biometrico);
     } else if (action === "confirm") {
       result = confirmBiometric(params.id, params.biometrico);
+    } else if (action === "getDatabase") {
+      return handleResponse(getData());
     } else {
       result = { success: false, error: "Acción no reconocida" };
     }
