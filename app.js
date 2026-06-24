@@ -1043,6 +1043,9 @@ function renderBiometrics() {
   if (userGrid) userGrid.innerHTML = "";
   if (adminGrid) adminGrid.innerHTML = "";
   if (userActiveGrid) userActiveGrid.innerHTML = "";
+  
+  const oldReminder = document.getElementById("pending-reminder");
+  if (oldReminder) oldReminder.remove();
 
   let hasActiveEquipment = false;
 
@@ -1060,6 +1063,26 @@ function renderBiometrics() {
       hasActiveEquipment = true;
       const activeCard = createActiveEquipmentChecklist(bio);
       if (userActiveGrid) userActiveGrid.appendChild(activeCard);
+    }
+
+    // 4. Recordatorio de equipo pendiente para pasantes
+    if (state.currentUser && state.currentUser.role === "user" && bio.status === "Pendiente" && bio.holder === state.currentUser.name) {
+      const reminderDiv = document.createElement("div");
+      reminderDiv.className = "alert alert-warning";
+      reminderDiv.style.backgroundColor = "#fff3cd";
+      reminderDiv.style.color = "#856404";
+      reminderDiv.style.padding = "15px";
+      reminderDiv.style.borderRadius = "8px";
+      reminderDiv.style.marginBottom = "20px";
+      reminderDiv.style.fontWeight = "bold";
+      reminderDiv.innerHTML = `🔔 No olvides pasar por tu Biométrico ${bio.biometrico} a la oficina antes de las 4.`;
+      
+      // Insertar al principio de la vista de usuario
+      const userView = document.getElementById("user-view");
+      if (userView) {
+        reminderDiv.id = "pending-reminder";
+        userView.insertBefore(reminderDiv, userView.firstChild);
+      }
     }
   });
 
@@ -1151,11 +1174,9 @@ function createBiometricCard(bio, role) {
         (isAvailable ? 
           `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Asignar Equipo</button>` : 
           (() => {
-            let confirmed = JSON.parse(localStorage.getItem('confirmed_deliveries') || '[]');
-            let isConfirmed = confirmed.includes(bio.logId);
-            if (!isConfirmed) {
+            if (bio.status === "Pendiente") {
               return `
-              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}')">🚨 Pendiente de entregar a pasante</button>
+              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')">🚨 Pendiente de entregar a pasante</button>
               <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')">❌ Cancelar</button>
               `;
             } else {
@@ -1384,14 +1405,15 @@ async function triggerReturn(logId, biometrico) {
   }
 }
 
-// Confirmar entrega de un biométrico (solo UX admin local)
-window.confirmDelivery = function(logId) {
-  let confirmed = JSON.parse(localStorage.getItem('confirmed_deliveries') || '[]');
-  if (!confirmed.includes(logId)) {
-    confirmed.push(logId);
-    localStorage.setItem('confirmed_deliveries', JSON.stringify(confirmed));
+// Confirmar entrega de un biométrico (backend)
+window.confirmDelivery = async function(logId, bioNum) {
+  const res = await sendAction("confirm", { id: logId, biometrico: bioNum });
+  if (res && res.success) {
+    showToast("Entrega confirmada con éxito");
+    fetchDatabase();
+  } else {
+    showToast("Error al confirmar la entrega", true);
   }
-  renderBiometrics();
 };
 
 // Cancelar solicitud de un biométrico (borra registro)
@@ -1399,12 +1421,8 @@ window.cancelDelivery = async function(logId, bioNum) {
   if (confirm(`¿Estás seguro de cancelar la solicitud del Biométrico ${bioNum}?`)) {
     const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
     if (res && res.success) {
-      // Remove from confirmed just in case
-      let confirmed = JSON.parse(localStorage.getItem('confirmed_deliveries') || '[]');
-      confirmed = confirmed.filter(id => id !== logId);
-      localStorage.setItem('confirmed_deliveries', JSON.stringify(confirmed));
       showToast("Solicitud cancelada");
-      // The fetch is already handled by sendAction if successful, but we can call fetchDatabase() if needed
+      fetchDatabase();
     }
   }
 }
@@ -2129,7 +2147,7 @@ function startNotificationPolling() {
   // Clone current logs to avoid firing notifications on startup
   lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
   
-  notificationPollingTimer = setInterval(pollForUpdates, 60000); // 60 seconds
+  notificationPollingTimer = setInterval(pollForUpdates, 15000); // 15 seconds
 }
 
 function stopNotificationPolling() {

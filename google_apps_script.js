@@ -35,6 +35,8 @@ function doGet(e) {
         result = logInternetPlan(e.parameter.biometrico, e.parameter.usuario, e.parameter.plan, e.parameter.observaciones);
       } else if (action === "cancel") {
         result = cancelBiometric(e.parameter.id, e.parameter.biometrico);
+      } else if (action === "confirm") {
+        result = confirmBiometric(e.parameter.id, e.parameter.biometrico);
       } else {
         result = { success: false, error: "Acción no reconocida" };
       }
@@ -74,6 +76,8 @@ function doPost(e) {
       result = logInternetPlan(params.biometrico, params.usuario, params.plan, params.observaciones);
     } else if (action === "cancel") {
       result = cancelBiometric(params.id, params.biometrico);
+    } else if (action === "confirm") {
+      result = confirmBiometric(params.id, params.biometrico);
     } else {
       result = { success: false, error: "Acción no reconocida" };
     }
@@ -268,8 +272,8 @@ function getBiometricsState(ss, logs, internetLogs) {
     if (logs && logs.length > 0) {
       for (var k = logs.length - 1; k >= 0; k--) {
         var log = logs[k];
-        if (parseInt(log.biometrico) === bio.biometrico && log.estado === "Activo") {
-          status = "Ocupado";
+        if (parseInt(log.biometrico) === bio.biometrico && (log.estado === "Activo" || log.estado === "Pendiente")) {
+          status = log.estado === "Pendiente" ? "Pendiente" : "Ocupado";
           holder = log.usuario;
           timeFormatted = log.hora_salida_solicitada;
           break;
@@ -318,6 +322,9 @@ function getLogsFromEstadisticas(ss) {
         var bioNum = x === 9 ? "General" : x;
         var logId = "ROW-" + (i + 1) + "-" + x; // ID único basado en fila y columna
         
+        var isPending = entradaVal && entradaVal.toString().trim() === "PENDIENTE";
+        var isReturned = entradaVal && entradaVal.toString().trim() !== "" && !isPending;
+        
         logs.push({
           id: logId,
           biometrico: bioNum,
@@ -325,10 +332,10 @@ function getLogsFromEstadisticas(ss) {
           fecha_salida: formatDate(salidaVal, "yyyy-MM-dd"),
           hora_salida_solicitada: formatDate(salidaVal, "HH:mm"),
           hora_salida_real: formatDate(salidaVal, "HH:mm:ss"),
-          fecha_entrada: entradaVal ? formatDate(entradaVal, "yyyy-MM-dd") : "",
-          hora_entrada: entradaVal ? formatDate(entradaVal, "HH:mm:ss") : "",
-          estado: (entradaVal && entradaVal.toString().trim() !== "") ? "Entregado" : "Activo",
-          devuelto_por: (entradaVal && entradaVal.toString().trim() !== "") ? "Admin" : ""
+          fecha_entrada: isReturned ? formatDate(entradaVal, "yyyy-MM-dd") : "",
+          hora_entrada: isReturned ? formatDate(entradaVal, "HH:mm:ss") : "",
+          estado: isPending ? "Pendiente" : (isReturned ? "Entregado" : "Activo"),
+          devuelto_por: isReturned ? "Admin" : ""
         });
       }
     }
@@ -423,6 +430,7 @@ function requestBiometric(biometrico, usuario, horaSalida) {
   
   estSheet.getRange(newRowIdx, 1).setValue(usuario);
   estSheet.getRange(newRowIdx, colSalidaNum).setValue(now);
+  estSheet.getRange(newRowIdx, colSalidaNum + 1).setValue("PENDIENTE");
   
   // B. Escribir en la hoja BIO X para la responsiva (si es del 1 al 8)
   if (x >= 1 && x <= 8) {
@@ -489,7 +497,41 @@ function cancelBiometric(id, biometrico) {
   return { success: true };
 }
 
-// 6. Registrar devolución (Escribe directamente en ESTADISTICAS y limpia BIO X)
+// 6. Confirmar entrega (Borra la palabra PENDIENTE de la Fecha de Retorno)
+function confirmBiometric(id, biometrico) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  var rowIdx = -1;
+  var x = -1;
+  
+  var parts = id ? id.toString().split("-") : [];
+  if (parts.length === 3 && parts[0] === "ROW") {
+    rowIdx = parseInt(parts[1]);
+    x = parseInt(parts[2]);
+  } else {
+    x = parseInt(biometrico);
+    if (isNaN(x) && biometrico === "General") {
+      x = 9;
+    }
+  }
+  
+  if (isNaN(x) || x < 1 || x > 9 || rowIdx === -1) {
+    return { success: false, error: "ID o número de biométrico inválido para confirmación." };
+  }
+  
+  var estSheet = ss.getSheetByName("ESTADISTICAS");
+  if (!estSheet) return { success: false, error: "No se encontró la hoja ESTADISTICAS" };
+  
+  var colSalidaNum = 2 * x;
+  
+  // Limpiar "PENDIENTE" (Col 2x+1)
+  estSheet.getRange(rowIdx, colSalidaNum + 1).clearContent();
+  
+  SpreadsheetApp.flush();
+  return { success: true };
+}
+
+// 7. Registrar devolución (Escribe directamente en ESTADISTICAS y limpia BIO X)
 function returnBiometric(id, usuarioRetorno, biometrico) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   
