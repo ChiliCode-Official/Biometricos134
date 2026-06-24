@@ -501,6 +501,11 @@ function recalculateBiometricStates() {
         bio.holder = log.usuario;
         bio.time = log.hora_salida_solicitada;
         bio.logId = log.id;
+      } else if (log.estado === "Pendiente") {
+        bio.status = "Pendiente";
+        bio.holder = log.usuario;
+        bio.time = log.hora_salida_solicitada || "Pendiente";
+        bio.logId = log.id;
       } else if (log.estado === "Entregado") {
         bio.status = "Disponible";
         bio.holder = "";
