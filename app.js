@@ -114,6 +114,10 @@ let ptrCurrentY = 0;
 let isPulling = false;
 const ptrIndicator = document.getElementById('pull-to-refresh-indicator');
 
+// --- Notification Polling Variables ---
+let notificationPollingTimer = null;
+let lastKnownLogs = [];
+
 // --- Offline Queue ---
 let offlineQueue = JSON.parse(localStorage.getItem('n134_offline_queue')) || [];
 
@@ -169,6 +173,10 @@ async function initApp() {
   const savedSession = localStorage.getItem("n134_session");
   if (savedSession) {
     state.currentUser = JSON.parse(savedSession);
+    if (state.currentUser && state.currentUser.role === "admin") {
+      requestNotificationPermission();
+      startNotificationPolling();
+    }
   }
 
   // 2. Determinar modo de conexiÃ³n
@@ -875,6 +883,10 @@ function loginAsAdmin() {
     updateSequentialSuggestion();
     showToast("SesiÃ³n de administrador iniciada.");
     document.getElementById("admin-pin").value = "";
+    
+    // Notifications init
+    requestNotificationPermission();
+    startNotificationPolling();
   } else {
     showToast("PIN incorrecto. Intenta de nuevo.");
   }
@@ -884,6 +896,7 @@ function loginAsAdmin() {
 function logout() {
   state.currentUser = null;
   localStorage.removeItem("n134_session");
+  stopNotificationPolling();
   
   // Limpiar campos de login
   document.getElementById("user-search").value = "";
@@ -2041,4 +2054,93 @@ function setButtonsState(enabled) {
       }
     });
   });
+}
+
+
+/* ==========================================================================
+   LOCAL NOTIFICATIONS (POLLING)
+   ========================================================================== */
+
+function requestNotificationPermission() {
+  if (!("Notification" in window)) {
+    console.warn("Este navegador no soporta notificaciones de escritorio");
+    return;
+  }
+  if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        console.log("Permiso de notificaciones concedido.");
+      }
+    });
+  }
+}
+
+function startNotificationPolling() {
+  if (notificationPollingTimer) clearInterval(notificationPollingTimer);
+  if (!CONFIG.GOOGLE_SHEET_API_URL) return;
+  
+  // Clone current logs to avoid firing notifications on startup
+  lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
+  
+  notificationPollingTimer = setInterval(pollForUpdates, 60000); // 60 seconds
+}
+
+function stopNotificationPolling() {
+  if (notificationPollingTimer) {
+    clearInterval(notificationPollingTimer);
+    notificationPollingTimer = null;
+  }
+}
+
+async function pollForUpdates() {
+  if (!navigator.onLine) return;
+  try {
+    const res = await fetch(CONFIG.GOOGLE_SHEET_API_URL + "?action=getDatabase&_t=" + Date.now());
+    if (!res.ok) return;
+    const db = await res.json();
+    if (db.success) {
+      const newLogs = db.logs;
+      checkNotificationChanges(lastKnownLogs, newLogs);
+      lastKnownLogs = JSON.parse(JSON.stringify(newLogs));
+      
+      // Optionally update local state seamlessly if there are changes
+      if (JSON.stringify(state.logs) !== JSON.stringify(newLogs)) {
+        state.logs = newLogs;
+        state.biometrics = db.biometrics;
+        recalculateBiometricStates();
+        renderBiometrics();
+        if (state.currentUser && state.currentUser.role === "admin") {
+          renderAdminDashboard();
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error polling notifications:", err);
+  }
+}
+
+function checkNotificationChanges(oldLogs, newLogs) {
+  if (Notification.permission !== "granted") return;
+  
+  newLogs.forEach(newLog => {
+    const oldLog = oldLogs.find(l => l.id === newLog.id);
+    if (!oldLog) {
+      // New log!
+      fireNotification("Nueva Solicitud", `${newLog.usuario} solicitó el Biométrico ${newLog.biometrico}`);
+    } else if (oldLog.estado !== newLog.estado && newLog.estado === "Entregado") {
+      // Returned!
+      fireNotification("Devolución", `El Biométrico ${newLog.biometrico} ha sido devuelto por ${newLog.usuario_retorno || newLog.usuario}`);
+    }
+  });
+}
+
+function fireNotification(title, body) {
+  try {
+    new Notification(title, {
+      body: body,
+      icon: "app_icon.png"
+    });
+  } catch(e) {
+    console.warn("No se pudo lanzar notificación", e);
+  }
 }
