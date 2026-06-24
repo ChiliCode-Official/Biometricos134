@@ -449,6 +449,9 @@ async function loadDatabase() {
 
         state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
         state.logs = db.logs;
+        // Fix for notifications firing on initial load:
+        lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
+        
         state.inkLogs = db.inkLogs;
         state.internetLogs = db.internetLogs;
         
