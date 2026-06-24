@@ -1150,10 +1150,21 @@ function createBiometricCard(bio, role) {
         // Acciones del Administrador
         (isAvailable ? 
           `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Asignar Equipo</button>` : 
-          `
-          <button class="btn btn-primary" onclick="triggerPrintResponsive('${bio.logId}')">Visualizar e Imprimir</button>
-          <button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')">Marcar como Entregado</button>
-          `
+          (() => {
+            let confirmed = JSON.parse(localStorage.getItem('confirmed_deliveries') || '[]');
+            let isConfirmed = confirmed.includes(bio.logId);
+            if (!isConfirmed) {
+              return `
+              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}')">🚨 Pendiente de entregar a pasante</button>
+              <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')">❌ Cancelar</button>
+              `;
+            } else {
+              return `
+              <button class="btn btn-primary" onclick="triggerPrintResponsive('${bio.logId}')">Visualizar e Imprimir</button>
+              <button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')">Marcar como Entregado (Devolución)</button>
+              `;
+            }
+          })()
         )
       }
     </div>
@@ -1370,6 +1381,31 @@ async function triggerReturn(logId, biometrico) {
       biometrico: biometrico,
       usuario_retorno: userRetorno
     });
+  }
+}
+
+// Confirmar entrega de un biométrico (solo UX admin local)
+window.confirmDelivery = function(logId) {
+  let confirmed = JSON.parse(localStorage.getItem('confirmed_deliveries') || '[]');
+  if (!confirmed.includes(logId)) {
+    confirmed.push(logId);
+    localStorage.setItem('confirmed_deliveries', JSON.stringify(confirmed));
+  }
+  renderBiometrics();
+};
+
+// Cancelar solicitud de un biométrico (borra registro)
+window.cancelDelivery = async function(logId, bioNum) {
+  if (confirm(`¿Estás seguro de cancelar la solicitud del Biométrico ${bioNum}?`)) {
+    const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
+    if (res && res.success) {
+      // Remove from confirmed just in case
+      let confirmed = JSON.parse(localStorage.getItem('confirmed_deliveries') || '[]');
+      confirmed = confirmed.filter(id => id !== logId);
+      localStorage.setItem('confirmed_deliveries', JSON.stringify(confirmed));
+      showToast("Solicitud cancelada");
+      // The fetch is already handled by sendAction if successful, but we can call fetchDatabase() if needed
+    }
   }
 }
 

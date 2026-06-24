@@ -33,6 +33,8 @@ function doGet(e) {
         result = logInkChange(e.parameter.biometrico, e.parameter.usuario, e.parameter.observaciones);
       } else if (action === "logInternet") {
         result = logInternetPlan(e.parameter.biometrico, e.parameter.usuario, e.parameter.plan, e.parameter.observaciones);
+      } else if (action === "cancel") {
+        result = cancelBiometric(e.parameter.id, e.parameter.biometrico);
       } else {
         result = { success: false, error: "Acción no reconocida" };
       }
@@ -70,6 +72,8 @@ function doPost(e) {
       result = logInkChange(params.biometrico, params.usuario, params.observaciones);
     } else if (action === "logInternet") {
       result = logInternetPlan(params.biometrico, params.usuario, params.plan, params.observaciones);
+    } else if (action === "cancel") {
+      result = cancelBiometric(params.id, params.biometrico);
     } else {
       result = { success: false, error: "Acción no reconocida" };
     }
@@ -449,7 +453,43 @@ function requestBiometric(biometrico, usuario, horaSalida) {
   return { success: true };
 }
 
-// 5. Registrar devolución (Escribe directamente en ESTADISTICAS y limpia BIO X)
+// 5. Cancelar solicitud (Limpia los datos de la fila sin borrarla para no afectar los IDs)
+function cancelBiometric(id, biometrico) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  var rowIdx = -1;
+  var x = -1;
+  
+  var parts = id ? id.toString().split("-") : [];
+  if (parts.length === 3 && parts[0] === "ROW") {
+    rowIdx = parseInt(parts[1]);
+    x = parseInt(parts[2]);
+  } else {
+    x = parseInt(biometrico);
+    if (isNaN(x) && biometrico === "General") {
+      x = 9;
+    }
+  }
+  
+  if (isNaN(x) || x < 1 || x > 9 || rowIdx === -1) {
+    return { success: false, error: "ID o número de biométrico inválido para cancelación." };
+  }
+  
+  var estSheet = ss.getSheetByName("ESTADISTICAS");
+  if (!estSheet) return { success: false, error: "No se encontró la hoja ESTADISTICAS" };
+  
+  var colSalidaNum = 2 * x;
+  
+  // Limpiar Usuario (Col 1), Fecha Salida (Col 2x) y Fecha Retorno (Col 2x+1)
+  estSheet.getRange(rowIdx, 1).clearContent();
+  estSheet.getRange(rowIdx, colSalidaNum).clearContent();
+  estSheet.getRange(rowIdx, colSalidaNum + 1).clearContent();
+  
+  SpreadsheetApp.flush();
+  return { success: true };
+}
+
+// 6. Registrar devolución (Escribe directamente en ESTADISTICAS y limpia BIO X)
 function returnBiometric(id, usuarioRetorno, biometrico) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   

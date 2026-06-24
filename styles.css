@@ -1498,3 +1498,25 @@ body.light-theme .skeleton::before {
     display: none !important;
   }
 }
+
+@keyframes blink-red {
+  0% { background-color: #ff3b30; color: white; border-color: #ff3b30; }
+  50% { background-color: rgba(255, 59, 48, 0.2); color: #ff3b30; border-color: #ff3b30; }
+  100% { background-color: #ff3b30; color: white; border-color: #ff3b30; }
+}
+
+.btn-blinking-red {
+  animation: blink-red 1.5s infinite;
+  font-weight: 600;
+}
+
+.btn-orange {
+  background-color: #FF9500;
+  color: white;
+  border-color: #FF9500;
+  font-weight: 600;
+}
+
+.btn-orange:hover {
+  background-color: #e08300;
+}
