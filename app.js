@@ -2147,12 +2147,22 @@ function checkNotificationChanges(oldLogs, newLogs) {
 
 function fireNotification(title, body) {
   try {
-    new Notification(title, {
-      body: body,
-      icon: "app_icon.png"
-    });
+    if (Notification.permission === "granted") {
+      new Notification(title, {
+        body: body,
+        icon: "app_icon.png"
+      });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          new Notification(title, {
+            body: body,
+            icon: "app_icon.png"
+          });
+        }
+      });
+    }
   } catch(e) {
-    console.warn("No se pudo lanzar notificaci�n", e);
+    console.warn("No se pudo lanzar notificación", e);
   }
 }
-
