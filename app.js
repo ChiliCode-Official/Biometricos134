@@ -964,8 +964,9 @@ function createActiveEquipmentChecklist(bio) {
       <div style="padding: 0 20px 20px; text-align: center; color: var(--text-light);">
         Tu solicitud está en espera de que pases por el equipo a la oficina.
       </div>
-      <div class="card-actions">
-        <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="width: 100%;">❌ Cancelar Solicitud</button>
+      <div class="card-actions" style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">✅ Ya lo recibí</button>
+        <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">❌ Cancelar</button>
       </div>
     ` : `
       <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
