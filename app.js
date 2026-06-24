@@ -2191,6 +2191,9 @@ async function pollForUpdates() {
 
 function checkNotificationChanges(oldLogs, newLogs) {
   if (Notification.permission !== "granted") return;
+  // If oldLogs is empty, this is the very first successful load of data. 
+  // We should NOT bombard the user with notifications for existing historical data.
+  if (!oldLogs || oldLogs.length === 0) return;
   
   newLogs.forEach(newLog => {
     const oldLog = oldLogs.find(l => l.id === newLog.id);
