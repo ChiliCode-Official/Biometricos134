@@ -960,32 +960,41 @@ function createActiveEquipmentChecklist(bio) {
       </div>
     </div>
     
-    <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
-      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
-        <span>💻 Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
-      </label>
-      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
-        <span>🖨️ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
-      </label>
-      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
-        <span>☝️ Lector ${bio.biometrico_lector}</span>
-      </label>
-      <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-        <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
-        <span>📶 Router BAM ${bio.router_modelo}</span>
-      </label>
-    </div>
-    
-    <div class="card-actions">
-      <button id="btn-return-${bio.biometrico}" class="btn btn-primary hold-to-confirm-btn" disabled 
-              style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">
-        <div class="progress-fill"></div>
-        <span>Mantén presionado para Entregar</span>
-      </button>
-    </div>
+    ${bio.status === 'Pendiente' ? `
+      <div style="padding: 0 20px 20px; text-align: center; color: var(--text-light);">
+        Tu solicitud está en espera de que pases por el equipo a la oficina.
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="width: 100%;">❌ Cancelar Solicitud</button>
+      </div>
+    ` : `
+      <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
+        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+          <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+          <span>💻 Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
+        </label>
+        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+          <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+          <span>🖨️ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
+        </label>
+        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+          <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+          <span>☝️ Lector ${bio.biometrico_lector}</span>
+        </label>
+        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+          <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+          <span>📶 Router BAM ${bio.router_modelo}</span>
+        </label>
+      </div>
+      
+      <div class="card-actions">
+        <button id="btn-return-${bio.biometrico}" class="btn btn-primary hold-to-confirm-btn" disabled 
+                style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">
+          <div class="progress-fill"></div>
+          <span>Mantén presionado para Entregar</span>
+        </button>
+      </div>
+    `}
   `;
   
   // Attach Hold-to-Confirm logic after element is created (done in render loop or here)
@@ -2204,10 +2213,18 @@ function checkNotificationChanges(oldLogs, newLogs) {
     const oldLog = oldLogs.find(l => l.id === newLog.id);
     if (!oldLog) {
       // New log!
-      fireNotification("Nueva Solicitud", `${newLog.usuario} solicit� el Biom�trico ${newLog.biometrico}`);
+      fireNotification("Nueva Solicitud", `${newLog.usuario} solicitó el Biométrico ${newLog.biometrico}`);
     } else if (oldLog.estado !== newLog.estado && newLog.estado === "Entregado") {
       // Returned!
-      fireNotification("Devoluci�n", `El Biom�trico ${newLog.biometrico} ha sido devuelto por ${newLog.usuario_retorno || newLog.usuario}`);
+      fireNotification("Devolución", `El Biométrico ${newLog.biometrico} ha sido devuelto por ${newLog.usuario_retorno || newLog.usuario}`);
+    }
+  });
+
+  // Detect cancellations (log existed in oldLogs as Pendiente, but is missing in newLogs)
+  oldLogs.forEach(oldLog => {
+    const stillExists = newLogs.find(l => l.id === oldLog.id);
+    if (!stillExists && oldLog.estado === "Pendiente") {
+      fireNotification("Solicitud Cancelada", `El pasante ${oldLog.usuario} canceló su solicitud del Biométrico ${oldLog.biometrico}`);
     }
   });
 }
