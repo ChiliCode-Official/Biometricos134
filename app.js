@@ -695,6 +695,11 @@ async function sendAction(action, payload) {
     });
     const bio = state.biometrics.find(b => b.biometrico == payload.biometrico);
     if (bio) bio.internet_plan = payload.plan;
+  } else if (action === "cancel") {
+    const logItem = state.logs.find(l => l.id === payload.id);
+    if (logItem) {
+      logItem.estado = "Cancelado";
+    }
   }
 
   // Guardar local, refrescar UI y sugerencias secuenciales
