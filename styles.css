@@ -1794,3 +1794,76 @@ body.light-theme .skeleton::before {
   margin-right: 10px;
   font-size: 1.2rem;
 }
+
+/* 7. Confeti (Micro-chispas) */
+.spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  animation: spark-shoot 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+@keyframes spark-shoot {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+/* 10. Screensaver */
+#screensaver {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  text-align: center;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+#screensaver.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: flex !important; /* Keep it flex but invisible so animation works */
+}
+.screensaver-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#screensaver-time {
+  font-size: 8rem;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+#screensaver-date {
+  font-size: 2rem;
+  color: #888888;
+  font-weight: 400;
+  margin-bottom: 20px;
+}
+.screensaver-stats {
+  font-size: 1.2rem;
+  color: #AAAAAA;
+  margin-bottom: 40px;
+}
+#ss-stat-available {
+  color: #34C759;
+  font-weight: bold;
+}
+#ss-stat-occupied {
+  color: #FF3B30;
+  font-weight: bold;
+}
+.screensaver-hint {
+  font-size: 0.9rem;
+  color: #555555;
+  animation: pulse 3s infinite;
+}

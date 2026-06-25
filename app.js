@@ -1471,12 +1471,50 @@ async function confirmReservation() {
   }
 }
 
+// Animación de confeti / chispas
+function fireConfetti(element) {
+  if (window.SoundManager) SoundManager.success();
+  if (!element) return;
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  for (let i = 0; i < 15; i++) {
+    const spark = document.createElement("div");
+    spark.className = "spark";
+    
+    // Random direction and distance
+    const angle = Math.random() * Math.PI * 2;
+    const velocity = 30 + Math.random() * 50;
+    const tx = Math.cos(angle) * velocity;
+    const ty = Math.sin(angle) * velocity;
+    
+    spark.style.left = `${centerX}px`;
+    spark.style.top = `${centerY}px`;
+    spark.style.setProperty('--tx', `${tx}px`);
+    spark.style.setProperty('--ty', `${ty}px`);
+    
+    // Random colors
+    const colors = ["#34C759", "#32D74B", "#30DB5B", "#FFD60A"];
+    spark.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    document.body.appendChild(spark);
+    
+    // Remove after animation
+    setTimeout(() => spark.remove(), 800);
+  }
+}
+
 // Devolver un biométrico
 async function triggerReturn(logId, biometrico) {
   if (confirm("¿Confirmas la entrega/retorno de este equipo biométrico a su lugar?")) {
     const role = (state.currentUser && state.currentUser.role) ? state.currentUser.role : "admin";
     const name = (state.currentUser && state.currentUser.name) ? state.currentUser.name : "Administrador";
     const userRetorno = role === "admin" ? "Administrador" : name;
+    
+    // Disparar confeti visualmente para feedback inmediato
+    fireConfetti(document.getElementById(`bio-card-${biometrico}`));
+    
     const res = await sendAction("return", {
       id: logId || "",
       biometrico: biometrico,
@@ -1499,6 +1537,9 @@ window.confirmDelivery = async function(logId, bioNum) {
 // Cancelar solicitud de un biométrico (borra registro)
 window.cancelDelivery = async function(logId, bioNum) {
   if (confirm(`¿Estás seguro de cancelar la solicitud del Biométrico ${bioNum}?`)) {
+    // Disparar confeti en la tarjeta antes de cancelar
+    fireConfetti(document.getElementById(`bio-card-${bioNum}`));
+    
     const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
     if (res && res.success) {
       showToast("Solicitud cancelada");
@@ -2121,8 +2162,12 @@ function showToast(message, duration = 3000) {
   let icon = "✨";
   if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
     icon = "⚠️";
+    if (window.SoundManager) SoundManager.error();
   } else if (message.toLowerCase().includes("cargando") || message.toLowerCase().includes("sincronizando")) {
     icon = "⏳";
+  } else {
+    // Para éxitos genéricos si no es cargando ni error
+    if (window.SoundManager && message.toLowerCase().includes("éxito")) SoundManager.success();
   }
   toast.innerHTML = `<span class="toast-icon">${icon}</span> ${message}`;
   toast.classList.remove("hidden");
@@ -2315,5 +2360,133 @@ function fireNotification(title, body) {
     }
   } catch(e) {
     console.warn("No se pudo lanzar notificación", e);
+  }
+}
+
+/* ==========================================================================
+   PREMIUM UX: HAPTICS, SOUNDS & SCREENSAVER
+   ========================================================================== */
+
+// 1. Haptic Feedback Wrapper
+function vibrateTap() {
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+function vibrateSuccess() {
+  if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+}
+function vibrateError() {
+  if (navigator.vibrate) navigator.vibrate([50, 50, 50, 50, 100]);
+}
+
+// 2. Web Audio API Sound Generator
+const SoundManager = {
+  ctx: null,
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  },
+  playTone(freq, type, duration, vol = 0.05) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+    
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+  },
+  click() {
+    this.playTone(600, 'sine', 0.05, 0.02);
+    vibrateTap();
+  },
+  success() {
+    this.playTone(440, 'sine', 0.1, 0.03);
+    setTimeout(() => this.playTone(660, 'sine', 0.15, 0.03), 100);
+    vibrateSuccess();
+  },
+  error() {
+    this.playTone(200, 'sawtooth', 0.15, 0.03);
+    setTimeout(() => this.playTone(150, 'sawtooth', 0.2, 0.03), 150);
+    vibrateError();
+  }
+};
+
+// Initialize audio context on first user interaction
+document.addEventListener('click', (e) => {
+  SoundManager.init();
+  
+  // Detect if click is on a button or inside a button
+  if (e.target.closest('.btn') || e.target.closest('.nav-btn')) {
+    SoundManager.click();
+  }
+});
+
+// 3. Screensaver (Idle Timer)
+let idleTimer;
+const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutos en milisegundos
+
+function showScreensaver() {
+  const ss = document.getElementById('screensaver');
+  if (ss && ss.classList.contains('hidden')) {
+    ss.classList.remove('hidden');
+    updateScreensaver();
+  }
+}
+
+function hideScreensaver() {
+  const ss = document.getElementById('screensaver');
+  if (ss && !ss.classList.contains('hidden')) {
+    ss.classList.add('hidden');
+  }
+}
+
+function resetIdleTimer() {
+  hideScreensaver();
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(showScreensaver, IDLE_TIMEOUT);
+}
+
+// Reset idle timer on various events
+['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+  document.addEventListener(evt, resetIdleTimer, { passive: true });
+});
+resetIdleTimer();
+
+function updateScreensaver() {
+  const ss = document.getElementById('screensaver');
+  if (ss && !ss.classList.contains('hidden')) {
+    const now = new Date();
+    
+    // Update Time
+    let h = now.getHours();
+    let m = now.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    m = m < 10 ? '0' + m : m;
+    document.getElementById('screensaver-time').innerText = `${h}:${m} ${ampm}`;
+    
+    // Update Date
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('screensaver-date').innerText = now.toLocaleDateString('es-ES', options);
+    
+    // Update Stats
+    if (state && state.biometrics) {
+      const occupied = state.biometrics.filter(b => b.status === "Ocupado").length;
+      document.getElementById('ss-stat-available').innerText = 8 - occupied;
+      document.getElementById('ss-stat-occupied').innerText = occupied;
+    }
+    
+    // Loop
+    setTimeout(updateScreensaver, 1000);
   }
 }
