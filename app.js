@@ -885,6 +885,9 @@ function loginAsUser() {
   localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
   
   document.getElementById("display-user-name").innerText = name;
+  const adminBadge = document.getElementById("admin-badge-top");
+  if (adminBadge) adminBadge.classList.add("hidden");
+  
   showView("user-view");
   renderBiometrics();
   updateSequentialSuggestion();
@@ -897,6 +900,10 @@ function loginAsAdmin() {
   if (pin === CONFIG.ADMIN_PIN) {
     state.currentUser = { name: "Administrador", role: "admin" };
     localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
+    
+    document.getElementById("display-user-name").innerText = state.currentUser.name;
+    const adminBadge = document.getElementById("admin-badge-top");
+    if (adminBadge) adminBadge.classList.remove("hidden");
     
     showView("admin-view");
     renderBiometrics();
