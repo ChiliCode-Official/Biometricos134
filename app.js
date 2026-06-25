@@ -227,11 +227,14 @@ async function initApp() {
   // 4. Mostrar vista según sesión
   if (state.currentUser) {
     showView(state.currentUser.role === "admin" ? "admin-view" : "user-view");
-    document.getElementById("display-user-name").innerText = state.currentUser.name;
+    
     if (state.currentUser.role === "admin") {
+       document.getElementById("display-user-name").style.display = "none";
        const adminBadge = document.getElementById("admin-badge-top");
        if (adminBadge) adminBadge.classList.remove("hidden");
     } else {
+       document.getElementById("display-user-name").innerText = state.currentUser.name;
+       document.getElementById("display-user-name").style.display = "inline";
        const adminBadge = document.getElementById("admin-badge-top");
        if (adminBadge) adminBadge.classList.add("hidden");
     }
@@ -885,6 +888,7 @@ function loginAsUser() {
   localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
   
   document.getElementById("display-user-name").innerText = name;
+  document.getElementById("display-user-name").style.display = "inline";
   const adminBadge = document.getElementById("admin-badge-top");
   if (adminBadge) adminBadge.classList.add("hidden");
   
@@ -901,7 +905,7 @@ function loginAsAdmin() {
     state.currentUser = { name: "Administrador", role: "admin" };
     localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
     
-    document.getElementById("display-user-name").innerText = state.currentUser.name;
+    document.getElementById("display-user-name").style.display = "none";
     const adminBadge = document.getElementById("admin-badge-top");
     if (adminBadge) adminBadge.classList.remove("hidden");
     
