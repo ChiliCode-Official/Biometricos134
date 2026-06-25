@@ -227,8 +227,13 @@ async function initApp() {
   // 4. Mostrar vista según sesión
   if (state.currentUser) {
     showView(state.currentUser.role === "admin" ? "admin-view" : "user-view");
-    if (state.currentUser.role === "user") {
-      document.getElementById("display-user-name").innerText = state.currentUser.name;
+    document.getElementById("display-user-name").innerText = state.currentUser.name;
+    if (state.currentUser.role === "admin") {
+       const adminBadge = document.getElementById("admin-badge-top");
+       if (adminBadge) adminBadge.classList.remove("hidden");
+    } else {
+       const adminBadge = document.getElementById("admin-badge-top");
+       if (adminBadge) adminBadge.classList.add("hidden");
     }
   } else {
     showView("login-view");
@@ -558,10 +563,13 @@ function saveLocalBackup() {
 
 // Lógica de desglose rotativo secuencial ("Gasto a la par")
 function getNextSequentialBiometric() {
-  // 1. Encontrar el número del último biométrico asignado en el historial logs
+  // 1. Encontrar el número del último biométrico asignado en el historial logs, ignorando los Cancelados
   let lastAssignedNum = 0;
   // Recorremos los logs de atrás hacia adelante para ver el último biométrico solicitado
   for (let i = state.logs.length - 1; i >= 0; i--) {
+    // Ignorar logs cancelados para no tomarlos en cuenta en la secuencia
+    if (state.logs[i].estado === "Cancelado" || state.logs[i].estado === "Cancelada") continue;
+    
     const num = parseInt(state.logs[i].biometrico);
     if (!isNaN(num) && num >= 1 && num <= 8) {
       lastAssignedNum = num;
@@ -921,10 +929,44 @@ function logout() {
    ========================================================================== */
 
 function showView(viewId) {
-  document.querySelectorAll(".view-panel").forEach(panel => {
-    panel.classList.remove("active");
-  });
-  document.getElementById(viewId).classList.add("active");
+  // Manejar el contenedor principal del Dashboard vs Login
+  const loginView = document.getElementById("login-view");
+  const dashboardLayout = document.getElementById("dashboard-layout");
+  
+  if (viewId === "login-view") {
+    loginView.classList.add("active");
+    dashboardLayout.classList.add("hidden");
+    // Ocultar vistas internas
+    document.querySelectorAll(".dashboard-views .view-panel").forEach(panel => {
+      panel.classList.remove("active");
+    });
+  } else {
+    loginView.classList.remove("active");
+    dashboardLayout.classList.remove("hidden");
+    
+    // Toggle vistas internas
+    document.querySelectorAll(".dashboard-views .view-panel").forEach(panel => {
+      panel.classList.remove("active");
+    });
+    const targetView = document.getElementById(viewId);
+    if (targetView) targetView.classList.add("active");
+    
+    // Ocultar sidebar en móvil al cambiar vista
+    document.querySelector('.dashboard-sidebar').classList.remove('open');
+      
+    // Actualizar estado activo de los botones del menú lateral
+    const navDashboard = document.getElementById("nav-dashboard");
+    const navProfile = document.getElementById("nav-profile");
+    if (navDashboard && navProfile) {
+      if (viewId === "profile-view") {
+        navDashboard.classList.remove("active");
+        navProfile.classList.add("active");
+      } else if (viewId === "admin-view" || viewId === "user-view") {
+        navProfile.classList.remove("active");
+        navDashboard.classList.add("active");
+      }
+    }
+  }
   
   if (viewId === "profile-view") {
     const adminTestBlock = document.getElementById("admin-test-notification");
@@ -1145,19 +1187,19 @@ function createBiometricCard(bio, role) {
     
     <div class="hw-info-box">
       <div class="hw-item">
-        <span class="hw-icon">💻</span>
+        <span class="hw-icon"><img src="assets/icons/laptop.png" class="hw-icon-img" alt="Laptop"></span>
         <div class="hw-desc">${bio.laptop_marca} ${bio.laptop_modelo} <span>S/N: ${bio.laptop_serie}</span></div>
       </div>
       <div class="hw-item">
-        <span class="hw-icon">🖨️</span>
+        <span class="hw-icon"><img src="assets/icons/printer.png" class="hw-icon-img" alt="Impresora"></span>
         <div class="hw-desc">${bio.impresora_marca} ${bio.impresora_modelo} <span>S/N: ${bio.impresora_serie}</span></div>
       </div>
       <div class="hw-item">
-        <span class="hw-icon">☝️</span>
+        <span class="hw-icon"><img src="assets/icons/touch.png" class="hw-icon-img" alt="Lector"></span>
         <div class="hw-desc">${bio.biometrico_lector} <span>S/N: ${bio.biometrico_serie}</span></div>
       </div>
       <div class="hw-item">
-        <span class="hw-icon">📶</span>
+        <span class="hw-icon"><img src="assets/icons/bam.png" class="hw-icon-img" alt="BAM"></span>
         <div class="hw-desc">BAM ${bio.router_modelo} <span>IMEI: ${bio.router_imei}</span></div>
       </div>
       ${bio.internet_plan ? `
@@ -1196,7 +1238,7 @@ function createBiometricCard(bio, role) {
           (() => {
             if (bio.status === "Pendiente") {
               return `
-              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')">🚨 Pendiente de entregar a pasante</button>
+              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')"><span class="running-icon">🏃🏽‍♂️</span> Pendiente de entregar a pasante</button>
               <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')">❌ Cancelar</button>
               `;
             } else {

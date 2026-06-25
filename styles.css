@@ -24,17 +24,17 @@
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
   
   /* Status Colors */
-  --color-available: #34C759;
-  --color-available-bg: rgba(52, 199, 89, 0.1);
-  --color-occupied: #FF9500;
-  --color-occupied-bg: rgba(255, 149, 0, 0.1);
-  --color-error: #FF3B30;
-  --color-error-bg: rgba(255, 59, 48, 0.1);
+  --color-available: #28a745;
+  --color-available-bg: rgba(40, 167, 69, 0.1);
+  --color-occupied: #fd7e14;
+  --color-occupied-bg: rgba(253, 126, 20, 0.1);
+  --color-error: #dc3545;
+  --color-error-bg: rgba(220, 53, 69, 0.1);
   
   --transition-smooth: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   --border-radius-sm: 8px;
-  --border-radius-md: 14px;
-  --border-radius-lg: 20px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
 }
 
 /* --- Dark Mode Override --- */
@@ -98,21 +98,207 @@ body {
   font-family: var(--font-body);
   background-color: var(--bg-system);
   color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   line-height: 1.5;
   transition: background-color 0.3s ease;
 }
 
 /* --- Layout Container --- */
 #app-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
+
+/* ==========================================================================
+   DASHBOARD LAYOUT (New UI Structure)
+   ========================================================================== */
+.dashboard-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-system);
+}
+
+/* --- Sidebar --- */
+.dashboard-sidebar {
+  width: 260px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: #16242B; /* Dark premium slate/teal from image */
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  z-index: 900;
+}
+
+.sidebar-logo {
+  padding: 30px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-logo h2 {
+  font-size: 1.4rem;
+  margin: 0;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-logo .apple-logo-sim {
+  width: 36px;
+  height: 36px;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.sidebar-nav {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 14px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.nav-btn.active {
+  background: var(--accent);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+}
+
+.sidebar-footer {
+  padding: 24px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* --- Dashboard Content Area --- */
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #F4F7F6; /* Light gray dashboard background */
+}
+body.dark-theme .dashboard-content {
+  background-color: var(--bg-system); /* In dark mode, match root */
+}
+
+/* --- Topbar --- */
+.dashboard-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 60px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  z-index: 10;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* Sidebar Collapsed State (Desktop) */
+@media (min-width: 769px) {
+  .dashboard-sidebar.collapsed { width: 80px; }
+  .dashboard-sidebar.collapsed h2, 
+  .dashboard-sidebar.collapsed .nav-label { display: none; }
+  .dashboard-sidebar.collapsed .sidebar-logo { padding: 30px 10px; justify-content: center; }
+  .dashboard-sidebar.collapsed .nav-btn { padding: 14px; justify-content: center; }
+  .dashboard-sidebar.collapsed .nav-icon { margin: 0; font-size: 1.3rem; }
+  .dashboard-sidebar.collapsed .sidebar-footer { padding: 24px 10px; }
+  .dashboard-sidebar.collapsed .logout-btn { font-size: 0; padding: 14px; }
+  .dashboard-sidebar.collapsed .logout-btn::after { content: "🚪"; font-size: 1.2rem; display: block; margin: 0 auto; }
+}
+
+.dashboard-views {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 60px 80px 60px;
+}
+
+/* --- Responsive Layout Adjustments --- */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+  }
+  .dashboard-sidebar.open {
+    transform: translateX(0);
+  }
+  .dashboard-topbar {
+    padding: 16px 20px;
+  }
+  .dashboard-views {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-hide { display: none; }
+  .dashboard-topbar { padding: 12px 10px; }
+  .topbar-right .btn { padding: 8px 12px; font-size: 0.8rem; }
+  #display-user-name { font-size: 0.9rem; }
+}
+
 
 /* --- Typography --- */
 h1, h2, h3, h4 {
@@ -130,10 +316,9 @@ h4 { font-size: 1.1rem; }
 .glass {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); /* Softer, premium shadow */
   border-radius: var(--border-radius-lg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* Removed heavy backdrop-filter to match flat dashboard UI */
 }
 
 .text-center { text-align: center; }
@@ -452,37 +637,23 @@ textarea:focus {
 /* ==========================================================================
    APP HEADER & NAVIGATION
    ========================================================================== */
+/* App Header is now mostly handled by topbar */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 30px;
+  padding: 10px 0 20px 0;
+  margin-bottom: 20px;
 }
-
-.app-header h2 {
-  font-size: 1.6rem;
-}
-
-.subtitle {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
+.app-header h2 { font-size: 1.6rem; }
+.subtitle { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; }
+.header-actions { display: flex; gap: 12px; }
 
 /* ==========================================================================
    BIOMETRIC CARDS GRID
    ========================================================================== */
 .section-title {
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
 .section-title h3 {
@@ -497,13 +668,13 @@ textarea:focus {
 
 .biometrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
 }
 
 /* Biometric Card Details */
 .bio-card {
-  padding: 24px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   min-height: 380px;
@@ -519,7 +690,7 @@ textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .bio-title-box h4 {
@@ -1168,10 +1339,6 @@ tr:hover td {
    RESPONSIVE DESIGN (Mobile adjustments)
    ========================================================================== */
 @media (max-width: 600px) {
-  #app-container {
-    padding: 12px;
-  }
-  
   .app-header {
     flex-direction: column;
     align-items: flex-start;
@@ -1519,4 +1686,37 @@ body.light-theme .skeleton::before {
 
 .btn-orange:hover {
   background-color: #e08300;
+}
+
+@keyframes run-animation {
+  0% { transform: translateX(-5px) rotate(-10deg); }
+  50% { transform: translateX(5px) rotate(10deg); }
+  100% { transform: translateX(-5px) rotate(-10deg); }
+}
+
+.running-icon {
+  display: inline-block;
+  animation: run-animation 0.6s infinite ease-in-out;
+  margin-right: 8px;
+  font-size: 1.2rem;
+}
+@media (max-width: 1200px) { .biometrics-grid { grid-template-columns: repeat(2, 1fr); } }
+.hw-icon-img { width: 22px; height: 22px; object-fit: contain; margin-right: 4px; }
+
+@media (max-width: 768px) {
+  #display-user-name {
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 0.9rem;
+  }
+  .user-greeting {
+    gap: 5px;
+  }
+  .topbar-left {
+    gap: 8px;
+  }
 }
