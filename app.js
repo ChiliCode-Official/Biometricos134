@@ -1186,16 +1186,18 @@ function renderBiometrics() {
 // Construye la tarjeta de biométrico dinámicamente
 function createBiometricCard(bio, role) {
   const card = document.createElement("div");
-  card.className = "bio-card glass fade-in";
-  card.id = `bio-card-${bio.biometrico}`;
   const isAvailable = bio.status === "Disponible";
+  const cardStatusClass = isAvailable ? "card-available" : "card-occupied";
+  card.className = `bio-card glass fade-in ${cardStatusClass}`;
+  card.id = `bio-card-${bio.biometrico}`;
   const statusClass = isAvailable ? "available" : "occupied";
+  const ledClass = isAvailable ? "led-available" : "led-occupied";
   const statusText = isAvailable ? "Disponible" : "Ocupado";
 
   card.innerHTML = `
     <div class="bio-card-header">
       <div class="bio-title-box">
-        <h4>Biométrico ${bio.biometrico}</h4>
+        <h4><div class="status-led ${ledClass}"></div>Biométrico ${bio.biometrico}</h4>
         <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
       </div>
       <span class="state-pill ${statusClass}">${statusText}</span>
@@ -2116,7 +2118,13 @@ function closeModal() {
 
 function showToast(message, duration = 3000) {
   const toast = document.getElementById("toast");
-  toast.innerText = message;
+  let icon = "✨";
+  if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
+    icon = "⚠️";
+  } else if (message.toLowerCase().includes("cargando") || message.toLowerCase().includes("sincronizando")) {
+    icon = "⏳";
+  }
+  toast.innerHTML = `<span class="toast-icon">${icon}</span> ${message}`;
   toast.classList.remove("hidden");
   // Reflow trigger to allow animation restart
   void toast.offsetWidth;

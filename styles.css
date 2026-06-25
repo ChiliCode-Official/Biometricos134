@@ -1720,3 +1720,77 @@ body.light-theme .skeleton::before {
     gap: 8px;
   }
 }
+
+/* ==========================================================================
+   PREMIUM UX/UI ENHANCEMENTS
+   ========================================================================== */
+/* 1. Micro-interacciones */
+.btn:active {
+  transform: scale(0.96) !important;
+  transition: transform 0.1s ease;
+}
+
+/* 2. Animaciones de vistas y modales */
+@keyframes slideUpFadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.view-panel.active {
+  animation: slideUpFadeIn 0.4s ease forwards !important;
+}
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.modal.active .modal-content {
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 3. Indicadores Visuales (LEDs) y 4. Glassmorphism Avanzado */
+.status-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  box-shadow: 0 0 5px currentColor;
+}
+.led-available {
+  background-color: #34C759;
+  color: #34C759;
+}
+.led-occupied {
+  background-color: #FF3B30;
+  color: #FF3B30;
+  animation: led-pulse 2s infinite ease-in-out;
+}
+@keyframes led-pulse {
+  0% { opacity: 1; box-shadow: 0 0 5px currentColor; }
+  50% { opacity: 0.4; box-shadow: 0 0 2px currentColor; }
+  100% { opacity: 1; box-shadow: 0 0 5px currentColor; }
+}
+
+.card-occupied {
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  box-shadow: 0 8px 32px rgba(255, 59, 48, 0.05);
+}
+
+/* 6. Toasts (Notificaciones Flotantes) Mejorados */
+@keyframes springDown {
+  0% { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+  60% { transform: translateX(-50%) translateY(20px); opacity: 1; }
+  80% { transform: translateX(-50%) translateY(-5px); }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+.toast {
+  top: 30px;
+  bottom: auto !important;
+  transform: translateX(-50%) translateY(-100px);
+}
+.toast.show {
+  animation: springDown 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+.toast-icon {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
