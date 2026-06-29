@@ -2653,7 +2653,10 @@ function renderAnalytics() {
         rp: { name: "Biométricos 134" },
         user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "admin@biometricos", displayName: "Admin" },
         pubKeyCredParams: [{type: "public-key", alg: -7}],
-        authenticatorSelection: { authenticatorAttachment: "platform" },
+        authenticatorSelection: { 
+          authenticatorAttachment: "platform",
+          userVerification: "required"
+        },
         timeout: 60000,
         attestation: "none"
       };
@@ -2667,7 +2670,7 @@ function renderAnalytics() {
       showView('admin-view');
     } catch (err) {
       console.error(err);
-      showToast("Cancelado o fallo en la biometría", "error");
+      showToast(`Fallo: ${err.name} - ${err.message}`, "error");
     }
   }
 
