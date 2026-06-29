@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    APPLICATION LOGIC - CONTROL DE BIOMÃ‰TRICOS (NOTARÃA 134)
    ========================================================================== */
 
@@ -1038,9 +1038,1592 @@ function createActiveEquipmentChecklist(bio) {
     ` : `
       <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
         <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-          <input type="checkbox" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--accent);">
+          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
           <span>ðŸ’» Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
         </label>
+        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
+          <span>ðŸ–¨ï¸ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
+        </label>
+        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
+          <span>â˜ï¸ Lector ${bio.biometrico_lector}</span>
+        </label>
+        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
+          <span>ðŸ“¶ Router BAM ${bio.router_modelo}</span>
+        </label>
+      </div>
+      
+      <div class="card-actions">
+        <button id="btn-return-${bio.biometrico}" class="btn btn-primary hold-to-confirm-btn" disabled 
+                style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">
+          <div class="progress-fill"></div>
+          <span>MantÃ©n presionado para Entregar</span>
+        </button>
+      </div>
+    `}
+  `;
+  
+  // Attach Hold-to-Confirm logic after element is created (done in render loop or here)
+  setTimeout(() => {
+    const btn = document.getElementById(`btn-return-${bio.biometrico}`);
+    if (!btn) return;
+    
+    let holdTimer;
+    const holdDuration = 1500; // 1.5 seconds
+    
+    const startHold = (e) => {
+      if (btn.disabled) return;
+      e.preventDefault(); // Prevent touch scroll/click issues
+      btn.classList.add("holding");
+      holdTimer = setTimeout(() => {
+        btn.classList.remove("holding");
+        triggerReturn(bio.logId, bio.biometrico);
+        // Shoot confetti on success!
+        if(typeof confetti === 'function') {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: [getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()] });
+        }
+      }, holdDuration);
+    };
+    
+    const stopHold = () => {
+      if (btn.disabled) return;
+      btn.classList.remove("holding");
+      clearTimeout(holdTimer);
+    };
+    
+    btn.addEventListener("mousedown", startHold);
+    btn.addEventListener("touchstart", startHold, {passive: false});
+    
+    btn.addEventListener("mouseup", stopHold);
+    btn.addEventListener("mouseleave", stopHold);
+    btn.addEventListener("touchend", stopHold);
+    btn.addEventListener("touchcancel", stopHold);
+    
+  }, 0);
+  
+  return card;
+}
+
+window.checkReturnChecklist = function(biometricoNum) {
+  const container = document.getElementById(`checklist-${biometricoNum}`);
+  if (!container) return;
+  const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  
+  const btn = document.getElementById(`btn-return-${biometricoNum}`);
+  if (btn) {
+    btn.disabled = !allChecked;
+  }
+};
+
+// Renderizar tarjetas de los biomÃ©tricos
+function renderBiometrics() {
+  const userGrid = document.getElementById("user-biometrics-grid");
+  const adminGrid = document.getElementById("admin-biometrics-grid");
+  const userActiveSection = document.getElementById("user-active-equipment-section");
+  const userActiveGrid = document.getElementById("user-active-equipment-container");
+  
+  if (userGrid) userGrid.innerHTML = "";
+  if (adminGrid) adminGrid.innerHTML = "";
+  if (userActiveGrid) userActiveGrid.innerHTML = "";
+  
+  const oldReminder = document.getElementById("pending-reminder");
+  if (oldReminder) oldReminder.remove();
+
+  let hasActiveEquipment = false;
+
+  state.biometrics.forEach(bio => {
+    // 1. Crear tarjeta para Usuarios
+    const userCard = createBiometricCard(bio, "user");
+    if (userGrid) userGrid.appendChild(userCard);
+
+    // 2. Crear tarjeta para Administrador
+    const adminCard = createBiometricCard(bio, "admin");
+    if (adminGrid) adminGrid.appendChild(adminCard);
+
+    // 3. Crear tarjeta activa con checklist si el usuario actual es el poseedor
+    if (state.currentUser && state.currentUser.role === "user" && 
+       (bio.status === "Ocupado" || bio.status === "Pendiente") && 
+       bio.holder === state.currentUser.name) {
+      hasActiveEquipment = true;
+      const activeCard = createActiveEquipmentChecklist(bio);
+      if (userActiveGrid) userActiveGrid.appendChild(activeCard);
+    }
+
+    // 4. Recordatorio de equipo pendiente para pasantes
+    if (state.currentUser && state.currentUser.role === "user" && bio.status === "Pendiente" && bio.holder === state.currentUser.name) {
+      const reminderDiv = document.createElement("div");
+      reminderDiv.className = "alert alert-warning";
+      reminderDiv.style.backgroundColor = "#fff3cd";
+      reminderDiv.style.color = "#856404";
+      reminderDiv.style.padding = "15px";
+      reminderDiv.style.borderRadius = "8px";
+      reminderDiv.style.marginBottom = "20px";
+      reminderDiv.style.fontWeight = "bold";
+      reminderDiv.innerHTML = `ðŸ”” No olvides pasar por tu BiomÃ©trico ${bio.biometrico} a la oficina antes de las 4.`;
+      
+      // Insertar al principio de la vista de usuario
+      const userView = document.getElementById("user-view");
+      if (userView) {
+        reminderDiv.id = "pending-reminder";
+        userView.insertBefore(reminderDiv, userView.firstChild);
+      }
+    }
+  });
+
+  if (userActiveSection) {
+    userActiveSection.style.display = hasActiveEquipment ? "block" : "none";
+  }
+
+  // LÃ³gica para ocultar secciones completas si el usuario tiene un equipo activo
+  if (state.currentUser && state.currentUser.role === "user") {
+    const quickBox = document.querySelector(".quick-sequential-box");
+    const othersSection = document.getElementById("user-others-section");
+    
+    if (hasActiveEquipment) {
+      if (quickBox) quickBox.style.display = "none";
+      if (othersSection) othersSection.style.display = "none";
+    } else {
+      if (quickBox) quickBox.style.display = "block";
+      if (othersSection) othersSection.style.display = "block";
+    }
+  }
+
+  // Initialize VanillaTilt for 3D effect
+  if (window.VanillaTilt) {
+    VanillaTilt.init(document.querySelectorAll(".bio-card"), {
+      max: 15,
+      speed: 400,
+      glare: true,
+      "max-glare": 0.2
+    });
+  }
+}
+
+// Construye la tarjeta de biomÃ©trico dinÃ¡micamente
+function createBiometricCard(bio, role) {
+  const card = document.createElement("div");
+  const isAvailable = bio.status === "Disponible";
+  const cardStatusClass = isAvailable ? "card-available" : "card-occupied";
+  card.className = `bio-card glass fade-in ${cardStatusClass}`;
+  card.id = `bio-card-${bio.biometrico}`;
+  const statusClass = isAvailable ? "available" : "occupied";
+  const ledClass = isAvailable ? "led-available" : "led-occupied";
+  const statusText = isAvailable ? "Disponible" : "Ocupado";
+
+  card.innerHTML = `
+    <div class="bio-card-header">
+      <div class="bio-title-box">
+        <h4><div class="status-led ${ledClass}"></div>BiomÃ©trico ${bio.biometrico}</h4>
+        <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
+      </div>
+      <span class="state-pill ${statusClass}">${statusText}</span>
+    </div>
+    
+    <div class="hw-info-box">
+      <div class="hw-item">
+        <span class="hw-icon"><img src="assets/icons/laptop.png" class="hw-icon-img" alt="Laptop"></span>
+        <div class="hw-desc">${bio.laptop_marca} ${bio.laptop_modelo} <span>S/N: ${bio.laptop_serie}</span></div>
+      </div>
+      <div class="hw-item">
+        <span class="hw-icon"><img src="assets/icons/printer.png" class="hw-icon-img" alt="Impresora"></span>
+        <div class="hw-desc">${bio.impresora_marca} ${bio.impresora_modelo} <span>S/N: ${bio.impresora_serie}</span></div>
+      </div>
+      <div class="hw-item">
+        <span class="hw-icon"><img src="assets/icons/touch.png" class="hw-icon-img" alt="Lector"></span>
+        <div class="hw-desc">${bio.biometrico_lector} <span>S/N: ${bio.biometrico_serie}</span></div>
+      </div>
+      <div class="hw-item">
+        <span class="hw-icon"><img src="assets/icons/bam.png" class="hw-icon-img" alt="BAM"></span>
+        <div class="hw-desc">BAM ${bio.router_modelo} <span>IMEI: ${bio.router_imei}</span></div>
+      </div>
+      ${bio.internet_plan ? `
+      <div class="hw-item" style="margin-top: 4px; border-top: 1px solid var(--border-light); padding-top: 4px;">
+        <span class="hw-icon">ðŸŒ</span>
+        <div class="hw-desc" style="color: var(--accent); font-weight: 500;">Plan: ${bio.internet_plan}</div>
+      </div>` : ''}
+    </div>
+    
+    ${!isAvailable ? `
+    <div class="holder-box">
+      <span class="holder-label">En uso por:</span>
+      <span class="holder-name">${bio.holder}</span>
+      <span class="holder-time">Salida programada: ${bio.time}</span>
+    </div>` : ''}
+
+    <div class="card-actions">
+      ${role === "user" ? 
+        (isAvailable ? 
+          (() => {
+            const nextBio = getNextSequentialBiometric();
+            if (nextBio == bio.biometrico) {
+              return `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Solicitar Salida</button>`;
+            } else {
+              return `<button class="btn btn-secondary" style="opacity: 0.6; cursor: not-allowed;" onclick="showToast('Por favor solicita el BiomÃ©trico ${nextBio || 'disponible'}, asignado por desgaste para uso a la par.')">Solicitar Salida</button>`;
+            }
+          })() : 
+          (bio.holder === state.currentUser?.name ? 
+            `<button class="btn btn-secondary" disabled>En posesiÃ³n (Ver Mis Equipos arriba)</button>` : 
+            `<button class="btn btn-secondary" disabled>No Disponible</button>`
+          )
+        ) : 
+        // Acciones del Administrador
+        (isAvailable ? 
+          `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Asignar Equipo</button>` : 
+          (() => {
+            if (bio.status === "Pendiente") {
+              return `
+              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')"><span class="running-icon">ðŸƒðŸ½â€â™‚ï¸</span> Pendiente de entregar a pasante</button>
+              <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')">âŒ Cancelar</button>
+              `;
+            } else {
+              return `
+              <button class="btn btn-primary" onclick="triggerPrintResponsive('${bio.logId}')">Visualizar e Imprimir</button>
+              <button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')">Marcar como Entregado (DevoluciÃ³n)</button>
+              `;
+            }
+          })()
+        )
+      }
+    </div>
+  `;
+
+  return card;
+}
+
+// Cargar datos en el Panel del Administrador (MÃ©tricas, Historial)
+function renderAdminDashboard() {
+  // Actualizar mÃ©tricas
+  const totalUses = state.logs.length;
+  const occupiedCount = state.biometrics.filter(b => b.status === "Ocupado").length;
+  const availableCount = 8 - occupiedCount;
+
+  document.getElementById("stat-total-uses").innerText = totalUses;
+  document.getElementById("stat-occupied").innerText = occupiedCount;
+  document.getElementById("stat-available").innerText = availableCount;
+
+  // Renderizar historial de uso completo
+  const tbody = document.getElementById("history-tbody");
+  tbody.innerHTML = "";
+
+  if (state.logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay registros aÃºn</td></tr>`;
+  } else {
+    // Clonar e invertir para ver primero lo mÃ¡s nuevo
+    const sortedLogs = [...state.logs].reverse();
+    sortedLogs.forEach(log => {
+      const tr = document.createElement("tr");
+      const isReturned = log.estado === "Entregado";
+      
+      tr.innerHTML = `
+        <td><strong>Bio ${log.biometrico}</strong></td>
+        <td>${log.usuario}</td>
+        <td>${log.fecha_salida}</td>
+        <td>${log.hora_salida_solicitada}</td>
+        <td>${log.hora_salida_real}</td>
+        <td>${log.fecha_entrada || 'â€”'}</td>
+        <td>${log.hora_entrada || 'â€”'}</td>
+        <td>
+          <span class="state-pill ${isReturned ? 'available' : 'occupied'}">
+            ${log.estado}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem;" onclick="triggerPrintResponsive('${log.id}')">Carta</button>
+            ${!isReturned ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem; background-color:#86868B;" onclick="triggerReturn('${log.id}', '${log.biometrico}')">Retorno</button>` : ''}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Renderizar historial de tintas
+  const inkTbody = document.getElementById("ink-history-tbody");
+  inkTbody.innerHTML = "";
+  if (state.inkLogs.length === 0) {
+    inkTbody.innerHTML = `<tr><td colspan="4" class="text-center">No hay registros de cambios</td></tr>`;
+  } else {
+    [...state.inkLogs].reverse().forEach(log => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${log.fecha}</td>
+        <td><strong>Bio ${log.biometrico}</strong></td>
+        <td>${log.usuario}</td>
+        <td>${log.observaciones || 'Sin notas'}</td>
+      `;
+      inkTbody.appendChild(tr);
+    });
+  }
+
+  // Renderizar historial de Internet
+  const netTbody = document.getElementById("net-history-tbody");
+  netTbody.innerHTML = "";
+  if (state.internetLogs.length === 0) {
+    netTbody.innerHTML = `<tr><td colspan="5" class="text-center">No hay renovaciones de datos</td></tr>`;
+  } else {
+    [...state.internetLogs].reverse().forEach(log => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${log.fecha}</td>
+        <td><strong>Bio ${log.biometrico}</strong></td>
+        <td style="color:var(--accent); font-weight:600;">${log.plan}</td>
+        <td>${log.usuario}</td>
+        <td>${log.observaciones || 'â€”'}</td>
+      `;
+      netTbody.appendChild(tr);
+    });
+  }
+}
+
+// Rellenar horas de salida de 7:00 AM a 4:00 PM
+function populateExitTimeDropdown() {
+  const select = document.getElementById("select-exit-time");
+  select.innerHTML = "";
+  
+  // Agregar hora de salida "Al momento"
+  const optNow = document.createElement("option");
+  optNow.value = "";
+  optNow.innerText = "Al momento (Hora actual)";
+  select.appendChild(optNow);
+
+  const startHour = 7;
+  const endHour = 16; // 4:00 PM
+
+  for (let h = startHour; h <= endHour; h++) {
+    const formattedHour = h > 12 ? h - 12 : h;
+    const ampm = h >= 12 ? "PM" : "AM";
+    
+    // Hora en punto
+    const opt1 = document.createElement("option");
+    opt1.value = `${h}:00`;
+    opt1.innerText = `${formattedHour}:00 ${ampm}`;
+    select.appendChild(opt1);
+
+    // Medias horas (excepto a las 4:00 PM)
+    if (h < endHour) {
+      const opt2 = document.createElement("option");
+      opt2.value = `${h}:30`;
+      opt2.innerText = `${formattedHour}:30 ${ampm}`;
+      select.appendChild(opt2);
+    }
+  }
+}
+
+/* ==========================================================================
+   INTERACTIONS & OPERATIONS
+   ========================================================================== */
+
+let selectedBiometricNum = null;
+
+// Abrir modal de reserva
+function openRequestModal(bioNum) {
+  if (state.currentUser && state.currentUser.role === "user") {
+    const nextBio = getNextSequentialBiometric();
+    if (nextBio && nextBio != bioNum) {
+      showToast(`Acceso denegado: Debes solicitar el BiomÃ©trico ${nextBio}.`);
+      return;
+    }
+  }
+
+  selectedBiometricNum = bioNum;
+  const bio = state.biometrics.find(b => b.biometrico == bioNum);
+  
+  document.getElementById("txt-modal-bio-name").innerText = `BiomÃ©trico ${bioNum}`;
+  document.getElementById("txt-modal-bio-hw").innerHTML = `
+    <ul>
+      <li>ðŸ’» <strong>Laptop:</strong> ${bio.laptop_marca} ${bio.laptop_modelo} (S/N: ${bio.laptop_serie})</li>
+      <li>ðŸ–¨ï¸ <strong>Impresora:</strong> ${bio.impresora_marca} ${bio.impresora_modelo} (S/N: ${bio.impresora_serie})</li>
+      <li>ðŸ“¶ <strong>BAM:</strong> ${bio.router_modelo} (Chip: ${bio.bam_telefono})</li>
+    </ul>
+  `;
+
+  // Controlar visibilidad del selector de usuario para Admin
+  const adminUserGroup = document.getElementById("admin-user-selector-group");
+  const adminUserInput = document.getElementById("admin-select-user");
+  const adminUserResults = document.getElementById("admin-user-results");
+  
+  adminUserInput.value = "";
+  adminUserResults.innerHTML = "";
+  adminUserResults.classList.add("hidden");
+
+  if (state.currentUser && state.currentUser.role === "admin") {
+    adminUserGroup.classList.remove("hidden");
+  } else {
+    adminUserGroup.classList.add("hidden");
+  }
+
+  openModal("modal-reserve");
+}
+
+// Confirmar y realizar la solicitud
+async function confirmReservation() {
+  const exitTime = document.getElementById("select-exit-time").value;
+  let userToAssign = "";
+
+  if (state.currentUser && state.currentUser.role === "admin") {
+    const chosenUser = document.getElementById("admin-select-user").value.trim();
+    if (chosenUser === "") {
+      showToast("Por favor selecciona o escribe el nombre del usuario.");
+      return;
+    }
+    if (!state.users.includes(chosenUser)) {
+      showToast("Por favor selecciona un usuario vÃ¡lido del listado oficial.");
+      return;
+    }
+    userToAssign = chosenUser;
+  } else {
+    userToAssign = state.currentUser.name;
+  }
+  
+  closeModal();
+
+  if (selectedBiometricNum) {
+    const res = await sendAction("request", {
+      biometrico: selectedBiometricNum,
+      usuario: userToAssign,
+      hora_salida: exitTime
+    });
+  }
+}
+
+// AnimaciÃ³n de confeti / chispas
+function fireConfetti(element) {
+  if (window.SoundManager) SoundManager.success();
+  if (!element) return;
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  for (let i = 0; i < 15; i++) {
+    const spark = document.createElement("div");
+    spark.className = "spark";
+    
+    // Random direction and distance
+    const angle = Math.random() * Math.PI * 2;
+    const velocity = 30 + Math.random() * 50;
+    const tx = Math.cos(angle) * velocity;
+    const ty = Math.sin(angle) * velocity;
+    
+    spark.style.left = `${centerX}px`;
+    spark.style.top = `${centerY}px`;
+    spark.style.setProperty('--tx', `${tx}px`);
+    spark.style.setProperty('--ty', `${ty}px`);
+    
+    // Random colors
+    const colors = ["#34C759", "#32D74B", "#30DB5B", "#FFD60A"];
+    spark.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    document.body.appendChild(spark);
+    
+    // Remove after animation
+    setTimeout(() => spark.remove(), 800);
+  }
+}
+
+// Devolver un biomÃ©trico
+async function triggerReturn(logId, biometrico) {
+  if (confirm("Â¿Confirmas la entrega/retorno de este equipo biomÃ©trico a su lugar?")) {
+    const role = (state.currentUser && state.currentUser.role) ? state.currentUser.role : "admin";
+    const name = (state.currentUser && state.currentUser.name) ? state.currentUser.name : "Administrador";
+    const userRetorno = role === "admin" ? "Administrador" : name;
+    
+    // Disparar confeti visualmente para feedback inmediato
+    fireConfetti(document.getElementById(`bio-card-${biometrico}`));
+    
+    const res = await sendAction("return", {
+      id: logId || "",
+      biometrico: biometrico,
+      usuario_retorno: userRetorno
+    });
+  }
+}
+
+// Confirmar entrega de un biomÃ©trico (backend)
+window.confirmDelivery = async function(logId, bioNum) {
+  const res = await sendAction("confirm", { id: logId, biometrico: bioNum });
+  if (res && res.success) {
+    showToast("Entrega confirmada con Ã©xito");
+    fetchDatabase();
+  } else {
+    showToast("Error al confirmar la entrega", true);
+  }
+};
+
+// Cancelar solicitud de un biomÃ©trico (borra registro)
+window.cancelDelivery = async function(logId, bioNum) {
+  if (confirm(`Â¿EstÃ¡s seguro de cancelar la solicitud del BiomÃ©trico ${bioNum}?`)) {
+    // Disparar confeti en la tarjeta antes de cancelar
+    fireConfetti(document.getElementById(`bio-card-${bioNum}`));
+    
+    const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
+    if (res && res.success) {
+      showToast("Solicitud cancelada");
+      fetchDatabase();
+    }
+  }
+}
+
+// Registrar cambio de tintas
+async function submitInkLog(e) {
+  e.preventDefault();
+  const bio = document.getElementById("ink-biometric").value;
+  const user = document.getElementById("ink-user").value;
+  const notes = document.getElementById("ink-notes").value;
+
+  const res = await sendAction("logInk", {
+    biometrico: bio,
+    usuario: user,
+    observaciones: notes
+  });
+
+  if (res.success) {
+    document.getElementById("ink-form").reset();
+    document.getElementById("ink-user").value = "Administrador";
+    showToast("Cambio de tinta registrado con Ã©xito.");
+  }
+}
+
+// Registrar recarga de BAM
+async function submitInternetLog(e) {
+  e.preventDefault();
+  const bio = document.getElementById("net-biometric").value;
+  const plan = document.getElementById("net-plan").value;
+  const user = document.getElementById("net-user").value;
+  const notes = document.getElementById("net-notes").value;
+
+  const res = await sendAction("logInternet", {
+    biometrico: bio,
+    plan: plan,
+    usuario: user,
+    observaciones: notes
+  });
+
+  if (res.success) {
+    document.getElementById("internet-form").reset();
+    document.getElementById("net-user").value = "Administrador";
+    showToast("Plan BAM registrado y actualizado.");
+  }
+}
+
+// Filtrar historial
+function filterHistoryTable(e) {
+  const query = e.target.value.toLowerCase().trim();
+  const rows = document.querySelectorAll("#history-tbody tr");
+  
+  rows.forEach(row => {
+    if (row.cells.length < 2) return; // Saltarse fila de "No hay registros"
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+}
+
+/* ==========================================================================
+   CARTA RESPONSIVA GENERATOR & PRINTING
+   ========================================================================== */
+
+function triggerPrintResponsive(logId) {
+  const log = state.logs.find(l => l.id === logId);
+  if (!log) return;
+
+  const bio = state.biometrics.find(b => b.biometrico == log.biometrico);
+  if (!bio) return;
+
+  // Generar HTML del documento
+  const paperHtml = generateResponsivaHtml(log, bio, false);
+  const printAreaHtml = generateResponsivaHtml(log, bio, true);
+
+  // Inyectar en el modal de previsualizaciÃ³n
+  document.getElementById("responsiva-paper-container").innerHTML = paperHtml;
+  
+  // Inyectar en la secciÃ³n de impresiÃ³n dedicada de la pÃ¡gina
+  document.getElementById("print-area").innerHTML = printAreaHtml;
+
+  openModal("modal-print");
+}
+
+function generateResponsivaHtml(log, bio, forPrint) {
+  const containerId = forPrint ? "responsiva-paper-container-print" : "";
+  const dateObj = parseDateString(log.fecha_salida || getTodayDateString());
+  const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const dateFormatted = `${dateObj.day} de ${monthNames[dateObj.month - 1]} de ${dateObj.year}`;
+  const timeFormatted = log.hora_salida_solicitada || log.hora_salida_real || getNowTimeString();
+
+  // Logo de la NotarÃ­a 134 en SVG idÃ©ntico al original
+  const logoSvg = `
+    <svg width="125" height="60" viewBox="0 0 140 70" xmlns="http://www.w3.org/2000/svg" style="border: 1px solid #000; padding: 2px;">
+      <rect x="80" y="2" width="55" height="35" fill="#1C1C1E" rx="2" ry="2"/>
+      <text x="107" y="26" font-family="'Outfit', 'Arial', sans-serif" font-weight="800" font-size="24" fill="#FFFFFF" text-anchor="middle">134</text>
+      <text x="5" y="45" font-family="'Brush Script MT', 'Georgia', cursive" font-style="italic" font-weight="bold" font-size="34" fill="#000000">NotarÃ­a</text>
+      <path d="M 5 50 Q 50 55 90 50" fill="none" stroke="#000000" stroke-width="1.5"/>
+      <circle cx="95" cy="53" r="12" fill="none" stroke="#555555" stroke-width="1" stroke-dasharray="2,1"/>
+      <circle cx="95" cy="53" r="10" fill="none" stroke="#555555" stroke-width="0.8"/>
+      <text x="95" y="56" font-family="Arial" font-size="4" fill="#555555" text-anchor="middle" font-weight="bold">NOTARIA 134</text>
+    </svg>
+  `;
+
+  return `
+    <div id="${containerId}" class="excel-responsiva-sheet">
+      <table class="excel-grid-table">
+        <!-- Row 1: Logo and Main Title -->
+        <tr class="excel-row">
+          <td rowspan="2" colspan="2" class="excel-cell logo-cell" style="width: 30%;">${logoSvg}</td>
+          <td colspan="4" class="excel-cell main-title">RESPONSIVA DE EQUIPO DE COMPUTO</td>
+        </tr>
+        <!-- Row 2: Biometric Subtitle -->
+        <tr class="excel-row">
+          <td colspan="4" class="excel-cell sub-title">BIOMETRICO ${log.biometrico}</td>
+        </tr>
+        <!-- Row 3: Spacer -->
+        <tr class="excel-row spacer-row"><td colspan="6"></td></tr>
+        <!-- Row 4: User Info -->
+        <tr class="excel-row">
+          <td class="excel-cell label-cell" style="width: 22%;">NOMBRE DEL USUARIO:</td>
+          <td colspan="2" class="excel-cell value-cell highlight-cell" style="width: 38%;">${log.usuario}</td>
+          <td class="excel-cell value-cell centered-cell font-bold" style="width: 15%;">${bio.bam_telefono || 'â€”'}</td>
+          <td colspan="2" class="excel-cell value-cell centered-cell font-bold" style="width: 25%;">${bio.internet_plan || 'â€”'}</td>
+        </tr>
+        <!-- Row 5: Spacer -->
+        <tr class="excel-row spacer-row"><td colspan="6"></td></tr>
+        <!-- Row 6: Department -->
+        <tr class="excel-row">
+          <td class="excel-cell label-cell">DEPARTAMENTO:</td>
+          <td colspan="5" class="excel-cell value-cell highlight-cell">PASANTES</td>
+        </tr>
+        <!-- Row 7: Spacer -->
+        <tr class="excel-row spacer-row"><td colspan="6"></td></tr>
+        <!-- Row 8: Date -->
+        <tr class="excel-row">
+          <td colspan="3" class="excel-cell border-none" style="border:none;"></td>
+          <td class="excel-cell label-cell italic-cell">FECHA DE ENTREGA DEL EQUIPO:</td>
+          <td colspan="2" class="excel-cell value-cell centered-cell font-bold">${dateFormatted} ${timeFormatted}</td>
+        </tr>
+        <!-- Row 9: Spacer -->
+        <tr class="excel-row spacer-row"><td colspan="6"></td></tr>
+        <!-- Row 10: Section Header -->
+        <tr class="excel-row">
+          <td colspan="6" class="excel-cell section-header">DESCRIPCION DEL EQUIPO</td>
+        </tr>
+        <!-- Row 11: Column Headers -->
+        <tr class="excel-row header-row">
+          <td style="width: 20%;">TIPO</td>
+          <td style="width: 15%;">MARCA</td>
+          <td style="width: 15%;">MODELO</td>
+          <td style="width: 15%;">No. SERIE</td>
+          <td style="width: 10%;">CARGADA</td>
+          <td style="width: 25%;">OBSERVACIONES</td>
+        </tr>
+        <!-- Row 12: Laptop -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">LAP TOP</td>
+          <td class="excel-cell">${bio.laptop_marca}</td>
+          <td class="excel-cell">${bio.laptop_modelo}</td>
+          <td class="excel-cell">${bio.laptop_serie}</td>
+          <td class="excel-cell centered-cell">100%</td>
+          <td rowspan="6" class="excel-cell obs-cell">
+            El equipo se entrega con cargador para Lap Top, Cargador para Impresora, cable usb de conexiÃ³n para la impresora desde la Lap Top, Equipo Biometrico
+          </td>
+        </tr>
+        <!-- Row 13: Printer -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">IMPRESORA PORTATIL</td>
+          <td class="excel-cell">${bio.impresora_marca}</td>
+          <td class="excel-cell">${bio.impresora_modelo}</td>
+          <td class="excel-cell">${bio.impresora_serie}</td>
+          <td class="excel-cell centered-cell">100%</td>
+        </tr>
+        <!-- Row 14: Biometric -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">BIOMETRICO</td>
+          <td class="excel-cell">U.are.U / HID</td>
+          <td class="excel-cell">${bio.biometrico_lector}</td>
+          <td class="excel-cell">${bio.biometrico_serie}</td>
+          <td class="excel-cell"></td>
+        </tr>
+        <!-- Row 15: Router -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">ROUTER MOBILE</td>
+          <td class="excel-cell">${bio.router_modelo}</td>
+          <td class="excel-cell"></td>
+          <td class="excel-cell">${bio.router_imei}</td>
+          <td class="excel-cell"></td>
+        </tr>
+        <!-- Row 16: Maletin -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">MALETIN PORTA LAP</td>
+          <td class="excel-cell">GenÃ©rico</td>
+          <td class="excel-cell">Porta Laptop</td>
+          <td class="excel-cell">â€”</td>
+          <td class="excel-cell"></td>
+        </tr>
+        <!-- Row 17: Otro -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">OTRO</td>
+          <td class="excel-cell"></td>
+          <td class="excel-cell"></td>
+          <td class="excel-cell"></td>
+          <td class="excel-cell"></td>
+        </tr>
+        <!-- Row 18: Section Header Peripherals -->
+        <tr class="excel-row">
+          <td colspan="6" class="excel-cell section-header">DISPOSITIVOS PERIFERICO</td>
+        </tr>
+        <!-- Row 19: Peripherals Headers -->
+        <tr class="excel-row header-row">
+          <td>TIPO</td>
+          <td>CAPACIDAD</td>
+          <td>VELOCIDAD</td>
+          <td colspan="3">OBSERVACIONES</td>
+        </tr>
+        <!-- Row 20-27: Peripherals List -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">PROCESADOR</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">DISCO DURO</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">MEMORIA RAM</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">UNIDAD 3.5</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">CD-ROM</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">DVD-ROM</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">OTRO</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">OTRO</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <!-- Row 28: Section Header Software -->
+        <tr class="excel-row">
+          <td colspan="6" class="excel-cell section-header">DESCRIPCION DE SOFTWARE</td>
+        </tr>
+        <!-- Row 29: Software Headers -->
+        <tr class="excel-row header-row">
+          <td>NOMBRE DEL PRODUCTO</td>
+          <td></td><td></td>
+          <td colspan="3"></td>
+        </tr>
+        <!-- Row 30: Windows -->
+        <tr class="excel-row">
+          <td class="excel-cell font-bold">WINDOWS</td>
+          <td class="excel-cell"></td><td class="excel-cell"></td>
+          <td colspan="3" class="excel-cell"></td>
+        </tr>
+        <!-- Row 31-33: Spacer/Grid Filler -->
+        <tr class="excel-row"><td class="excel-cell"></td><td class="excel-cell"></td><td class="excel-cell"></td><td colspan="3" class="excel-cell"></td></tr>
+        <tr class="excel-row"><td class="excel-cell"></td><td class="excel-cell"></td><td class="excel-cell"></td><td colspan="3" class="excel-cell"></td></tr>
+        <tr class="excel-row"><td class="excel-cell"></td><td class="excel-cell"></td><td class="excel-cell"></td><td colspan="3" class="excel-cell"></td></tr>
+      </table>
+
+      <!-- Legal Clauses -->
+      <div class="responsiva-legal-text" style="font-family: 'Times New Roman', serif; text-align: justify; margin-top: 15px; font-size: 8.5pt; line-height: 1.25; color: #000000;">
+        RecibÃ­ el equipo de cÃ³mputo y software instalado descritos en esta responsiva como herramienta de trabajo, 
+        obligÃ¡ndome en tÃ©rminos dispuestos por la fracciÃ³n VI del artÃ­culo 134 y por la fracciÃ³n II y IX del artÃ­culo 135 
+        de la Ley Federal del Trabajo. Manifestando que lo usarÃ© y destinarÃ© Ãºnica y exclusivamente para el desempeÃ±o de 
+        mis funciones y actividades encomendadas por mi Ãºnico patrÃ³n <strong>OMAR LOZANO TORRES</strong>.<br><br>
+        AsÃ­ mismo con la firma de la presente me comprometo a no instalar en el equipo otro software diferente al 
+        descrito en la presente responsiva y notificar inmediatamente al Ã¡rea de sistemas cualquier siniestro y/o 
+        requerimiento de servicio o reparaciÃ³n que llegase a necesitar tanto el equipo como el software.<br><br>
+        En el momento en que me sea requerido por la sociedad me comprometo a entregar a Ã©sta el equipo y software 
+        mencionado, en las mismas condiciones en que los he recibido sin mÃ¡s deterioro que el ocasionado por el uso 
+        normal y el transcurso del tiempo.<br><br>
+        Para el caso de la terminaciÃ³n de la relaciÃ³n laboral por cualquier causa o bien que me sea requerido el equipo 
+        en cualquier momento, me obligo a entregar inmediatamente el equipo asignado. Y en el evento de que dicho equipo 
+        no lo entregue en el momento que me sea requerido por mi PatrÃ³n, o entregÃ¡ndolo presente algÃºn daÃ±o, ya sea 
+        intencional o negligencia inexcusable me obligo a cubrir el pago de los daÃ±os o perjuicios ocasionados, autorizando 
+        que me sea descontado de mi pago de salarios o bien me sea descontado de mi finiquito en caso de terminaciÃ³n de 
+        la relaciÃ³n laboral.<br><br>
+        En virtud de lo anterior, desde ahora me hago sabedor del contenido de los artÃ­culos 213 en su fracciÃ³n XVII, 
+        artÃ­culo 223 fracciÃ³n I y del artÃ­culo 224 de la Ley Federal de la Propiedad Industrial y demÃ¡s relativos aplicables 
+        por lo que me responsabilizo de las consecuencias por el mal uso, daÃ±o provocado o indebida disposiciÃ³n del hardware 
+        o del software descritos o instalados por mi cuenta, comprometiÃ©ndome a pagar cualquier sanciÃ³n, multa, daÃ±o o 
+        perjuicio ocasionado por mi negligencia o mala fe, obligÃ¡ndome a responder de ello ante la propia sociedad o ante 
+        cualquier tercero que en su caso resulte afectado.
+      </div>
+      
+      <!-- Footer Signature Block -->
+      <div class="responsiva-footer" style="margin-top: 25px; text-align: center; font-family: 'Times New Roman', serif; color: #000000;">
+        <div class="responsiva-signature-box" style="width: 50%; margin: 0 auto; border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 9pt;">
+          ${log.usuario}<br>
+          <span style="font-size: 8pt; font-weight: normal; color: #333;">NOMBRE COMPLETO Y FIRMA DE CONFORMIDAD</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ==========================================================================
+   EXCEL IMPORT & EXPORT (SheetJS)
+   ========================================================================== */
+
+function processExcelFile(file) {
+  const statusDiv = document.getElementById("import-status");
+  statusDiv.className = "import-status";
+  statusDiv.innerHTML = "Procesando archivo...";
+  statusDiv.classList.remove("hidden");
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { 
+        type: "array", 
+        cellStyles: true, 
+        cellFormulas: true, 
+        cellDates: true, 
+        cellNF: true 
+      });
+      state.originalWorkbook = workbook;
+      state.originalWorkbookBuffer = e.target.result;
+      
+      // Parsear Usuarios si existe la hoja
+      let importedUsers = [];
+      if (workbook.Sheets["USUARIOS"]) {
+        const uSheet = workbook.Sheets["USUARIOS"];
+        const rows = XLSX.utils.sheet_to_json(uSheet);
+        rows.forEach(r => {
+          // Leer la columna del nombre
+          const keys = Object.keys(r);
+          if (keys.length > 0) {
+            const name = r[keys[0]] || r["nombre"] || r["NOMBRE"];
+            if (name && typeof name === "string") {
+              importedUsers.push(name.trim());
+            }
+          }
+        });
+      }
+
+      // Parsear Equipos
+      let importedBiometrics = [];
+      // Intentar leer hoja de EQUIPOS consolidada
+      if (workbook.Sheets["EQUIPOS"]) {
+        importedBiometrics = XLSX.utils.sheet_to_json(workbook.Sheets["EQUIPOS"]);
+      } else {
+        // Fallback: Intentar extraer datos recorriendo hojas BIO 1 a BIO 8
+        for (let i = 1; i <= 8; i++) {
+          const sheetName = `BIO ${i}`;
+          if (workbook.Sheets[sheetName]) {
+            const sheet = workbook.Sheets[sheetName];
+            // Extraer celdas clave
+            // E4 = bam_telefono
+            const cellE4 = sheet["E4"] ? sheet["E4"].v : "";
+            // F4 = internet_plan
+            const cellF4 = sheet["F4"] ? sheet["F4"].v : "";
+            
+            // Fila 12: Laptop
+            const laptop_marca = sheet["B12"] ? sheet["B12"].v : "";
+            const laptop_modelo = sheet["C12"] ? sheet["C12"].v : "";
+            const laptop_serie = sheet["D12"] ? sheet["D12"].v : "";
+
+            // Fila 13: Impresora
+            const impresora_marca = sheet["B13"] ? sheet["B13"].v : "";
+            const impresora_modelo = sheet["C13"] ? sheet["C13"].v : "";
+            const impresora_serie = sheet["D13"] ? sheet["D13"].v : "";
+
+            // Fila 14: Biometrico
+            const biometrico_lector = sheet["B14"] ? sheet["B14"].v : "";
+            const biometrico_serie = sheet["D14"] ? sheet["D14"].v : "";
+
+            // Fila 15: Router
+            const router_modelo = sheet["B15"] ? sheet["B15"].v : "";
+            const router_imei = sheet["D15"] ? sheet["D15"].v : "";
+
+            importedBiometrics.push({
+              biometrico: i,
+              bam_telefono: cellE4,
+              internet_plan: cellF4,
+              laptop_marca: laptop_marca,
+              laptop_modelo: laptop_modelo,
+              laptop_serie: laptop_serie,
+              impresora_marca: impresora_marca,
+              impresora_modelo: impresora_modelo,
+              impresora_serie: impresora_serie,
+              biometrico_lector: biometrico_lector,
+              biometrico_serie: biometrico_serie,
+              router_modelo: router_modelo,
+              router_imei: router_imei
+            });
+          }
+        }
+      }
+
+      // Si no importÃ³ usuarios ni biomÃ©tricos, arrojar error
+      if (importedUsers.length === 0 && importedBiometrics.length === 0) {
+        throw new Error("No se encontrÃ³ una estructura compatible en el archivo Excel.");
+      }
+
+      // Sincronizar localmente y enviar a Google Sheets si aplica
+      if (importedUsers.length > 0) state.users = importedUsers;
+      if (importedBiometrics.length > 0) {
+        state.biometrics = importedBiometrics;
+        recalculateBiometricStates();
+      }
+
+      // Enviar a la nube en caso de modo online
+      if (state.connectionMode === "online") {
+        const usersArray = state.users.map(u => ({ nombre: u, rol: "Pasante" }));
+        await sendAction("syncAll", {
+          users: usersArray,
+          biometrics: state.biometrics
+        });
+      } else {
+        saveLocalBackup();
+        renderBiometrics();
+        renderAdminDashboard();
+      }
+
+      statusDiv.className = "import-status success";
+      statusDiv.innerHTML = `<strong>Ã‰xito:</strong> Archivo procesado correctamente. Cargados ${state.users.length} usuarios y ${state.biometrics.length} equipos biomÃ©tricos.`;
+      
+      setTimeout(() => {
+        closeModal();
+        statusDiv.classList.add("hidden");
+      }, 2500);
+
+    } catch (err) {
+      statusDiv.className = "import-status error";
+      statusDiv.innerHTML = `<strong>Error de importaciÃ³n:</strong> ${err.message}`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Handle manual file selection
+function handleExcelFileSelect(e) {
+  if (e.target.files.length > 0) {
+    processExcelFile(e.target.files[0]);
+  }
+}
+
+// Exportar Base de Datos Completa a Excel (.xlsx) conservando formato del jefe
+async function exportToExcel() {
+  const dateStr = getTodayDateString().replace(/-/g, "");
+
+  // Si no tenemos la plantilla precargada en buffer, la pedimos del archivo subido originalmente
+  if (!state.originalWorkbookBuffer) {
+    try {
+      showLoadingToast("Buscando plantilla de Excel original...");
+      const response = await fetch('RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx');
+      if (response.ok) {
+        state.originalWorkbookBuffer = await response.arrayBuffer();
+        hideToast();
+      } else {
+        throw new Error("No se pudo autodescargar la plantilla original. AsegÃºrate de haber importado el Excel primero en el administrador.");
+      }
+    } catch (err) {
+      console.warn("Fallo al intentar descargar plantilla automÃ¡ticamente:", err);
+      hideToast();
+      alert("Error: Para poder exportar con el formato del jefe, primero debes importar/arrastrar el archivo original 'RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx' en la zona de importaciÃ³n.");
+      return;
+    }
+  }
+
+  try {
+    showLoadingToast("Generando Excel con formatos originales...");
+    const workbook = await XlsxPopulate.fromDataAsync(state.originalWorkbookBuffer);
+
+    // 1. Actualizar las responsivas en las pestaÃ±as BIO 1 a BIO 8
+    for (let i = 1; i <= 8; i++) {
+      const sheetName = `BIO ${i}`;
+      const sheet = workbook.sheet(sheetName);
+      if (sheet) {
+        const bio = state.biometrics.find(b => b.biometrico == i);
+        if (bio) {
+          const isOccupied = bio.status === "Ocupado";
+          
+          // Escribir en B4 (Usuario)
+          sheet.cell("B4").value(isOccupied ? bio.holder : null);
+          
+          // Escribir en A54 (Firma)
+          sheet.cell("A54").value(isOccupied ? bio.holder : null);
+
+          // Escribir en F8 (Fecha de prÃ©stamo)
+          if (isOccupied) {
+            const activeLog = state.logs.find(l => l.biometrico == i && l.estado === "Activo");
+            if (activeLog) {
+              const fullDateStr = activeLog.fecha_salida + " " + activeLog.hora_salida_real;
+              sheet.cell("F8").value(new Date(fullDateStr.replace(/-/g, "/")));
+            }
+          } else {
+            sheet.cell("F8").value(null);
+          }
+
+          // Escribir en F4 (Plan BAM)
+          sheet.cell("F4").value(bio.internet_plan || null);
+        }
+      }
+    }
+
+    // 2. Actualizar la pestaÃ±a ESTADISTICAS usando las funciones del ayudante
+    const estSheet = workbook.sheet("ESTADISTICAS");
+    if (estSheet) {
+      writeEstadisticasData(estSheet, state);
+    }
+
+    // 3. Actualizar la pestaÃ±a USUARIOS
+    const usrSheet = workbook.sheet("USUARIOS");
+    if (usrSheet) {
+      // Limpiar registros antiguos desde la fila 4 a la 500 para la columna B (2)
+      for (let r = 4; r <= 500; r++) {
+        usrSheet.row(r).cell(2).value(null);
+      }
+      
+      // Escribir los nombres de los usuarios
+      state.users.forEach((user, idx) => {
+        const r = 4 + idx;
+        const cellB = usrSheet.row(r).cell(2);
+        cellB.value(user);
+        if (r > 4) {
+          try { cellB.style(usrSheet.row(4).cell(2).style()); } catch(e){}
+        }
+      });
+    }
+
+    // 4. Escribir las pestaÃ±as auxiliares con formato profesional usando las funciones del ayudante
+    writeAuxiliarySheets(workbook, state);
+
+    // 5. Descargar archivo
+    const blob = await workbook.outputAsync();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `RESPONSIVA DE EQUIPO DE COMPUTO Firmas_${dateStr}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    hideToast();
+    showToast("Excel exportado conservando formatos originales, estilos y fÃ³rmulas.");
+  } catch (err) {
+    console.error("Fallo durante la exportaciÃ³n con xlsx-populate:", err);
+    hideToast();
+    alert("Error de Formato Excel: " + err.message + "\n\nPor favor asegÃºrate de haber importado el Excel de tu jefe en el gestor antes de descargar.");
+  }
+}
+
+// Fallback de exportaciÃ³n usando SheetJS (formato plano, para emergencias)
+function exportToExcelFallback() {
+  const dateStr = getTodayDateString().replace(/-/g, "");
+  const wb = XLSX.utils.book_new();
+  
+  const wsEquipos = XLSX.utils.json_to_sheet(state.biometrics);
+  XLSX.utils.book_append_sheet(wb, wsEquipos, "EQUIPOS");
+  
+  const wsLogUso = XLSX.utils.json_to_sheet(state.logs);
+  XLSX.utils.book_append_sheet(wb, wsLogUso, "LOG_USO");
+  
+  const wsInk = XLSX.utils.json_to_sheet(state.inkLogs);
+  XLSX.utils.book_append_sheet(wb, wsInk, "LOG_TINTAS");
+  
+  const wsNet = XLSX.utils.json_to_sheet(state.internetLogs);
+  XLSX.utils.book_append_sheet(wb, wsNet, "LOG_INTERNET");
+  
+  const formattedUsers = state.users.map(name => ({ nombre: name, rol: "Pasante" }));
+  const wsUsuarios = XLSX.utils.json_to_sheet(formattedUsers);
+  XLSX.utils.book_append_sheet(wb, wsUsuarios, "USUARIOS");
+  
+  XLSX.writeFile(wb, `BIOMETRICOS_N134_RESPALDO_${dateStr}.xlsx`);
+  showToast("Excel bÃ¡sico generado (Respaldo).");
+}
+
+// Convertir Ã­ndice numÃ©rico a letras de columna de Excel (1 = A, 2 = B, etc.)
+function getColumnLetter(colIndex) {
+  let temp, letter = "";
+  while (colIndex > 0) {
+    temp = (colIndex - 1) % 26;
+    letter = String.fromCharCode(65 + temp) + letter;
+    colIndex = (colIndex - temp - 1) / 26;
+  }
+  return letter;
+}
+
+/* ==========================================================================
+   MODAL UTILITIES & TOASTS
+   ========================================================================== */
+
+function openModal(modalId) {
+  document.getElementById(modalId).classList.add("active");
+}
+
+function closeModal() {
+  document.querySelectorAll(".modal").forEach(modal => modal.classList.remove("active"));
+}
+
+function showToast(message, duration = 3000) {
+  const toast = document.getElementById("toast");
+  let icon = "âœ¨";
+  if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("invÃ¡lido")) {
+    icon = "âš ï¸";
+    if (window.SoundManager) SoundManager.error();
+  } else if (message.toLowerCase().includes("cargando") || message.toLowerCase().includes("sincronizando")) {
+    icon = "â³";
+  } else {
+    // Para Ã©xitos genÃ©ricos si no es cargando ni error
+    if (window.SoundManager && message.toLowerCase().includes("Ã©xito")) SoundManager.success();
+  }
+  toast.innerHTML = `<span class="toast-icon">${icon}</span> ${message}`;
+  toast.classList.remove("hidden");
+  // Reflow trigger to allow animation restart
+  void toast.offsetWidth;
+  toast.classList.add("show");
+  
+  if (duration > 0) {
+    setTimeout(hideToast, duration);
+  }
+}
+
+function showLoadingToast(message) {
+  showToast(message, 0);
+}
+
+function hideToast() {
+  const toast = document.getElementById("toast");
+  toast.classList.remove("show");
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 400);
+}
+
+/* ==========================================================================
+   DATE/TIME HELPERS
+   ========================================================================== */
+
+function getTodayDateString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getNowTimeString() {
+  const d = new Date();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function parseDateString(dateStr) {
+  // Acepta yyyy-mm-dd
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    return {
+      year: parseInt(parts[0]),
+      month: parseInt(parts[1]),
+      day: parseInt(parts[2])
+    };
+  }
+  return { year: 2026, month: 6, day: 23 };
+}
+
+// Habilitar o deshabilitar todos los botones principales de la aplicaciÃ³n durante procesos de carga/sincronizaciÃ³n
+function setButtonsState(enabled) {
+  const selectors = [
+    "#btn-login-user",
+    "#btn-login-admin",
+    "#btn-request-sequential",
+    "#btn-confirm-reservation",
+    "#btn-export-excel",
+    ".card-actions button",
+    ".logout-btn",
+    "input",
+    "select",
+    "button"
+  ];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      if (enabled) {
+        el.removeAttribute("disabled");
+        if (el.tagName === "BUTTON") el.style.opacity = "1";
+      } else {
+        el.setAttribute("disabled", "true");
+        if (el.tagName === "BUTTON") el.style.opacity = "0.5";
+      }
+    });
+  });
+}
+
+
+/* ==========================================================================
+   LOCAL NOTIFICATIONS (POLLING)
+   ========================================================================== */
+
+function requestNotificationPermission() {
+  if (!("Notification" in window)) {
+    console.warn("Este navegador no soporta notificaciones de escritorio");
+    return;
+  }
+  if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        console.log("Permiso de notificaciones concedido.");
+      }
+    });
+  }
+}
+
+function startNotificationPolling() {
+  if (notificationPollingTimer) clearInterval(notificationPollingTimer);
+  if (!CONFIG.GOOGLE_SHEET_API_URL) return;
+  
+  // Clone current logs to avoid firing notifications on startup
+  lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
+  
+  notificationPollingTimer = setInterval(pollForUpdates, 15000); // 15 seconds
+}
+
+function stopNotificationPolling() {
+  if (notificationPollingTimer) {
+    clearInterval(notificationPollingTimer);
+    notificationPollingTimer = null;
+  }
+}
+
+async function pollForUpdates() {
+  if (!navigator.onLine) return;
+  try {
+    const res = await fetch(CONFIG.GOOGLE_SHEET_API_URL + "?action=getDatabase&_t=" + Date.now());
+    if (!res.ok) return;
+    const db = await res.json();
+    if (db.success) {
+      const newLogs = db.logs;
+      checkNotificationChanges(lastKnownLogs, newLogs);
+      lastKnownLogs = JSON.parse(JSON.stringify(newLogs));
+      
+      // Optionally update local state seamlessly if there are changes
+      if (JSON.stringify(state.logs) !== JSON.stringify(newLogs)) {
+        state.logs = newLogs;
+        state.biometrics = db.biometrics;
+        recalculateBiometricStates();
+        renderBiometrics();
+        if (state.currentUser && state.currentUser.role === "admin") {
+          renderAdminDashboard();
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error polling notifications:", err);
+  }
+}
+
+function checkNotificationChanges(oldLogs, newLogs) {
+  if (Notification.permission !== "granted") return;
+  // If oldLogs is empty, this is the very first successful load of data. 
+  // We should NOT bombard the user with notifications for existing historical data.
+  if (!oldLogs || oldLogs.length === 0) return;
+  
+  newLogs.forEach(newLog => {
+    const oldLog = oldLogs.find(l => l.id === newLog.id);
+    if (!oldLog) {
+      // New log!
+      fireNotification("Nueva Solicitud", `${newLog.usuario} solicitÃ³ el BiomÃ©trico ${newLog.biometrico}`);
+    } else if (oldLog.estado !== newLog.estado && newLog.estado === "Entregado") {
+      // Returned!
+      fireNotification("DevoluciÃ³n", `El BiomÃ©trico ${newLog.biometrico} ha sido devuelto por ${newLog.usuario_retorno || newLog.usuario}`);
+    }
+  });
+
+  // Detect cancellations (log existed in oldLogs as Pendiente, but is missing in newLogs)
+  oldLogs.forEach(oldLog => {
+    const stillExists = newLogs.find(l => l.id === oldLog.id);
+    if (!stillExists && oldLog.estado === "Pendiente") {
+      fireNotification("Solicitud Cancelada", `El pasante ${oldLog.usuario} cancelÃ³ su solicitud del BiomÃ©trico ${oldLog.biometrico}`);
+    }
+  });
+}
+
+function fireNotification(title, body) {
+  try {
+    if (Notification.permission === "granted") {
+      new Notification(title, {
+        body: body,
+        icon: "app_icon.png"
+      });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          new Notification(title, {
+            body: body,
+            icon: "app_icon.png"
+          });
+        }
+      });
+    }
+  } catch(e) {
+    console.warn("No se pudo lanzar notificaciÃ³n", e);
+  }
+}
+
+/* ==========================================================================
+   PREMIUM UX: HAPTICS, SOUNDS & SCREENSAVER
+   ========================================================================== */
+
+// 1. Haptic Feedback Wrapper
+function vibrateTap() {
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+function vibrateSuccess() {
+  if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+}
+function vibrateError() {
+  if (navigator.vibrate) navigator.vibrate([50, 50, 50, 50, 100]);
+}
+
+// 2. Web Audio API Sound Generator
+const SoundManager = {
+  ctx: null,
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  },
+  playTone(freq, type, duration, vol = 0.05) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+    
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+  },
+  click() {
+    this.playTone(600, 'sine', 0.05, 0.02);
+    vibrateTap();
+  },
+  success() {
+    this.playTone(440, 'sine', 0.1, 0.03);
+    setTimeout(() => this.playTone(660, 'sine', 0.15, 0.03), 100);
+    vibrateSuccess();
+  },
+  error() {
+    this.playTone(200, 'sawtooth', 0.15, 0.03);
+    setTimeout(() => this.playTone(150, 'sawtooth', 0.2, 0.03), 150);
+    vibrateError();
+  }
+};
+
+// Initialize audio context on first user interaction
+document.addEventListener('click', (e) => {
+  SoundManager.init();
+  
+  // Detect if click is on a button or inside a button
+  if (e.target.closest('.btn') || e.target.closest('.nav-btn')) {
+    SoundManager.click();
+  }
+});
+
+// 3. Screensaver (Idle Timer)
+let idleTimer;
+const IDLE_TIMEOUT = 10 * 60 * 1000; // 5 minutos en milisegundos
+
+// Variables para DVD Bounce
+let dvdX = 50;
+let dvdY = 50;
+let dvdVx = 2; // velocidad X
+let dvdVy = 2; // velocidad Y
+let dvdAnimationFrame = null;
+
+function animateDVD() {
+  const ss = document.getElementById('screensaver');
+  const box = document.getElementById('screensaver-content');
+  if (!ss || ss.classList.contains('hidden') || !box) return;
+
+  const ssRect = ss.getBoundingClientRect();
+  const boxRect = box.getBoundingClientRect();
+
+  // Mover
+  dvdX += dvdVx;
+  dvdY += dvdVy;
+
+  // Rebotar en los bordes
+  if (dvdX + boxRect.width >= ssRect.width || dvdX <= 0) {
+    dvdVx = -dvdVx;
+    dvdX = Math.max(0, Math.min(dvdX, ssRect.width - boxRect.width));
+  }
+  if (dvdY + boxRect.height >= ssRect.height || dvdY <= 0) {
+    dvdVy = -dvdVy;
+    dvdY = Math.max(0, Math.min(dvdY, ssRect.height - boxRect.height));
+  }
+
+  box.style.left = dvdX + 'px';
+  box.style.top = dvdY + 'px';
+  box.style.transform = 'none'; // Quitar el translate -50%
+
+  dvdAnimationFrame = requestAnimationFrame(animateDVD);
+}
+
+function showScreensaver() {
+  const ss = document.getElementById('screensaver');
+  if (ss && ss.classList.contains('hidden')) {
+    ss.classList.remove('hidden');
+    updateScreensaver(true);
+    
+    // Iniciar Bounce
+    dvdX = Math.random() * (window.innerWidth - 300);
+    dvdY = Math.random() * (window.innerHeight - 300);
+    animateDVD();
+  }
+}
+
+function hideScreensaver() {
+  const ss = document.getElementById('screensaver');
+  if (ss && !ss.classList.contains('hidden')) {
+    ss.classList.add('hidden');
+    if (dvdAnimationFrame) cancelAnimationFrame(dvdAnimationFrame);
+  }
+}
+
+function resetIdleTimer() {
+  hideScreensaver();
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(showScreensaver, IDLE_TIMEOUT);
+}
+
+// Reset idle timer on various events
+['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+  document.addEventListener(evt, resetIdleTimer, { passive: true });
+});
+resetIdleTimer();
+
+function updateScreensaver(force = false) {
+  const ss = document.getElementById('screensaver');
+  if (force || (ss && !ss.classList.contains('hidden'))) {
+    const now = new Date();
+    
+    // Update Time
+    let h = now.getHours();
+    let m = now.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    m = m < 10 ? '0' + m : m;
+    document.getElementById('screensaver-time').innerText = `${h}:${m} ${ampm}`;
+    
+    // Update Date
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('screensaver-date').innerText = now.toLocaleDateString('es-ES', options);
+    
+    // Update Stats
+    if (state && state.biometrics) {
+      const occupied = state.biometrics.filter(b => b.status === "Ocupado").length;
+      document.getElementById('ss-stat-available').innerText = 8 - occupied;
+      document.getElementById('ss-stat-occupied').innerText = occupied;
+    }
+    
+    // Loop
+    setTimeout(updateScreensaver, 1000);
+  }
+}
+
+/* ==========================================================================
+   ANALITICAS VIEW (CHART.JS)
+   ========================================================================== */
+let biometricsChartInstance = null;
+let usersChartInstance = null;
+
+function renderAnalytics() {
+  if (typeof Chart === 'undefined') return;
+
+  const logs = state.logs || [];
+  const bioCount = {};
+  const userCount = {};
+
+  logs.forEach(log => {
+    if (log.action === "Salida" || log.action === "Asignado") {
+      bioCount[log.biometrico] = (bioCount[log.biometrico] || 0) + 1;
+      userCount[log.holder] = (userCount[log.holder] || 0) + 1;
+    }
+  });
+
+  const ctxBio = document.getElementById('chart-biometrics');
+  const ctxUser = document.getElementById('chart-users');
+
+  if (ctxBio) {
+    if (biometricsChartInstance) biometricsChartInstance.destroy();
+    biometricsChartInstance = new Chart(ctxBio, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(bioCount).map(b => 'Bio ' + b),
+        datasets: [{
+          data: Object.values(bioCount),
+          backgroundColor: ['#0071e3', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#FF2D55', '#5856D6', '#5AC8FA'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#fff' } }
+        }
+      }
+    });
+  }
+
+  if (ctxUser) {
+    if (usersChartInstance) usersChartInstance.destroy();
+    usersChartInstance = new Chart(ctxUser, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(userCount),
+        datasets: [{
+          label: 'Salidas',
+          data: Object.values(userCount),
+          backgroundColor: '#0071e3',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#fff' } },
+          x: { ticks: { color: '#fff' } }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+}
   function showView(viewId) {
     if (document.startViewTransition) {
       document.startViewTransition(() => {
@@ -1053,44 +2636,44 @@ function createActiveEquipmentChecklist(bio) {
   
   async function handleWebAuthn() {
     if (!window.PublicKeyCredential) {
-      showToast("Tu dispositivo no soporta biometrÃ­a nativa.", "error");
+      showToast(Tu dispositivo no soporta biometría nativa., error);
       return;
     }
     try {
       const isRegistered = localStorage.getItem('webauthn_registered');
       if (!isRegistered) {
-        showToast("Configurando biometrÃ­a... Usa FaceID o TouchID.", "info");
+        showToast(Configurando biometría... Usa FaceID o TouchID., info);
         const publicKey = {
           challenge: new Uint8Array([1,2,3,4,5,6]),
-          rp: { name: "BiomÃ©tricos 134" },
-          user: { id: new Uint8Array(16), name: "admin@biometricos", displayName: "Admin" },
-          pubKeyCredParams: [{type: "public-key", alg: -7}],
-          authenticatorSelection: { authenticatorAttachment: "platform" },
+          rp: { name: Biométricos 134 },
+          user: { id: new Uint8Array(16), name: admin@biometricos, displayName: Admin },
+          pubKeyCredParams: [{type: public-key, alg: -7}],
+          authenticatorSelection: { authenticatorAttachment: platform },
           timeout: 60000,
-          attestation: "none"
+          attestation: none
         };
         await navigator.credentials.create({ publicKey });
         localStorage.setItem('webauthn_registered', 'true');
-        showToast("BiometrÃ­a configurada correctamente.", "success");
-        state.currentUser = { name: "Admin (BiometrÃ­a)", role: "admin" };
+        showToast(Biometría configurada correctamente., success);
+        state.currentUser = { name: Admin (Biometría), role: admin };
         document.getElementById('admin-name').textContent = state.currentUser.name;
         document.getElementById('profile-name').textContent = state.currentUser.name;
-        document.getElementById('profile-role').textContent = "Administrador";
+        document.getElementById('profile-role').textContent = Administrador;
         renderBiometrics();
         showView('admin-view');
       } else {
         const publicKey = { challenge: new Uint8Array([1,2,3,4,5,6]), timeout: 60000 };
         await navigator.credentials.get({ publicKey });
-        showToast("Autenticado con biometrÃ­a", "success");
-        state.currentUser = { name: "Admin (BiometrÃ­a)", role: "admin" };
+        showToast(Autenticado con biometría, success);
+        state.currentUser = { name: Admin (Biometría), role: admin };
         document.getElementById('admin-name').textContent = state.currentUser.name;
         document.getElementById('profile-name').textContent = state.currentUser.name;
-        document.getElementById('profile-role').textContent = "Administrador";
+        document.getElementById('profile-role').textContent = Administrador;
         renderBiometrics();
         showView('admin-view');
       }
     } catch (err) {
       console.error(err);
-      showToast("Cancelado o fallo en la biometrÃ­a", "error");
+      showToast(Cancelado o fallo en la biometría, error);
     }
   }

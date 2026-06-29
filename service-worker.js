@@ -9,24 +9,24 @@ const ASSETS = [
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
 ];
 
-// Instalar el Service Worker y almacenar activos en caché
+// Instalar el Service Worker y almacenar activos en cachÃ©
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Almacenando en caché los activos estáticos');
+      console.log('[Service Worker] Almacenando en cachÃ© los activos estÃ¡ticos');
       return cache.addAll(ASSETS);
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activar el Service Worker y limpiar cachés antiguas
+// Activar el Service Worker y limpiar cachÃ©s antiguas
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log('[Service Worker] Borrando caché antigua:', key);
+            console.log('[Service Worker] Borrando cachÃ© antigua:', key);
             return caches.delete(key);
           }
         })

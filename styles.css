@@ -1,5 +1,5 @@
 /* ==========================================================================
-   DESIGN SYSTEM - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
+   DESIGN SYSTEM - CONTROL DE BIOMÃ‰TRICOS (NOTARÃA 134)
    Apple-Inspired Clean & Modern UI
    ========================================================================== */
 
@@ -263,7 +263,7 @@ body.dark-theme .dashboard-content {
   .dashboard-sidebar.collapsed .nav-icon { margin: 0; font-size: 1.3rem; }
   .dashboard-sidebar.collapsed .sidebar-footer { padding: 24px 10px; }
   .dashboard-sidebar.collapsed .logout-btn { font-size: 0; padding: 14px; }
-  .dashboard-sidebar.collapsed .logout-btn::after { content: "🚪"; font-size: 1.2rem; display: block; margin: 0 auto; }
+  .dashboard-sidebar.collapsed .logout-btn::after { content: "ðŸšª"; font-size: 1.2rem; display: block; margin: 0 auto; }
 }
 
 .dashboard-views {
@@ -673,6 +673,8 @@ textarea:focus {
 
 /* Biometric Card Details */
 .bio-card {
+  transform-style: preserve-3d;
+  perspective: 1000px;
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -686,6 +688,7 @@ textarea:focus {
 }
 
 .bio-card-header {
+  transform: translateZ(30px);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1818,6 +1821,9 @@ body.light-theme .skeleton::before {
   overflow: hidden;
 }
 .screensaver-background {
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  background: linear-gradient(135deg, rgba(20,20,22,0.85) 0%, rgba(30,30,35,0.95) 100%);
   position: absolute;
   top: 0;
   left: 0;
@@ -1862,6 +1868,7 @@ body.light-theme .skeleton::before {
   min-width: 300px;
 }
 #screensaver-time {
+  text-shadow: 0 4px 20px rgba(255,255,255,0.2);
   font-size: 8rem;
   font-weight: 300;
   line-height: 1;
@@ -1916,4 +1923,37 @@ body.light-theme .skeleton::before {
   width: 100%;
   max-width: 400px;
   height: 300px;
+}
+
+/* iOS Switches */
+input[type="checkbox"].ios-switch {
+  appearance: none;
+  width: 44px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: background 0.3s, border-color 0.3s;
+}
+input[type="checkbox"].ios-switch::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+input[type="checkbox"].ios-switch:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+input[type="checkbox"].ios-switch:checked::after {
+  transform: translateX(20px);
 }

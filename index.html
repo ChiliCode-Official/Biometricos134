@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Control de Biométricos - Notaría 134</title>
+  <title>Control de BiomÃ©tricos - NotarÃ­a 134</title>
   
   <!-- PWA Metadata -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1C1C1E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Biométricos N134">
+  <meta name="apple-mobile-web-app-title" content="BiomÃ©tricos N134">
   <link rel="apple-touch-icon" href="app_icon.png">
   <link rel="icon" type="image/png" href="app_icon.png">
   
@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=34">
+  <link rel="stylesheet" href="styles.css?v=40">
   
   <!-- SheetJS for browser Excel parsing/exporting -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -29,7 +29,7 @@
 </head>
 <body>
   <div id="pull-to-refresh-indicator" style="position: fixed; top: 0; left: 0; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: transparent; transform: translateY(-100%); transition: transform 0.2s; z-index: 9999;">
-    <div style="background: var(--bg-card); padding: 8px 16px; border-radius: 20px; box-shadow: var(--shadow-md); font-size: 0.9em; font-weight: bold; color: var(--accent);">⬇️ Suelta para actualizar</div>
+    <div style="background: var(--bg-card); padding: 8px 16px; border-radius: 20px; box-shadow: var(--shadow-md); font-size: 0.9em; font-weight: bold; color: var(--accent);">â¬‡ï¸ Suelta para actualizar</div>
   </div>
 
   <!-- Top Notification Toast -->
@@ -38,7 +38,7 @@
   <!-- Cloud/Offline Connection Status Bar -->
   <div id="connection-bar" class="connection-bar offline">
     <span class="status-dot"></span>
-    <span id="connection-text">Modo Demostración (Local) - Configura tu URL de GAS en config.js</span>
+    <span id="connection-text">Modo DemostraciÃ³n (Local) - Configura tu URL de GAS en config.js</span>
   </div>
   
   <!-- Loading Progress Bar -->
@@ -54,8 +54,8 @@
       <div class="login-card glass">
         <div class="logo-area">
           <div class="apple-logo-sim">N134</div>
-          <h1>Notaría 134</h1>
-          <p>Control de Equipos Biométricos</p>
+          <h1>NotarÃ­a 134</h1>
+          <p>Control de Equipos BiomÃ©tricos</p>
         </div>
         
         <div class="role-selector">
@@ -72,18 +72,18 @@
               <ul id="user-results" class="autocomplete-list hidden"></ul>
             </div>
           </div>
-          <button id="btn-login-user" class="btn btn-primary" disabled>Iniciar Sesión</button>
+          <button id="btn-login-user" class="btn btn-primary" disabled>Iniciar SesiÃ³n</button>
         </div>
         
         <!-- Admin Form (PIN Input) -->
         <div id="form-admin" class="login-form">
           <div class="input-group">
             <label for="admin-pin">PIN de Administrador</label>
-            <input type="password" id="admin-pin" maxlength="6" placeholder="••• •••" inputmode="numeric">
+            <input type="password" id="admin-pin" maxlength="6" placeholder="â€¢â€¢â€¢ â€¢â€¢â€¢" inputmode="numeric">
           </div>
           <button id="btn-login-admin" class="btn btn-primary">Acceder al Dashboard</button>
           <button id="btn-biometric-admin" class="btn btn-secondary" style="margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handleWebAuthn()">
-            <img src="assets/icons/touch.png" alt="Biometría" style="width: 20px; height: 20px; filter: invert(1);"> Entrar con Biometría
+            <img src="assets/icons/touch.png" alt="BiometrÃ­a" style="width: 20px; height: 20px; filter: invert(1);"> Entrar con BiometrÃ­a
           </button>
         </div>
       </div>
@@ -98,7 +98,7 @@
       <aside class="dashboard-sidebar">
         <div class="sidebar-logo">
           <img src="app_icon.png" alt="N134" class="sidebar-app-icon" style="width: 36px; height: 36px; border-radius: 8px;">
-          <h2>Notaría 134</h2>
+          <h2>NotarÃ­a 134</h2>
         </div>
         
         <nav class="sidebar-nav">
@@ -109,8 +109,8 @@
             </button>
             
           <button id="nav-analytics" class="nav-btn" onclick="showView('analytics-view')">
-              <span class="nav-icon"><img src="analiticas.png" alt="Analíticas" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='assets/icons/dashboard.png'; this.style.filter='hue-rotate(90deg)';"></span>
-              <span class="nav-label">Analíticas</span>
+              <span class="nav-icon"><img src="analiticas.png" alt="AnalÃ­ticas" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='assets/icons/dashboard.png'; this.style.filter='hue-rotate(90deg)';"></span>
+              <span class="nav-label">AnalÃ­ticas</span>
             </button>
           
           <button id="nav-profile" class="nav-btn" onclick="showView('profile-view')">
@@ -121,7 +121,7 @@
 
         <div class="sidebar-footer">
           <button class="btn btn-secondary logout-btn" style="width: 100%; border: none; background: rgba(255,255,255,0.05); color: inherit;">
-            🚪 Cerrar Sesión
+            ðŸšª Cerrar SesiÃ³n
           </button>
         </div>
       </aside>
@@ -132,7 +132,7 @@
         <!-- DASHBOARD TOPBAR -->
         <header class="dashboard-topbar">
           <div class="topbar-left">
-            <button id="mobile-menu-btn" class="btn btn-icon" style="background: transparent; border: none; font-size: 1.5rem; padding: 0 10px; cursor: pointer; color: var(--text-primary);" onclick="document.querySelector('.dashboard-sidebar').classList.toggle('collapsed'); document.querySelector('.dashboard-sidebar').classList.toggle('open');">☰</button>
+            <button id="mobile-menu-btn" class="btn btn-icon" style="background: transparent; border: none; font-size: 1.5rem; padding: 0 10px; cursor: pointer; color: var(--text-primary);" onclick="document.querySelector('.dashboard-sidebar').classList.toggle('collapsed'); document.querySelector('.dashboard-sidebar').classList.toggle('open');">â˜°</button>
             <div class="user-greeting">
                 <img src="assets/icons/perfil.png" class="hw-icon-img" alt="Perfil" style="width:36px;height:36px;margin-right:8px;border-radius:50%;background:#e0e0e0;padding:2px;">
                 <span class="subtitle mobile-hide">Bienvenido, </span>
@@ -142,8 +142,8 @@
           </div>
           
           <div class="topbar-right">
-            <button class="btn btn-secondary" onclick="location.reload()" title="Sincronizar">🔄 Sincronizar</button>
-            <span id="user-offline-badge" class="offline-badge hidden" style="background: #FF9500; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">☁️ 0</span>
+            <button class="btn btn-secondary" onclick="location.reload()" title="Sincronizar">ðŸ”„ Sincronizar</button>
+            <span id="user-offline-badge" class="offline-badge hidden" style="background: #FF9500; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">â˜ï¸ 0</span>
           </div>
         </header>
 
@@ -156,8 +156,8 @@
       <div class="content-section">
         <!-- Quick Round-Robin Request Panel -->
         <div class="quick-sequential-box glass" style="padding: 24px; margin-bottom: 30px; text-align: center; border-left: 5px solid var(--accent); background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);">
-          <h3 style="font-size: 1.3rem; margin-bottom: 8px; font-family: var(--font-heading);">Asignación Equitativa de Equipos</h3>
-          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 16px;">Para equilibrar el desgaste de los equipos, el sistema asignará el biométrico de manera rotativa.</p>
+          <h3 style="font-size: 1.3rem; margin-bottom: 8px; font-family: var(--font-heading);">AsignaciÃ³n Equitativa de Equipos</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 16px;">Para equilibrar el desgaste de los equipos, el sistema asignarÃ¡ el biomÃ©trico de manera rotativa.</p>
           
           <div id="sequential-suggested-container" class="suggested-bio-badge" style="display: inline-block; padding: 12px 24px; border-radius: 12px; background-color: var(--accent-light); color: var(--accent); font-weight: 700; font-size: 1.2rem; margin-bottom: 20px;">
             Siguiente sugerido: <span id="suggested-bio-name">Cargando...</span>
@@ -166,7 +166,7 @@
           <div>
             <button id="btn-request-sequential" class="btn btn-primary btn-lg hold-to-confirm-btn" style="padding: 16px 32px; font-size: 1.1rem; box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25);">
               <div class="progress-fill"></div>
-              <span id="btn-request-sequential-text">⚡ Mantén para Solicitar Sugerencia</span>
+              <span id="btn-request-sequential-text">âš¡ MantÃ©n para Solicitar Sugerencia</span>
             </button>
           </div>
           </div>
@@ -174,7 +174,7 @@
           <div id="user-active-equipment-section" style="display: none; margin-bottom: 30px;">
             <div class="section-title">
               <h3>Mis Equipos a Devolver</h3>
-              <p>Por favor, marca todos los componentes para habilitar la devolución del equipo.</p>
+              <p>Por favor, marca todos los componentes para habilitar la devoluciÃ³n del equipo.</p>
             </div>
             <div id="user-active-equipment-container" class="biometrics-grid">
               <!-- Dynamically populated user active equipment cards -->
@@ -184,7 +184,7 @@
           <div id="user-others-section">
             <div class="section-title">
               <h3>Estado Actual de los Equipos</h3>
-              <p>A continuación se muestra la disponibilidad actual de los 8 biométricos para tu referencia.</p>
+              <p>A continuaciÃ³n se muestra la disponibilidad actual de los 8 biomÃ©tricos para tu referencia.</p>
             </div>
     
             <div id="user-biometrics-grid" class="biometrics-grid">
@@ -198,13 +198,13 @@
     <section id="analytics-view" class="view-panel">
       <div class="content-section">
         <div class="section-title">
-          <h3>Analíticas de Uso</h3>
-          <p>Métricas en tiempo real del desgaste de equipos y demanda de pasantes.</p>
+          <h3>AnalÃ­ticas de Uso</h3>
+          <p>MÃ©tricas en tiempo real del desgaste de equipos y demanda de pasantes.</p>
         </div>
         
         <div class="analytics-grid">
           <div class="analytics-card glass">
-            <h4>Frecuencia de Uso por Biométrico</h4>
+            <h4>Frecuencia de Uso por BiomÃ©trico</h4>
             <div class="chart-container">
               <canvas id="chart-biometrics"></canvas>
             </div>
@@ -225,12 +225,12 @@
       <!-- Header moved to topbar -->
       <div class="content-section">
         <div class="glass" style="padding: 24px; border-radius: 16px; margin-bottom: 20px;">
-          <h3>Aspecto de la Aplicación</h3>
-          <p style="color: var(--text-secondary); margin-bottom: 15px;">Selecciona el tema de tu preferencia. Esto se guardará en tu dispositivo.</p>
+          <h3>Aspecto de la AplicaciÃ³n</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 15px;">Selecciona el tema de tu preferencia. Esto se guardarÃ¡ en tu dispositivo.</p>
           
           <div style="display: flex; gap: 15px;">
-            <button id="btn-theme-light" class="btn btn-primary" onclick="setTheme('light')" style="flex: 1;">☀️ Modo Claro</button>
-            <button id="btn-theme-dark" class="btn btn-secondary" onclick="setTheme('dark')" style="flex: 1;">🌙 Modo Oscuro</button>
+            <button id="btn-theme-light" class="btn btn-primary" onclick="setTheme('light')" style="flex: 1;">â˜€ï¸ Modo Claro</button>
+            <button id="btn-theme-dark" class="btn btn-secondary" onclick="setTheme('dark')" style="flex: 1;">ðŸŒ™ Modo Oscuro</button>
           </div>
           
           <div style="margin-top: 20px; border-top: 1px solid var(--border-light); padding-top: 20px;">
@@ -244,9 +244,9 @@
         </div>
         
         <div id="install-app-section" class="glass" style="padding: 24px; border-radius: 16px; display: none;">
-          <h3>Instalar Aplicación</h3>
-          <p style="color: var(--text-secondary); margin-bottom: 15px;">Instala esta aplicación en tu dispositivo para un acceso rápido y experiencia de pantalla completa.</p>
-          <button id="btn-install-app" class="btn btn-primary" style="width: 100%;">📱 Instalar App</button>
+          <h3>Instalar AplicaciÃ³n</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 15px;">Instala esta aplicaciÃ³n en tu dispositivo para un acceso rÃ¡pido y experiencia de pantalla completa.</p>
+          <button id="btn-install-app" class="btn btn-primary" style="width: 100%;">ðŸ“± Instalar App</button>
         </div>
         
         <div id="ios-install-section" class="glass" style="padding: 24px; border-radius: 16px; display: none; margin-bottom: 20px;">
@@ -254,16 +254,16 @@
           <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9em;">
             Para instalar esta app en iOS:
             <br><br>
-            1. Toca el botón <strong>Compartir</strong> <span style="font-size: 1.2em;">⎙</span> en la barra inferior de Safari.
+            1. Toca el botÃ³n <strong>Compartir</strong> <span style="font-size: 1.2em;">âŽ™</span> en la barra inferior de Safari.
             <br>
-            2. Desliza hacia abajo y selecciona <strong>"Agregar a Inicio"</strong> <span style="font-size: 1.2em;">➕</span>.
+            2. Desliza hacia abajo y selecciona <strong>"Agregar a Inicio"</strong> <span style="font-size: 1.2em;">âž•</span>.
           </p>
         </div>
         
         <div id="admin-test-notification" class="glass" style="padding: 24px; border-radius: 16px; display: none; margin-bottom: 20px; border-left: 4px solid #FF9500;">
           <h3>Herramientas de Administrador</h3>
-          <p style="color: var(--text-secondary); margin-bottom: 15px;">Prueba que el sistema de notificaciones en este dispositivo esté funcionando correctamente.</p>
-          <button class="btn btn-secondary" onclick="fireNotification('Prueba Exitosa', '¡Las notificaciones están funcionando perfectamente en este equipo!')" style="width: 100%;">🔔 Probar Notificación</button>
+          <p style="color: var(--text-secondary); margin-bottom: 15px;">Prueba que el sistema de notificaciones en este dispositivo estÃ© funcionando correctamente.</p>
+          <button class="btn btn-secondary" onclick="fireNotification('Prueba Exitosa', 'Â¡Las notificaciones estÃ¡n funcionando perfectamente en este equipo!')" style="width: 100%;">ðŸ”” Probar NotificaciÃ³n</button>
         </div>
       </div>
     </section>
@@ -296,7 +296,7 @@
           </div>
           <div class="stat-card glass">
             <span class="stat-num" id="stat-total-uses">0</span>
-            <span class="stat-label">Total Préstamos</span>
+            <span class="stat-label">Total PrÃ©stamos</span>
           </div>
         </div>
 
@@ -310,21 +310,21 @@
         <div class="logistics-container">
           <div class="log-form-box glass">
             <h4>Registrar Cambio de Tinta</h4>
-            <p class="form-desc">Registra el cambio para calcular la duración promedio de los cartuchos.</p>
+            <p class="form-desc">Registra el cambio para calcular la duraciÃ³n promedio de los cartuchos.</p>
             
             <form id="ink-form">
               <div class="input-group">
-                <label for="ink-biometric">Equipo Biométrico</label>
+                <label for="ink-biometric">Equipo BiomÃ©trico</label>
                 <select id="ink-biometric" required>
                   <option value="">Selecciona...</option>
-                  <option value="1">Biométrico 1 (HP OfficeJet 200)</option>
-                  <option value="2">Biométrico 2 (HP OfficeJet 200)</option>
-                  <option value="3">Biométrico 3 (EPSON WF-100)</option>
-                  <option value="4">Biométrico 4 (EPSON WF-100)</option>
-                  <option value="5">Biométrico 5 (EPSON WF-100)</option>
-                  <option value="6">Biométrico 6 (EPSON WF-100)</option>
-                  <option value="7">Biométrico 7 (EPSON WF-100)</option>
-                  <option value="8">Biométrico 8 (EPSON WF-100)</option>
+                  <option value="1">BiomÃ©trico 1 (HP OfficeJet 200)</option>
+                  <option value="2">BiomÃ©trico 2 (HP OfficeJet 200)</option>
+                  <option value="3">BiomÃ©trico 3 (EPSON WF-100)</option>
+                  <option value="4">BiomÃ©trico 4 (EPSON WF-100)</option>
+                  <option value="5">BiomÃ©trico 5 (EPSON WF-100)</option>
+                  <option value="6">BiomÃ©trico 6 (EPSON WF-100)</option>
+                  <option value="7">BiomÃ©trico 7 (EPSON WF-100)</option>
+                  <option value="8">BiomÃ©trico 8 (EPSON WF-100)</option>
                 </select>
               </div>
               <div class="input-group">
@@ -346,13 +346,13 @@
                 <thead>
                   <tr>
                     <th>Fecha</th>
-                    <th>Biométrico</th>
+                    <th>BiomÃ©trico</th>
                     <th>Registrado por</th>
                     <th>Observaciones</th>
                   </tr>
                 </thead>
                 <tbody id="ink-history-tbody">
-                  <tr><td colspan="4" class="text-center">No hay registros aún</td></tr>
+                  <tr><td colspan="4" class="text-center">No hay registros aÃºn</td></tr>
                 </tbody>
               </table>
             </div>
@@ -364,22 +364,22 @@
       <div id="admin-tab-internet" class="tab-content">
         <div class="logistics-container">
           <div class="log-form-box glass">
-            <h4>Registrar Renovación de Datos (BAM)</h4>
+            <h4>Registrar RenovaciÃ³n de Datos (BAM)</h4>
             <p class="form-desc">Registra los recargas y planes asignados a los chips BAM.</p>
             
             <form id="internet-form">
               <div class="input-group">
-                <label for="net-biometric">Equipo Biométrico</label>
+                <label for="net-biometric">Equipo BiomÃ©trico</label>
                 <select id="net-biometric" required>
                   <option value="">Selecciona...</option>
-                  <option value="1">Biométrico 1 (Chip 55 13 92 13 97)</option>
-                  <option value="2">Biométrico 2 (Chip 55 37 16 67 30)</option>
-                  <option value="3">Biométrico 3 (Chip 55 21 12 29 45)</option>
-                  <option value="4">Biométrico 4 (Chip 55 74 82 60 26)</option>
-                  <option value="5">Biométrico 5 (Chip 55 22 99 60 18)</option>
-                  <option value="6">Biométrico 6 (Chip 55 61 55 38 52)</option>
-                  <option value="7">Biométrico 7 (Chip 55 47 85 81 57)</option>
-                  <option value="8">Biométrico 8 (Chip 55 49 16 78 44)</option>
+                  <option value="1">BiomÃ©trico 1 (Chip 55 13 92 13 97)</option>
+                  <option value="2">BiomÃ©trico 2 (Chip 55 37 16 67 30)</option>
+                  <option value="3">BiomÃ©trico 3 (Chip 55 21 12 29 45)</option>
+                  <option value="4">BiomÃ©trico 4 (Chip 55 74 82 60 26)</option>
+                  <option value="5">BiomÃ©trico 5 (Chip 55 22 99 60 18)</option>
+                  <option value="6">BiomÃ©trico 6 (Chip 55 61 55 38 52)</option>
+                  <option value="7">BiomÃ©trico 7 (Chip 55 47 85 81 57)</option>
+                  <option value="8">BiomÃ©trico 8 (Chip 55 49 16 78 44)</option>
                 </select>
               </div>
               <div class="input-group">
@@ -405,14 +405,14 @@
                 <thead>
                   <tr>
                     <th>Fecha</th>
-                    <th>Biométrico</th>
+                    <th>BiomÃ©trico</th>
                     <th>Plan</th>
                     <th>Registrado por</th>
                     <th>Detalles</th>
                   </tr>
                 </thead>
                 <tbody id="net-history-tbody">
-                  <tr><td colspan="5" class="text-center">No hay registros aún</td></tr>
+                  <tr><td colspan="5" class="text-center">No hay registros aÃºn</td></tr>
                 </tbody>
               </table>
             </div>
@@ -424,7 +424,7 @@
       <div id="admin-tab-history" class="tab-content">
         <div class="history-container glass">
           <div class="history-header">
-            <h4>Historial de Préstamos</h4>
+            <h4>Historial de PrÃ©stamos</h4>
             <div class="search-filter">
               <input type="text" id="history-search" placeholder="Filtrar por usuario o equipo...">
             </div>
@@ -433,7 +433,7 @@
             <table id="history-table">
               <thead>
                 <tr>
-                  <th>Biométrico</th>
+                  <th>BiomÃ©trico</th>
                   <th>Usuario</th>
                   <th>Fecha Salida</th>
                   <th>Salida Solicitada</th>
@@ -441,7 +441,7 @@
                   <th>Fecha Retorno</th>
                   <th>Retorno Real</th>
                   <th>Estado</th>
-                  <th>Acción</th>
+                  <th>AcciÃ³n</th>
                 </tr>
               </thead>
               <tbody id="history-tbody">
@@ -470,7 +470,7 @@
         <button class="modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <p>¿Estás seguro de solicitar el <strong><span id="txt-modal-bio-name">Biométrico X</span></strong>?</p>
+        <p>Â¿EstÃ¡s seguro de solicitar el <strong><span id="txt-modal-bio-name">BiomÃ©trico X</span></strong>?</p>
         <div class="hardware-bullet-list" id="txt-modal-bio-hw">
           <!-- Pre-filled hardware details -->
         </div>
@@ -517,7 +517,7 @@
   <div id="modal-excel" class="modal">
     <div class="modal-content glass animate-slide-up">
       <div class="modal-header">
-        <h3>Sincronización Excel</h3>
+        <h3>SincronizaciÃ³n Excel</h3>
         <button class="modal-close">&times;</button>
       </div>
       <div class="modal-body">
@@ -525,7 +525,7 @@
         
         <div class="excel-drag-drop" id="drop-zone">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <p>Arrastra tu archivo Excel aquí</p>
+          <p>Arrastra tu archivo Excel aquÃ­</p>
           <span>o haz clic para seleccionar</span>
           <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display: none;">
         </div>
@@ -559,7 +559,7 @@
       <div id="screensaver-time">12:00 PM</div>
       <div id="screensaver-date">Lunes, 1 de Enero</div>
       <div class="screensaver-stats">
-        <span id="ss-stat-available">--</span> Disponibles • 
+        <span id="ss-stat-available">--</span> Disponibles â€¢ 
         <span id="ss-stat-occupied">--</span> Ocupados
       </div>
       <div class="screensaver-hint">Mueve el mouse para despertar</div>
@@ -570,17 +570,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <script src="config.js?v=34"></script>
-  <script src="excel-export-helpers.js?v=34"></script>
-  <script src="app.js?v=34"></script>
+  <script src="config.js?v=40"></script>
+  <script src="excel-export-helpers.js?v=40"></script>
+  <script src="app.js?v=40"></script>
   <script>
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
           .then(reg => {
-            console.log('Service Worker registrado con éxito:', reg.scope);
-            reg.update(); // Forzar actualización de service-worker
+            console.log('Service Worker registrado con Ã©xito:', reg.scope);
+            reg.update(); // Forzar actualizaciÃ³n de service-worker
           })
           .catch(err => console.log('Fallo al registrar Service Worker:', err));
       });
