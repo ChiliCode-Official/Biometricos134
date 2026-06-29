@@ -1,15 +1,15 @@
-// CONFIGURACI�N CENTRAL DE LA APLICACI�N DE BIOM�TRICOS (NOTAR�A 134)
+// CONFIGURACIÓN CENTRAL DE LA APLICACIÓN DE BIOMÉTRICOS (NOTARÍA 134)
 
 const CONFIG = {
-  // Pegar aqu� la URL de la Web App obtenida de Google Apps Script.
+  // Pegar aquí la URL de la Web App obtenida de Google Apps Script.
   // Ejemplo: "https://script.google.com/macros/s/AKfycbz.../exec"
-  // Si est� vac�o, la app funcionar� en modo DEMO (LocalStorage local).
+  // Si está vacío, la app funcionará en modo DEMO (LocalStorage local).
   GOOGLE_SHEET_API_URL: "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec", 
 
   // PIN de Acceso para el Administrador
   ADMIN_PIN: "134134",
 
-  // Datos precargados de los 8 Biom�tricos (Extra�dos del Excel original)
+  // Datos precargados de los 8 Biométricos (Extraídos del Excel original)
   BIOMETRICOS: [
     {
       biometrico: 1,
@@ -128,7 +128,7 @@ const CONFIG = {
       impresora_serie: "WKHK005642",
       biometrico_lector: "HID",
       biometrico_serie: "P520E10599",
-      router_modelo: "4G LTE (Gen�rico)",
+      router_modelo: "4G LTE (Genérico)",
       router_imei: "866645058867321"
     }
   ],
@@ -153,7 +153,7 @@ const CONFIG = {
     "GABRIEL SANCHEZ DAVILA",
     "GISELL CONTRERAS",
     "HUGO ZAID ARTEAGA JIMENEZ",
-    "ISAI ZU�IGA GARCIA",
+    "ISAI ZUÑIGA GARCIA",
     "JESSICA RODRIGUEZ RANGEL",
     "JACOB DORANTES RANGEL",
     "JIMENA BARRON FLORES",
@@ -183,7 +183,7 @@ const CONFIG = {
     "VALERIA ALEJANDRA CARRILLO GORDILLO",
     "VIRIDIANA GARCIA HERNANDEZ",
     "XIMENA ANGELES HERNANDEZ",
-    "YAIR ALEXIS GARC�A RAM�REZ",
+    "YAIR ALEXIS GARCÍA RAMÍREZ",
     "YADIRA BERNAL",
     "YAREMI JOCELIN MONDRAGON GARCIA",
     "YEIDCKOL DANIELA VEGA RIVERO",
@@ -191,7 +191,7 @@ const CONFIG = {
   ]
 };
 
-// Exportar configuraci�n para navegadores (compatible con ES Modules o script global)
+// Exportar configuración para navegadores (compatible con ES Modules o script global)
 if (typeof module !== "undefined" && module.exports) {
   module.exports = CONFIG;
 } else {

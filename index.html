@@ -11,7 +11,7 @@
   
   <!-- CACHE NUKE SCRIPT -->
   <script>
-    if (!localStorage.getItem('cache_nuked_v42')) {
+    if (!localStorage.getItem('cache_nuked_v43')) {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for(let registration of registrations) {
@@ -26,7 +26,7 @@
           }
         });
       }
-      localStorage.setItem('cache_nuked_v42', 'true');
+      localStorage.setItem('cache_nuked_v43', 'true');
       window.location.reload(true);
     }
   </script>

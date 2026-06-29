@@ -2674,6 +2674,6 @@ function renderAnalytics() {
       }
     } catch (err) {
       console.error(err);
-      showToast(Cancelado o fallo en la biometr�a, error);
+      showToast("Cancelado o fallo en la biometría", "error");
     }
   }
