@@ -1,5 +1,5 @@
 /* ==========================================================================
-   APPLICATION LOGIC - CONTROL DE BIOMÃ‰TRICOS (NOTARÃA 134)
+   APPLICATION LOGIC - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
    ========================================================================== */
 
 // --- Global State ---
@@ -7,7 +7,7 @@ let state = {
   connectionMode: "demo", // "online" | "demo"
   currentUser: null,      // { name: "", role: "user" | "admin" }
   biometrics: [],         // Inventario de 8 equipos y su estado actual
-  logs: [],               // Historial de prÃ©stamos (LOG_USO)
+  logs: [],               // Historial de préstamos (LOG_USO)
   inkLogs: [],            // Cambios de tinta (LOG_TINTAS)
   internetLogs: [],       // Planes de BAM (LOG_INTERNET)
   users: []               // Lista de usuarios (pasantes)
@@ -127,11 +127,11 @@ function updateOfflineBadge() {
   const adminBadge = document.getElementById('admin-offline-badge');
   if (userBadge) {
     userBadge.style.display = cnt > 0 ? 'inline-block' : 'none';
-    userBadge.innerText = `â˜ï¸ ${cnt} pte.`;
+    userBadge.innerText = `☁️ ${cnt} pte.`;
   }
   if (adminBadge) {
     adminBadge.style.display = cnt > 0 ? 'inline-block' : 'none';
-    adminBadge.innerText = `â˜ï¸ ${cnt} pte.`;
+    adminBadge.innerText = `☁️ ${cnt} pte.`;
   }
 }
 
@@ -169,7 +169,7 @@ window.addEventListener('online', processOfflineQueue);
 // --- Core App Init ---
 async function initApp() {
   updateOfflineBadge();
-  // 1. Detectar si hay sesiÃ³n guardada en localStorage
+  // 1. Detectar si hay sesión guardada en localStorage
   const savedSession = localStorage.getItem("n134_session");
   if (savedSession) {
     state.currentUser = JSON.parse(savedSession);
@@ -179,16 +179,16 @@ async function initApp() {
     }
   }
 
-  // 2. Determinar modo de conexiÃ³n
+  // 2. Determinar modo de conexión
   if (CONFIG.GOOGLE_SHEET_API_URL && CONFIG.GOOGLE_SHEET_API_URL.trim() !== "") {
     state.connectionMode = "online";
-    updateConnectionBar("loading", "Revisando biomÃ©tricos disponibles...");
+    updateConnectionBar("loading", "Revisando biométricos disponibles...");
   } else {
     state.connectionMode = "demo";
-    updateConnectionBar("demo", "Modo DemostraciÃ³n (Local) - Edita config.js para conectar Google Sheets");
+    updateConnectionBar("demo", "Modo Demostración (Local) - Edita config.js para conectar Google Sheets");
   }
 
-  // Cargar base local de inmediato para respuesta instantÃ¡nea antes de red
+  // Cargar base local de inmediato para respuesta instantánea antes de red
   loadLocalDatabase();
   renderBiometrics();
   populateExitTimeDropdown();
@@ -207,13 +207,13 @@ async function initApp() {
         cellDates: true, 
         cellNF: true 
       });
-      console.log("Plantilla Excel precargada con Ã©xito");
+      console.log("Plantilla Excel precargada con éxito");
     }
   } catch (err) {
-    console.warn("No se pudo precargar la plantilla Excel automÃ¡ticamente:", err);
+    console.warn("No se pudo precargar la plantilla Excel automáticamente:", err);
   }
 
-  // 3. Cargar Base de Datos (Nube) de forma asÃ­ncrona sin bloquear la UI
+  // 3. Cargar Base de Datos (Nube) de forma asíncrona sin bloquear la UI
   setButtonsState(false); // Deshabilitar botones durante la carga
   loadDatabase().then(() => {
     setButtonsState(true); // Habilitar botones al terminar de cargar
@@ -224,7 +224,7 @@ async function initApp() {
     }
   });
 
-  // 4. Mostrar vista segÃºn sesiÃ³n
+  // 4. Mostrar vista según sesión
   if (state.currentUser) {
     showView(state.currentUser.role === "admin" ? "admin-view" : "user-view");
     
@@ -448,7 +448,7 @@ async function loadDatabase() {
       if (db.success) {
         if (db.version !== "v2") {
           setTimeout(() => {
-            alert("âš ï¸ Â¡ATENCIÃ“N SISTEMAS!\n\nTu Google Apps Script estÃ¡ desactualizado y la aplicaciÃ³n no responderÃ¡ al marcar como entregado o solicitar equipos.\n\nPor favor, actualiza tu script en Google Sheets con la Ãºltima versiÃ³n de google_apps_script.js y asegÃºrate de crear una NUEVA IMPLEMENTACIÃ“N (AplicaciÃ³n Web) en el menÃº.");
+            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la aplicación no responderá al marcar como entregado o solicitar equipos.\n\nPor favor, actualiza tu script en Google Sheets con la última versión de google_apps_script.js y asegúrate de crear una NUEVA IMPLEMENTACIÓN (Aplicación Web) en el menú.");
           }, 1000);
         }
         state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
@@ -463,10 +463,10 @@ async function loadDatabase() {
         state.inkLogs = db.inkLogs;
         state.internetLogs = db.internetLogs;
         
-        // Calcular estado de biometria dinÃ¡micamente con base en LOG_USO activo
+        // Calcular estado de biometria dinámicamente con base en LOG_USO activo
         recalculateBiometricStates();
 
-        updateConnectionBar("online", "Conectado con disponibilidad de biomÃ©tricos");
+        updateConnectionBar("online", "Conectado con disponibilidad de biométricos");
         saveLocalBackup(); // Guardar copia local de respaldo
         
         if (progressContainer && progressBar) {
@@ -485,11 +485,11 @@ async function loadDatabase() {
   }
 
   // Respaldo local
-  updateConnectionBar("demo", "Modo Local (Respaldo/Sin conexiÃ³n) - Cambios guardados en navegador");
+  updateConnectionBar("demo", "Modo Local (Respaldo/Sin conexión) - Cambios guardados en navegador");
   loadLocalDatabase();
 }
 
-// Recalcular estado de los biomÃ©tricos con base en LOG_USO
+// Recalcular estado de los biométricos con base en LOG_USO
 function recalculateBiometricStates() {
   // Inicializar todos como disponible
   state.biometrics.forEach(b => {
@@ -536,7 +536,7 @@ function loadLocalDatabase() {
     state.internetLogs = db.internetLogs || [];
     recalculateBiometricStates();
   } else {
-    // Inicializar base de datos local vacÃ­a con el config.js
+    // Inicializar base de datos local vacía con el config.js
     state.users = CONFIG.USUARIOS;
     state.biometrics = JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
     state.biometrics.forEach(b => {
@@ -564,11 +564,11 @@ function saveLocalBackup() {
   localStorage.setItem("n134_local_db", JSON.stringify(dbToSave));
 }
 
-// LÃ³gica de desglose rotativo secuencial ("Gasto a la par")
+// Lógica de desglose rotativo secuencial ("Gasto a la par")
 function getNextSequentialBiometric() {
-  // 1. Encontrar el nÃºmero del Ãºltimo biomÃ©trico asignado en el historial logs, ignorando los Cancelados
+  // 1. Encontrar el número del último biométrico asignado en el historial logs, ignorando los Cancelados
   let lastAssignedNum = 0;
-  // Recorremos los logs de atrÃ¡s hacia adelante para ver el Ãºltimo biomÃ©trico solicitado
+  // Recorremos los logs de atrás hacia adelante para ver el último biométrico solicitado
   for (let i = state.logs.length - 1; i >= 0; i--) {
     // Ignorar logs cancelados para no tomarlos en cuenta en la secuencia
     if (state.logs[i].estado === "Cancelado" || state.logs[i].estado === "Cancelada") continue;
@@ -580,8 +580,8 @@ function getNextSequentialBiometric() {
     }
   }
 
-  // 2. Determinar la secuencia a partir del Ãºltimo biomÃ©trico
-  // Si no hay asignaciÃ³n previa, empezamos en 1
+  // 2. Determinar la secuencia a partir del último biométrico
+  // Si no hay asignación previa, empezamos en 1
   let currentNum = lastAssignedNum === 0 ? 1 : (lastAssignedNum % 8) + 1;
 
   // 3. Probar disponibilidad en secuencia circular
@@ -593,11 +593,11 @@ function getNextSequentialBiometric() {
     currentNum = (currentNum % 8) + 1;
   }
 
-  // Si ninguno estÃ¡ disponible, retornar null
+  // Si ninguno está disponible, retornar null
   return null;
 }
 
-// Actualiza el texto en la UI con el biomÃ©trico sugerido
+// Actualiza el texto en la UI con el biométrico sugerido
 function updateSequentialSuggestion() {
   const suggestSpan = document.getElementById("suggested-bio-name");
   const container = document.getElementById("sequential-suggested-container");
@@ -608,12 +608,12 @@ function updateSequentialSuggestion() {
 
   const nextBio = getNextSequentialBiometric();
   if (nextBio) {
-    suggestSpan.innerText = `BiomÃ©trico ${nextBio}`;
+    suggestSpan.innerText = `Biométrico ${nextBio}`;
     container.style.backgroundColor = "var(--accent-light)";
     container.style.color = "var(--accent)";
     if (btn) {
       btn.disabled = false;
-      if (btnText) btnText.innerText = `âš¡ MantÃ©n para Solicitar BiomÃ©trico ${nextBio}`;
+      if (btnText) btnText.innerText = `⚡ Mantén para Solicitar Biométrico ${nextBio}`;
       btn.setAttribute("data-bio", nextBio);
     }
   } else {
@@ -622,7 +622,7 @@ function updateSequentialSuggestion() {
     container.style.color = "var(--color-error)";
     if (btn) {
       btn.disabled = true;
-      if (btnText) btnText.innerText = "âŒ Todos los Equipos Ocupados";
+      if (btnText) btnText.innerText = "❌ Todos los Equipos Ocupados";
       btn.removeAttribute("data-bio");
     }
   }
@@ -653,7 +653,7 @@ function renderSkeletons() {
 
 // Enviar comandos al Backend en segundo plano sin bloquear al usuario
 async function sendAction(action, payload) {
-  // LÃ³gica local INMEDIATA para que la app se sienta instantÃ¡nea
+  // Lógica local INMEDIATA para que la app se sienta instantánea
   let localLogId = "LOG-" + new Date().getTime();
   if (action === "request") {
     const dateStr = getTodayDateString();
@@ -735,7 +735,7 @@ async function sendAction(action, payload) {
       .then(db => {
         if (db && db.success) {
           if (db.version !== "v2") {
-            alert("âš ï¸ Â¡ATENCIÃ“N SISTEMAS!\n\nTu Google Apps Script estÃ¡ desactualizado y la acciÃ³n no se aplicÃ³ en Google Sheets.\n\nPor favor, actualiza tu script.");
+            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la acción no se aplicó en Google Sheets.\n\nPor favor, actualiza tu script.");
           }
           
           if (db.logs) {
@@ -749,7 +749,7 @@ async function sendAction(action, payload) {
           }
           
           recalculateBiometricStates();
-          updateConnectionBar("online", "Conectado con disponibilidad de biomÃ©tricos");
+          updateConnectionBar("online", "Conectado con disponibilidad de biométricos");
           saveLocalBackup();
         } else {
           throw new Error((db && db.error) || "Error desconocido");
@@ -775,9 +775,9 @@ async function sendAction(action, payload) {
         updateOfflineBadge();
         
         if (err.name === 'AbortError') {
-          showToast("Red muy lenta. AcciÃ³n guardada en la nube pendiente (Offline).");
+          showToast("Red muy lenta. Acción guardada en la nube pendiente (Offline).");
         } else {
-          showToast("Sin internet. AcciÃ³n guardada en cola local (Offline).");
+          showToast("Sin internet. Acción guardada en cola local (Offline).");
         }
       });
   } else {
@@ -804,19 +804,19 @@ function switchLoginTab(role) {
   }
 }
 
-// NormalizaciÃ³n de texto para bÃºsqueda (ignora acentos)
+// Normalización de texto para búsqueda (ignora acentos)
 function normalizeText(text) {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-// BÃºsqueda autocompletado de usuarios
+// Búsqueda autocompletado de usuarios
 function handleUserSearch(e) {
   const query = normalizeText(e.target.value);
   const list = document.getElementById("user-results");
   const loginBtn = document.getElementById("btn-login-user");
   list.innerHTML = "";
   
-  // Si estÃ¡ vacÃ­o, mostrar los primeros 5 usuarios por defecto para que puedan seleccionar
+  // Si está vacío, mostrar los primeros 5 usuarios por defecto para que puedan seleccionar
   const matches = query === "" 
     ? state.users.slice(0, 5)
     : state.users.filter(u => normalizeText(u).includes(query)).slice(0, 5);
@@ -843,7 +843,7 @@ function handleUserSearch(e) {
   }
 }
 
-// BÃºsqueda autocompletado para el administrador en el modal
+// Búsqueda autocompletado para el administrador en el modal
 function handleAdminUserSearch(e) {
   const query = normalizeText(e.target.value);
   const list = document.getElementById("admin-user-results");
@@ -854,7 +854,7 @@ function handleAdminUserSearch(e) {
     return;
   }
 
-  // Filtrar nombres por coincidencia parcial en cualquier posiciÃ³n
+  // Filtrar nombres por coincidencia parcial en cualquier posición
   const matches = state.users.filter(u => normalizeText(u).includes(query)).slice(0, 5);
   
   if (matches.length > 0) {
@@ -876,11 +876,11 @@ function handleAdminUserSearch(e) {
   }
 }
 
-// Iniciar sesiÃ³n como Usuario
+// Iniciar sesión como Usuario
 function loginAsUser() {
   const name = document.getElementById("user-search").value.trim();
   if (name === "" || !state.users.includes(name)) {
-    showToast("Por favor selecciona un usuario vÃ¡lido.");
+    showToast("Por favor selecciona un usuario válido.");
     return;
   }
 
@@ -895,10 +895,10 @@ function loginAsUser() {
   showView("user-view");
   renderBiometrics();
   updateSequentialSuggestion();
-  showToast(`SesiÃ³n iniciada como ${name}`);
+  showToast(`Sesión iniciada como ${name}`);
 }
 
-// Iniciar sesiÃ³n como Administrador
+// Iniciar sesión como Administrador
 function loginAsAdmin() {
   const pin = document.getElementById("admin-pin").value;
   if (pin === CONFIG.ADMIN_PIN) {
@@ -913,7 +913,7 @@ function loginAsAdmin() {
     renderBiometrics();
     renderAdminDashboard();
     updateSequentialSuggestion();
-    showToast("SesiÃ³n de administrador iniciada.");
+    showToast("Sesión de administrador iniciada.");
     document.getElementById("admin-pin").value = "";
     
     // Notifications init
@@ -924,7 +924,7 @@ function loginAsAdmin() {
   }
 }
 
-// Cerrar SesiÃ³n
+// Cerrar Sesión
 function logout() {
   state.currentUser = null;
   localStorage.removeItem("n134_session");
@@ -937,7 +937,7 @@ function logout() {
   
   showView("login-view");
   updateSequentialSuggestion();
-  showToast("SesiÃ³n cerrada.");
+  showToast("Sesión cerrada.");
 }
 
 /* ==========================================================================
@@ -967,10 +967,10 @@ function _showViewInternal(viewId) {
     const targetView = document.getElementById(viewId);
     if (targetView) targetView.classList.add("active");
     
-    // Ocultar sidebar en mÃ³vil al cambiar vista
+    // Ocultar sidebar en móvil al cambiar vista
     document.querySelector('.dashboard-sidebar').classList.remove('open');
       
-    // Actualizar estado activo de los botones del menÃº lateral
+    // Actualizar estado activo de los botones del menú lateral
     const navDashboard = document.getElementById("nav-dashboard");
     const navProfile = document.getElementById("nav-profile");
     const navAnalytics = document.getElementById("nav-analytics");
@@ -1023,35 +1023,35 @@ function createActiveEquipmentChecklist(bio) {
   card.innerHTML = `
     <div class="bio-card-header" style="background: var(--accent-light); margin: -20px -20px 15px -20px; padding: 15px 20px; border-radius: 12px 12px 0 0;">
       <div class="bio-title-box">
-        <h4 style="color: var(--accent); font-size: 1.1rem; font-weight: 700;">BiomÃ©trico ${bio.biometrico} Asignado</h4>
+        <h4 style="color: var(--accent); font-size: 1.1rem; font-weight: 700;">Biométrico ${bio.biometrico} Asignado</h4>
       </div>
     </div>
     
     ${bio.status === 'Pendiente' ? `
       <div style="padding: 0 20px 20px; text-align: center; color: var(--text-light);">
-        Tu solicitud estÃ¡ en espera de que pases por el equipo a la oficina.
+        Tu solicitud está en espera de que pases por el equipo a la oficina.
       </div>
       <div class="card-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-primary" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">âœ… Ya lo recibÃ­</button>
-        <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">âŒ Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">✅ Ya lo recibí</button>
+        <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">❌ Cancelar</button>
       </div>
     ` : `
       <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
         <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
           <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>ðŸ’» Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
+          <span>💻 Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
         </label>
         <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
           <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>ðŸ–¨ï¸ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
+          <span>🖨️ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
         </label>
         <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
           <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>â˜ï¸ Lector ${bio.biometrico_lector}</span>
+          <span>☝️ Lector ${bio.biometrico_lector}</span>
         </label>
         <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
           <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>ðŸ“¶ Router BAM ${bio.router_modelo}</span>
+          <span>📶 Router BAM ${bio.router_modelo}</span>
         </label>
       </div>
       
@@ -1059,7 +1059,7 @@ function createActiveEquipmentChecklist(bio) {
         <button id="btn-return-${bio.biometrico}" class="btn btn-primary hold-to-confirm-btn" disabled 
                 style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">
           <div class="progress-fill"></div>
-          <span>MantÃ©n presionado para Entregar</span>
+          <span>Mantén presionado para Entregar</span>
         </button>
       </div>
     `}
@@ -1118,7 +1118,7 @@ window.checkReturnChecklist = function(biometricoNum) {
   }
 };
 
-// Renderizar tarjetas de los biomÃ©tricos
+// Renderizar tarjetas de los biométricos
 function renderBiometrics() {
   const userGrid = document.getElementById("user-biometrics-grid");
   const adminGrid = document.getElementById("admin-biometrics-grid");
@@ -1162,7 +1162,7 @@ function renderBiometrics() {
       reminderDiv.style.borderRadius = "8px";
       reminderDiv.style.marginBottom = "20px";
       reminderDiv.style.fontWeight = "bold";
-      reminderDiv.innerHTML = `ðŸ”” No olvides pasar por tu BiomÃ©trico ${bio.biometrico} a la oficina antes de las 4.`;
+      reminderDiv.innerHTML = `🔔 No olvides pasar por tu Biométrico ${bio.biometrico} a la oficina antes de las 4.`;
       
       // Insertar al principio de la vista de usuario
       const userView = document.getElementById("user-view");
@@ -1177,7 +1177,7 @@ function renderBiometrics() {
     userActiveSection.style.display = hasActiveEquipment ? "block" : "none";
   }
 
-  // LÃ³gica para ocultar secciones completas si el usuario tiene un equipo activo
+  // Lógica para ocultar secciones completas si el usuario tiene un equipo activo
   if (state.currentUser && state.currentUser.role === "user") {
     const quickBox = document.querySelector(".quick-sequential-box");
     const othersSection = document.getElementById("user-others-section");
@@ -1202,7 +1202,7 @@ function renderBiometrics() {
   }
 }
 
-// Construye la tarjeta de biomÃ©trico dinÃ¡micamente
+// Construye la tarjeta de biométrico dinámicamente
 function createBiometricCard(bio, role) {
   const card = document.createElement("div");
   const isAvailable = bio.status === "Disponible";
@@ -1216,7 +1216,7 @@ function createBiometricCard(bio, role) {
   card.innerHTML = `
     <div class="bio-card-header">
       <div class="bio-title-box">
-        <h4><div class="status-led ${ledClass}"></div>BiomÃ©trico ${bio.biometrico}</h4>
+        <h4><div class="status-led ${ledClass}"></div>Biométrico ${bio.biometrico}</h4>
         <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
       </div>
       <span class="state-pill ${statusClass}">${statusText}</span>
@@ -1241,7 +1241,7 @@ function createBiometricCard(bio, role) {
       </div>
       ${bio.internet_plan ? `
       <div class="hw-item" style="margin-top: 4px; border-top: 1px solid var(--border-light); padding-top: 4px;">
-        <span class="hw-icon">ðŸŒ</span>
+        <span class="hw-icon">🌐</span>
         <div class="hw-desc" style="color: var(--accent); font-weight: 500;">Plan: ${bio.internet_plan}</div>
       </div>` : ''}
     </div>
@@ -1261,11 +1261,11 @@ function createBiometricCard(bio, role) {
             if (nextBio == bio.biometrico) {
               return `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Solicitar Salida</button>`;
             } else {
-              return `<button class="btn btn-secondary" style="opacity: 0.6; cursor: not-allowed;" onclick="showToast('Por favor solicita el BiomÃ©trico ${nextBio || 'disponible'}, asignado por desgaste para uso a la par.')">Solicitar Salida</button>`;
+              return `<button class="btn btn-secondary" style="opacity: 0.6; cursor: not-allowed;" onclick="showToast('Por favor solicita el Biométrico ${nextBio || 'disponible'}, asignado por desgaste para uso a la par.')">Solicitar Salida</button>`;
             }
           })() : 
           (bio.holder === state.currentUser?.name ? 
-            `<button class="btn btn-secondary" disabled>En posesiÃ³n (Ver Mis Equipos arriba)</button>` : 
+            `<button class="btn btn-secondary" disabled>En posesión (Ver Mis Equipos arriba)</button>` : 
             `<button class="btn btn-secondary" disabled>No Disponible</button>`
           )
         ) : 
@@ -1275,13 +1275,13 @@ function createBiometricCard(bio, role) {
           (() => {
             if (bio.status === "Pendiente") {
               return `
-              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')"><span class="running-icon">ðŸƒðŸ½â€â™‚ï¸</span> Pendiente de entregar a pasante</button>
-              <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')">âŒ Cancelar</button>
+              <button class="btn btn-blinking-red" style="margin-bottom: 6px;" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')"><span class="running-icon">🏃🏽‍♂️</span> Pendiente de entregar a pasante</button>
+              <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')">❌ Cancelar</button>
               `;
             } else {
               return `
               <button class="btn btn-primary" onclick="triggerPrintResponsive('${bio.logId}')">Visualizar e Imprimir</button>
-              <button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')">Marcar como Entregado (DevoluciÃ³n)</button>
+              <button class="btn btn-secondary" onclick="triggerReturn('${bio.logId}', '${bio.biometrico}')">Marcar como Entregado (Devolución)</button>
               `;
             }
           })()
@@ -1293,9 +1293,9 @@ function createBiometricCard(bio, role) {
   return card;
 }
 
-// Cargar datos en el Panel del Administrador (MÃ©tricas, Historial)
+// Cargar datos en el Panel del Administrador (Métricas, Historial)
 function renderAdminDashboard() {
-  // Actualizar mÃ©tricas
+  // Actualizar métricas
   const totalUses = state.logs.length;
   const occupiedCount = state.biometrics.filter(b => b.status === "Ocupado").length;
   const availableCount = 8 - occupiedCount;
@@ -1309,9 +1309,9 @@ function renderAdminDashboard() {
   tbody.innerHTML = "";
 
   if (state.logs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay registros aÃºn</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay registros aún</td></tr>`;
   } else {
-    // Clonar e invertir para ver primero lo mÃ¡s nuevo
+    // Clonar e invertir para ver primero lo más nuevo
     const sortedLogs = [...state.logs].reverse();
     sortedLogs.forEach(log => {
       const tr = document.createElement("tr");
@@ -1323,8 +1323,8 @@ function renderAdminDashboard() {
         <td>${log.fecha_salida}</td>
         <td>${log.hora_salida_solicitada}</td>
         <td>${log.hora_salida_real}</td>
-        <td>${log.fecha_entrada || 'â€”'}</td>
-        <td>${log.hora_entrada || 'â€”'}</td>
+        <td>${log.fecha_entrada || '—'}</td>
+        <td>${log.hora_entrada || '—'}</td>
         <td>
           <span class="state-pill ${isReturned ? 'available' : 'occupied'}">
             ${log.estado}
@@ -1372,7 +1372,7 @@ function renderAdminDashboard() {
         <td><strong>Bio ${log.biometrico}</strong></td>
         <td style="color:var(--accent); font-weight:600;">${log.plan}</td>
         <td>${log.usuario}</td>
-        <td>${log.observaciones || 'â€”'}</td>
+        <td>${log.observaciones || '—'}</td>
       `;
       netTbody.appendChild(tr);
     });
@@ -1424,7 +1424,7 @@ function openRequestModal(bioNum) {
   if (state.currentUser && state.currentUser.role === "user") {
     const nextBio = getNextSequentialBiometric();
     if (nextBio && nextBio != bioNum) {
-      showToast(`Acceso denegado: Debes solicitar el BiomÃ©trico ${nextBio}.`);
+      showToast(`Acceso denegado: Debes solicitar el Biométrico ${nextBio}.`);
       return;
     }
   }
@@ -1432,12 +1432,12 @@ function openRequestModal(bioNum) {
   selectedBiometricNum = bioNum;
   const bio = state.biometrics.find(b => b.biometrico == bioNum);
   
-  document.getElementById("txt-modal-bio-name").innerText = `BiomÃ©trico ${bioNum}`;
+  document.getElementById("txt-modal-bio-name").innerText = `Biométrico ${bioNum}`;
   document.getElementById("txt-modal-bio-hw").innerHTML = `
     <ul>
-      <li>ðŸ’» <strong>Laptop:</strong> ${bio.laptop_marca} ${bio.laptop_modelo} (S/N: ${bio.laptop_serie})</li>
-      <li>ðŸ–¨ï¸ <strong>Impresora:</strong> ${bio.impresora_marca} ${bio.impresora_modelo} (S/N: ${bio.impresora_serie})</li>
-      <li>ðŸ“¶ <strong>BAM:</strong> ${bio.router_modelo} (Chip: ${bio.bam_telefono})</li>
+      <li>💻 <strong>Laptop:</strong> ${bio.laptop_marca} ${bio.laptop_modelo} (S/N: ${bio.laptop_serie})</li>
+      <li>🖨️ <strong>Impresora:</strong> ${bio.impresora_marca} ${bio.impresora_modelo} (S/N: ${bio.impresora_serie})</li>
+      <li>📶 <strong>BAM:</strong> ${bio.router_modelo} (Chip: ${bio.bam_telefono})</li>
     </ul>
   `;
 
@@ -1471,7 +1471,7 @@ async function confirmReservation() {
       return;
     }
     if (!state.users.includes(chosenUser)) {
-      showToast("Por favor selecciona un usuario vÃ¡lido del listado oficial.");
+      showToast("Por favor selecciona un usuario válido del listado oficial.");
       return;
     }
     userToAssign = chosenUser;
@@ -1490,7 +1490,7 @@ async function confirmReservation() {
   }
 }
 
-// AnimaciÃ³n de confeti / chispas
+// Animación de confeti / chispas
 function fireConfetti(element) {
   if (window.SoundManager) SoundManager.success();
   if (!element) return;
@@ -1524,9 +1524,9 @@ function fireConfetti(element) {
   }
 }
 
-// Devolver un biomÃ©trico
+// Devolver un biométrico
 async function triggerReturn(logId, biometrico) {
-  if (confirm("Â¿Confirmas la entrega/retorno de este equipo biomÃ©trico a su lugar?")) {
+  if (confirm("¿Confirmas la entrega/retorno de este equipo biométrico a su lugar?")) {
     const role = (state.currentUser && state.currentUser.role) ? state.currentUser.role : "admin";
     const name = (state.currentUser && state.currentUser.name) ? state.currentUser.name : "Administrador";
     const userRetorno = role === "admin" ? "Administrador" : name;
@@ -1542,20 +1542,20 @@ async function triggerReturn(logId, biometrico) {
   }
 }
 
-// Confirmar entrega de un biomÃ©trico (backend)
+// Confirmar entrega de un biométrico (backend)
 window.confirmDelivery = async function(logId, bioNum) {
   const res = await sendAction("confirm", { id: logId, biometrico: bioNum });
   if (res && res.success) {
-    showToast("Entrega confirmada con Ã©xito");
+    showToast("Entrega confirmada con éxito");
     fetchDatabase();
   } else {
     showToast("Error al confirmar la entrega", true);
   }
 };
 
-// Cancelar solicitud de un biomÃ©trico (borra registro)
+// Cancelar solicitud de un biométrico (borra registro)
 window.cancelDelivery = async function(logId, bioNum) {
-  if (confirm(`Â¿EstÃ¡s seguro de cancelar la solicitud del BiomÃ©trico ${bioNum}?`)) {
+  if (confirm(`¿Estás seguro de cancelar la solicitud del Biométrico ${bioNum}?`)) {
     // Disparar confeti en la tarjeta antes de cancelar
     fireConfetti(document.getElementById(`bio-card-${bioNum}`));
     
@@ -1583,7 +1583,7 @@ async function submitInkLog(e) {
   if (res.success) {
     document.getElementById("ink-form").reset();
     document.getElementById("ink-user").value = "Administrador";
-    showToast("Cambio de tinta registrado con Ã©xito.");
+    showToast("Cambio de tinta registrado con éxito.");
   }
 }
 
@@ -1636,10 +1636,10 @@ function triggerPrintResponsive(logId) {
   const paperHtml = generateResponsivaHtml(log, bio, false);
   const printAreaHtml = generateResponsivaHtml(log, bio, true);
 
-  // Inyectar en el modal de previsualizaciÃ³n
+  // Inyectar en el modal de previsualización
   document.getElementById("responsiva-paper-container").innerHTML = paperHtml;
   
-  // Inyectar en la secciÃ³n de impresiÃ³n dedicada de la pÃ¡gina
+  // Inyectar en la sección de impresión dedicada de la página
   document.getElementById("print-area").innerHTML = printAreaHtml;
 
   openModal("modal-print");
@@ -1652,12 +1652,12 @@ function generateResponsivaHtml(log, bio, forPrint) {
   const dateFormatted = `${dateObj.day} de ${monthNames[dateObj.month - 1]} de ${dateObj.year}`;
   const timeFormatted = log.hora_salida_solicitada || log.hora_salida_real || getNowTimeString();
 
-  // Logo de la NotarÃ­a 134 en SVG idÃ©ntico al original
+  // Logo de la Notaría 134 en SVG idéntico al original
   const logoSvg = `
     <svg width="125" height="60" viewBox="0 0 140 70" xmlns="http://www.w3.org/2000/svg" style="border: 1px solid #000; padding: 2px;">
       <rect x="80" y="2" width="55" height="35" fill="#1C1C1E" rx="2" ry="2"/>
       <text x="107" y="26" font-family="'Outfit', 'Arial', sans-serif" font-weight="800" font-size="24" fill="#FFFFFF" text-anchor="middle">134</text>
-      <text x="5" y="45" font-family="'Brush Script MT', 'Georgia', cursive" font-style="italic" font-weight="bold" font-size="34" fill="#000000">NotarÃ­a</text>
+      <text x="5" y="45" font-family="'Brush Script MT', 'Georgia', cursive" font-style="italic" font-weight="bold" font-size="34" fill="#000000">Notaría</text>
       <path d="M 5 50 Q 50 55 90 50" fill="none" stroke="#000000" stroke-width="1.5"/>
       <circle cx="95" cy="53" r="12" fill="none" stroke="#555555" stroke-width="1" stroke-dasharray="2,1"/>
       <circle cx="95" cy="53" r="10" fill="none" stroke="#555555" stroke-width="0.8"/>
@@ -1683,8 +1683,8 @@ function generateResponsivaHtml(log, bio, forPrint) {
         <tr class="excel-row">
           <td class="excel-cell label-cell" style="width: 22%;">NOMBRE DEL USUARIO:</td>
           <td colspan="2" class="excel-cell value-cell highlight-cell" style="width: 38%;">${log.usuario}</td>
-          <td class="excel-cell value-cell centered-cell font-bold" style="width: 15%;">${bio.bam_telefono || 'â€”'}</td>
-          <td colspan="2" class="excel-cell value-cell centered-cell font-bold" style="width: 25%;">${bio.internet_plan || 'â€”'}</td>
+          <td class="excel-cell value-cell centered-cell font-bold" style="width: 15%;">${bio.bam_telefono || '—'}</td>
+          <td colspan="2" class="excel-cell value-cell centered-cell font-bold" style="width: 25%;">${bio.internet_plan || '—'}</td>
         </tr>
         <!-- Row 5: Spacer -->
         <tr class="excel-row spacer-row"><td colspan="6"></td></tr>
@@ -1724,7 +1724,7 @@ function generateResponsivaHtml(log, bio, forPrint) {
           <td class="excel-cell">${bio.laptop_serie}</td>
           <td class="excel-cell centered-cell">100%</td>
           <td rowspan="6" class="excel-cell obs-cell">
-            El equipo se entrega con cargador para Lap Top, Cargador para Impresora, cable usb de conexiÃ³n para la impresora desde la Lap Top, Equipo Biometrico
+            El equipo se entrega con cargador para Lap Top, Cargador para Impresora, cable usb de conexión para la impresora desde la Lap Top, Equipo Biometrico
           </td>
         </tr>
         <!-- Row 13: Printer -->
@@ -1754,9 +1754,9 @@ function generateResponsivaHtml(log, bio, forPrint) {
         <!-- Row 16: Maletin -->
         <tr class="excel-row">
           <td class="excel-cell font-bold">MALETIN PORTA LAP</td>
-          <td class="excel-cell">GenÃ©rico</td>
+          <td class="excel-cell">Genérico</td>
           <td class="excel-cell">Porta Laptop</td>
-          <td class="excel-cell">â€”</td>
+          <td class="excel-cell">—</td>
           <td class="excel-cell"></td>
         </tr>
         <!-- Row 17: Otro -->
@@ -1843,27 +1843,27 @@ function generateResponsivaHtml(log, bio, forPrint) {
 
       <!-- Legal Clauses -->
       <div class="responsiva-legal-text" style="font-family: 'Times New Roman', serif; text-align: justify; margin-top: 15px; font-size: 8.5pt; line-height: 1.25; color: #000000;">
-        RecibÃ­ el equipo de cÃ³mputo y software instalado descritos en esta responsiva como herramienta de trabajo, 
-        obligÃ¡ndome en tÃ©rminos dispuestos por la fracciÃ³n VI del artÃ­culo 134 y por la fracciÃ³n II y IX del artÃ­culo 135 
-        de la Ley Federal del Trabajo. Manifestando que lo usarÃ© y destinarÃ© Ãºnica y exclusivamente para el desempeÃ±o de 
-        mis funciones y actividades encomendadas por mi Ãºnico patrÃ³n <strong>OMAR LOZANO TORRES</strong>.<br><br>
-        AsÃ­ mismo con la firma de la presente me comprometo a no instalar en el equipo otro software diferente al 
-        descrito en la presente responsiva y notificar inmediatamente al Ã¡rea de sistemas cualquier siniestro y/o 
-        requerimiento de servicio o reparaciÃ³n que llegase a necesitar tanto el equipo como el software.<br><br>
-        En el momento en que me sea requerido por la sociedad me comprometo a entregar a Ã©sta el equipo y software 
-        mencionado, en las mismas condiciones en que los he recibido sin mÃ¡s deterioro que el ocasionado por el uso 
+        Recibí el equipo de cómputo y software instalado descritos en esta responsiva como herramienta de trabajo, 
+        obligándome en términos dispuestos por la fracción VI del artículo 134 y por la fracción II y IX del artículo 135 
+        de la Ley Federal del Trabajo. Manifestando que lo usaré y destinaré única y exclusivamente para el desempeño de 
+        mis funciones y actividades encomendadas por mi único patrón <strong>OMAR LOZANO TORRES</strong>.<br><br>
+        Así mismo con la firma de la presente me comprometo a no instalar en el equipo otro software diferente al 
+        descrito en la presente responsiva y notificar inmediatamente al área de sistemas cualquier siniestro y/o 
+        requerimiento de servicio o reparación que llegase a necesitar tanto el equipo como el software.<br><br>
+        En el momento en que me sea requerido por la sociedad me comprometo a entregar a ésta el equipo y software 
+        mencionado, en las mismas condiciones en que los he recibido sin más deterioro que el ocasionado por el uso 
         normal y el transcurso del tiempo.<br><br>
-        Para el caso de la terminaciÃ³n de la relaciÃ³n laboral por cualquier causa o bien que me sea requerido el equipo 
+        Para el caso de la terminación de la relación laboral por cualquier causa o bien que me sea requerido el equipo 
         en cualquier momento, me obligo a entregar inmediatamente el equipo asignado. Y en el evento de que dicho equipo 
-        no lo entregue en el momento que me sea requerido por mi PatrÃ³n, o entregÃ¡ndolo presente algÃºn daÃ±o, ya sea 
-        intencional o negligencia inexcusable me obligo a cubrir el pago de los daÃ±os o perjuicios ocasionados, autorizando 
-        que me sea descontado de mi pago de salarios o bien me sea descontado de mi finiquito en caso de terminaciÃ³n de 
-        la relaciÃ³n laboral.<br><br>
-        En virtud de lo anterior, desde ahora me hago sabedor del contenido de los artÃ­culos 213 en su fracciÃ³n XVII, 
-        artÃ­culo 223 fracciÃ³n I y del artÃ­culo 224 de la Ley Federal de la Propiedad Industrial y demÃ¡s relativos aplicables 
-        por lo que me responsabilizo de las consecuencias por el mal uso, daÃ±o provocado o indebida disposiciÃ³n del hardware 
-        o del software descritos o instalados por mi cuenta, comprometiÃ©ndome a pagar cualquier sanciÃ³n, multa, daÃ±o o 
-        perjuicio ocasionado por mi negligencia o mala fe, obligÃ¡ndome a responder de ello ante la propia sociedad o ante 
+        no lo entregue en el momento que me sea requerido por mi Patrón, o entregándolo presente algún daño, ya sea 
+        intencional o negligencia inexcusable me obligo a cubrir el pago de los daños o perjuicios ocasionados, autorizando 
+        que me sea descontado de mi pago de salarios o bien me sea descontado de mi finiquito en caso de terminación de 
+        la relación laboral.<br><br>
+        En virtud de lo anterior, desde ahora me hago sabedor del contenido de los artículos 213 en su fracción XVII, 
+        artículo 223 fracción I y del artículo 224 de la Ley Federal de la Propiedad Industrial y demás relativos aplicables 
+        por lo que me responsabilizo de las consecuencias por el mal uso, daño provocado o indebida disposición del hardware 
+        o del software descritos o instalados por mi cuenta, comprometiéndome a pagar cualquier sanción, multa, daño o 
+        perjuicio ocasionado por mi negligencia o mala fe, obligándome a responder de ello ante la propia sociedad o ante 
         cualquier tercero que en su caso resulte afectado.
       </div>
       
@@ -1973,9 +1973,9 @@ function processExcelFile(file) {
         }
       }
 
-      // Si no importÃ³ usuarios ni biomÃ©tricos, arrojar error
+      // Si no importó usuarios ni biométricos, arrojar error
       if (importedUsers.length === 0 && importedBiometrics.length === 0) {
-        throw new Error("No se encontrÃ³ una estructura compatible en el archivo Excel.");
+        throw new Error("No se encontró una estructura compatible en el archivo Excel.");
       }
 
       // Sincronizar localmente y enviar a Google Sheets si aplica
@@ -1999,7 +1999,7 @@ function processExcelFile(file) {
       }
 
       statusDiv.className = "import-status success";
-      statusDiv.innerHTML = `<strong>Ã‰xito:</strong> Archivo procesado correctamente. Cargados ${state.users.length} usuarios y ${state.biometrics.length} equipos biomÃ©tricos.`;
+      statusDiv.innerHTML = `<strong>Éxito:</strong> Archivo procesado correctamente. Cargados ${state.users.length} usuarios y ${state.biometrics.length} equipos biométricos.`;
       
       setTimeout(() => {
         closeModal();
@@ -2008,7 +2008,7 @@ function processExcelFile(file) {
 
     } catch (err) {
       statusDiv.className = "import-status error";
-      statusDiv.innerHTML = `<strong>Error de importaciÃ³n:</strong> ${err.message}`;
+      statusDiv.innerHTML = `<strong>Error de importación:</strong> ${err.message}`;
     }
   };
   reader.readAsArrayBuffer(file);
@@ -2034,12 +2034,12 @@ async function exportToExcel() {
         state.originalWorkbookBuffer = await response.arrayBuffer();
         hideToast();
       } else {
-        throw new Error("No se pudo autodescargar la plantilla original. AsegÃºrate de haber importado el Excel primero en el administrador.");
+        throw new Error("No se pudo autodescargar la plantilla original. Asegúrate de haber importado el Excel primero en el administrador.");
       }
     } catch (err) {
-      console.warn("Fallo al intentar descargar plantilla automÃ¡ticamente:", err);
+      console.warn("Fallo al intentar descargar plantilla automáticamente:", err);
       hideToast();
-      alert("Error: Para poder exportar con el formato del jefe, primero debes importar/arrastrar el archivo original 'RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx' en la zona de importaciÃ³n.");
+      alert("Error: Para poder exportar con el formato del jefe, primero debes importar/arrastrar el archivo original 'RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx' en la zona de importación.");
       return;
     }
   }
@@ -2048,7 +2048,7 @@ async function exportToExcel() {
     showLoadingToast("Generando Excel con formatos originales...");
     const workbook = await XlsxPopulate.fromDataAsync(state.originalWorkbookBuffer);
 
-    // 1. Actualizar las responsivas en las pestaÃ±as BIO 1 a BIO 8
+    // 1. Actualizar las responsivas en las pestañas BIO 1 a BIO 8
     for (let i = 1; i <= 8; i++) {
       const sheetName = `BIO ${i}`;
       const sheet = workbook.sheet(sheetName);
@@ -2063,7 +2063,7 @@ async function exportToExcel() {
           // Escribir en A54 (Firma)
           sheet.cell("A54").value(isOccupied ? bio.holder : null);
 
-          // Escribir en F8 (Fecha de prÃ©stamo)
+          // Escribir en F8 (Fecha de préstamo)
           if (isOccupied) {
             const activeLog = state.logs.find(l => l.biometrico == i && l.estado === "Activo");
             if (activeLog) {
@@ -2080,13 +2080,13 @@ async function exportToExcel() {
       }
     }
 
-    // 2. Actualizar la pestaÃ±a ESTADISTICAS usando las funciones del ayudante
+    // 2. Actualizar la pestaña ESTADISTICAS usando las funciones del ayudante
     const estSheet = workbook.sheet("ESTADISTICAS");
     if (estSheet) {
       writeEstadisticasData(estSheet, state);
     }
 
-    // 3. Actualizar la pestaÃ±a USUARIOS
+    // 3. Actualizar la pestaña USUARIOS
     const usrSheet = workbook.sheet("USUARIOS");
     if (usrSheet) {
       // Limpiar registros antiguos desde la fila 4 a la 500 para la columna B (2)
@@ -2105,7 +2105,7 @@ async function exportToExcel() {
       });
     }
 
-    // 4. Escribir las pestaÃ±as auxiliares con formato profesional usando las funciones del ayudante
+    // 4. Escribir las pestañas auxiliares con formato profesional usando las funciones del ayudante
     writeAuxiliarySheets(workbook, state);
 
     // 5. Descargar archivo
@@ -2120,15 +2120,15 @@ async function exportToExcel() {
     window.URL.revokeObjectURL(url);
     
     hideToast();
-    showToast("Excel exportado conservando formatos originales, estilos y fÃ³rmulas.");
+    showToast("Excel exportado conservando formatos originales, estilos y fórmulas.");
   } catch (err) {
-    console.error("Fallo durante la exportaciÃ³n con xlsx-populate:", err);
+    console.error("Fallo durante la exportación con xlsx-populate:", err);
     hideToast();
-    alert("Error de Formato Excel: " + err.message + "\n\nPor favor asegÃºrate de haber importado el Excel de tu jefe en el gestor antes de descargar.");
+    alert("Error de Formato Excel: " + err.message + "\n\nPor favor asegúrate de haber importado el Excel de tu jefe en el gestor antes de descargar.");
   }
 }
 
-// Fallback de exportaciÃ³n usando SheetJS (formato plano, para emergencias)
+// Fallback de exportación usando SheetJS (formato plano, para emergencias)
 function exportToExcelFallback() {
   const dateStr = getTodayDateString().replace(/-/g, "");
   const wb = XLSX.utils.book_new();
@@ -2150,10 +2150,10 @@ function exportToExcelFallback() {
   XLSX.utils.book_append_sheet(wb, wsUsuarios, "USUARIOS");
   
   XLSX.writeFile(wb, `BIOMETRICOS_N134_RESPALDO_${dateStr}.xlsx`);
-  showToast("Excel bÃ¡sico generado (Respaldo).");
+  showToast("Excel básico generado (Respaldo).");
 }
 
-// Convertir Ã­ndice numÃ©rico a letras de columna de Excel (1 = A, 2 = B, etc.)
+// Convertir índice numérico a letras de columna de Excel (1 = A, 2 = B, etc.)
 function getColumnLetter(colIndex) {
   let temp, letter = "";
   while (colIndex > 0) {
@@ -2178,15 +2178,15 @@ function closeModal() {
 
 function showToast(message, duration = 3000) {
   const toast = document.getElementById("toast");
-  let icon = "âœ¨";
-  if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("invÃ¡lido")) {
-    icon = "âš ï¸";
+  let icon = "✨";
+  if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
+    icon = "⚠️";
     if (window.SoundManager) SoundManager.error();
   } else if (message.toLowerCase().includes("cargando") || message.toLowerCase().includes("sincronizando")) {
-    icon = "â³";
+    icon = "⏳";
   } else {
-    // Para Ã©xitos genÃ©ricos si no es cargando ni error
-    if (window.SoundManager && message.toLowerCase().includes("Ã©xito")) SoundManager.success();
+    // Para éxitos genéricos si no es cargando ni error
+    if (window.SoundManager && message.toLowerCase().includes("éxito")) SoundManager.success();
   }
   toast.innerHTML = `<span class="toast-icon">${icon}</span> ${message}`;
   toast.classList.remove("hidden");
@@ -2244,7 +2244,7 @@ function parseDateString(dateStr) {
   return { year: 2026, month: 6, day: 23 };
 }
 
-// Habilitar o deshabilitar todos los botones principales de la aplicaciÃ³n durante procesos de carga/sincronizaciÃ³n
+// Habilitar o deshabilitar todos los botones principales de la aplicación durante procesos de carga/sincronización
 function setButtonsState(enabled) {
   const selectors = [
     "#btn-login-user",
@@ -2344,10 +2344,10 @@ function checkNotificationChanges(oldLogs, newLogs) {
     const oldLog = oldLogs.find(l => l.id === newLog.id);
     if (!oldLog) {
       // New log!
-      fireNotification("Nueva Solicitud", `${newLog.usuario} solicitÃ³ el BiomÃ©trico ${newLog.biometrico}`);
+      fireNotification("Nueva Solicitud", `${newLog.usuario} solicitó el Biométrico ${newLog.biometrico}`);
     } else if (oldLog.estado !== newLog.estado && newLog.estado === "Entregado") {
       // Returned!
-      fireNotification("DevoluciÃ³n", `El BiomÃ©trico ${newLog.biometrico} ha sido devuelto por ${newLog.usuario_retorno || newLog.usuario}`);
+      fireNotification("Devolución", `El Biométrico ${newLog.biometrico} ha sido devuelto por ${newLog.usuario_retorno || newLog.usuario}`);
     }
   });
 
@@ -2355,7 +2355,7 @@ function checkNotificationChanges(oldLogs, newLogs) {
   oldLogs.forEach(oldLog => {
     const stillExists = newLogs.find(l => l.id === oldLog.id);
     if (!stillExists && oldLog.estado === "Pendiente") {
-      fireNotification("Solicitud Cancelada", `El pasante ${oldLog.usuario} cancelÃ³ su solicitud del BiomÃ©trico ${oldLog.biometrico}`);
+      fireNotification("Solicitud Cancelada", `El pasante ${oldLog.usuario} canceló su solicitud del Biométrico ${oldLog.biometrico}`);
     }
   });
 }
@@ -2378,7 +2378,7 @@ function fireNotification(title, body) {
       });
     }
   } catch(e) {
-    console.warn("No se pudo lanzar notificaciÃ³n", e);
+    console.warn("No se pudo lanzar notificación", e);
   }
 }
 
@@ -2636,16 +2636,16 @@ function renderAnalytics() {
   
   async function handleWebAuthn() {
     if (!window.PublicKeyCredential) {
-      showToast(Tu dispositivo no soporta biometría nativa., error);
+      showToast(Tu dispositivo no soporta biometr�a nativa., error);
       return;
     }
     try {
       const isRegistered = localStorage.getItem('webauthn_registered');
       if (!isRegistered) {
-        showToast(Configurando biometría... Usa FaceID o TouchID., info);
+        showToast(Configurando biometr�a... Usa FaceID o TouchID., info);
         const publicKey = {
           challenge: new Uint8Array([1,2,3,4,5,6]),
-          rp: { name: Biométricos 134 },
+          rp: { name: Biom�tricos 134 },
           user: { id: new Uint8Array(16), name: admin@biometricos, displayName: Admin },
           pubKeyCredParams: [{type: public-key, alg: -7}],
           authenticatorSelection: { authenticatorAttachment: platform },
@@ -2654,8 +2654,8 @@ function renderAnalytics() {
         };
         await navigator.credentials.create({ publicKey });
         localStorage.setItem('webauthn_registered', 'true');
-        showToast(Biometría configurada correctamente., success);
-        state.currentUser = { name: Admin (Biometría), role: admin };
+        showToast(Biometr�a configurada correctamente., success);
+        state.currentUser = { name: Admin (Biometr�a), role: admin };
         document.getElementById('admin-name').textContent = state.currentUser.name;
         document.getElementById('profile-name').textContent = state.currentUser.name;
         document.getElementById('profile-role').textContent = Administrador;
@@ -2664,8 +2664,8 @@ function renderAnalytics() {
       } else {
         const publicKey = { challenge: new Uint8Array([1,2,3,4,5,6]), timeout: 60000 };
         await navigator.credentials.get({ publicKey });
-        showToast(Autenticado con biometría, success);
-        state.currentUser = { name: Admin (Biometría), role: admin };
+        showToast(Autenticado con biometr�a, success);
+        state.currentUser = { name: Admin (Biometr�a), role: admin };
         document.getElementById('admin-name').textContent = state.currentUser.name;
         document.getElementById('profile-name').textContent = state.currentUser.name;
         document.getElementById('profile-role').textContent = Administrador;
@@ -2674,6 +2674,6 @@ function renderAnalytics() {
       }
     } catch (err) {
       console.error(err);
-      showToast(Cancelado o fallo en la biometría, error);
+      showToast(Cancelado o fallo en la biometr�a, error);
     }
   }

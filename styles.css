@@ -1,5 +1,5 @@
 /* ==========================================================================
-   DESIGN SYSTEM - CONTROL DE BIOMÃ‰TRICOS (NOTARÃA 134)
+   DESIGN SYSTEM - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
    Apple-Inspired Clean & Modern UI
    ========================================================================== */
 
@@ -263,7 +263,7 @@ body.dark-theme .dashboard-content {
   .dashboard-sidebar.collapsed .nav-icon { margin: 0; font-size: 1.3rem; }
   .dashboard-sidebar.collapsed .sidebar-footer { padding: 24px 10px; }
   .dashboard-sidebar.collapsed .logout-btn { font-size: 0; padding: 14px; }
-  .dashboard-sidebar.collapsed .logout-btn::after { content: "ðŸšª"; font-size: 1.2rem; display: block; margin: 0 auto; }
+  .dashboard-sidebar.collapsed .logout-btn::after { content: "🚪"; font-size: 1.2rem; display: block; margin: 0 auto; }
 }
 
 .dashboard-views {

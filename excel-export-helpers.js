@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    EXCEL EXPORT HELPERS - Funciones auxiliares para exportar con formato
    Compatible con GitHub Pages (todo client-side via xlsx-populate CDN)
    ========================================================================== */
@@ -64,7 +64,7 @@ function writeFormattedSheet(workbook, sheetName, columns, data, headerColor) {
 
 /**
  * Escribe los datos en la hoja ESTADISTICAS con el MISMO formato del Excel del jefe:
- * - Logs de uso en orden cronológico con fechas en las columnas de cada biométrico
+ * - Logs de uso en orden cronol�gico con fechas en las columnas de cada biom�trico
  * - Recargas BAM como filas amarillas completas (abarcando todas las columnas)
  * - Cambios de tinta como celdas amarillas individuales en la columna ENTRADA
  */
@@ -76,8 +76,8 @@ function writeEstadisticasData(estSheet, state) {
     }
   }
 
-  // 2. Construir línea de tiempo combinada: logs de uso + recargas BAM
-  //    (como las pone el jefe: todo mezclado cronológicamente)
+  // 2. Construir l�nea de tiempo combinada: logs de uso + recargas BAM
+  //    (como las pone el jefe: todo mezclado cronol�gicamente)
   const timeline = [];
 
   // Agregar logs de uso
@@ -103,7 +103,7 @@ function writeEstadisticasData(estSheet, state) {
     });
   });
 
-  // Ordenar cronológicamente
+  // Ordenar cronol�gicamente
   timeline.sort((a, b) => a.sortDate - b.sortDate);
 
   // 3. Escribir cada evento en la hoja ESTADISTICAS
@@ -124,7 +124,7 @@ function writeEstadisticasData(estSheet, state) {
       let x = parseInt(log.biometrico);
       if (isNaN(x)) x = 9;
 
-      // Columna Salida: 2 * x (Bio 1 → Col B=2, Bio 2 → Col D=4, etc.)
+      // Columna Salida: 2 * x (Bio 1 ? Col B=2, Bio 2 ? Col D=4, etc.)
       const colSalida = 2 * x;
       const cellSalida = estSheet.row(r).cell(colSalida);
       const cleanExitDateStr = (log.fecha_salida + " " + log.hora_salida_real).replace(/-/g, "/");
@@ -133,7 +133,7 @@ function writeEstadisticasData(estSheet, state) {
         try { cellSalida.style(estSheet.row(6).cell(colSalida).style()); } catch(e){}
       }
 
-      // Columna Entrada: 2 * x + 1 (Bio 1 → Col C=3, Bio 2 → Col E=5, etc.)
+      // Columna Entrada: 2 * x + 1 (Bio 1 ? Col C=3, Bio 2 ? Col E=5, etc.)
       if (log.estado === "Entregado") {
         const colEntrada = 2 * x + 1;
         const cellEntrada = estSheet.row(r).cell(colEntrada);
@@ -167,7 +167,7 @@ function writeEstadisticasData(estSheet, state) {
       const bamText = net.observaciones ||
         "SE HIZO RECARGA DE TODAS LAS BAM    " + (net.fecha || "") + "   VIGENCIA: " + (net.plan || "");
 
-      // Escribir el texto en columna B para que abarque visualmente las columnas de biométricos
+      // Escribir el texto en columna B para que abarque visualmente las columnas de biom�tricos
       estSheet.row(r).cell(2).value(bamText);
 
       // Aplicar fondo amarillo y negrita a TODA la fila (columnas A a S = 1 a 19)
@@ -213,7 +213,7 @@ function writeEstadisticasData(estSheet, state) {
  * con formato profesional usando writeFormattedSheet.
  */
 function writeAuxiliarySheets(workbook, state) {
-  // EQUIPOS - Inventario de los 8 paquetes biométricos (cabecera verde como el original)
+  // EQUIPOS - Inventario de los 8 paquetes biom�tricos (cabecera verde como el original)
   writeFormattedSheet(workbook, "EQUIPOS", [
     { key: "biometrico", header: "biometrico", width: 12 },
     { key: "status", header: "status", width: 12 },
@@ -233,7 +233,7 @@ function writeAuxiliarySheets(workbook, state) {
     { key: "router_imei", header: "router_imei", width: 20 }
   ], state.biometrics, "006100");
 
-  // LOG_USO - Historial completo de préstamos (cabecera azul marino)
+  // LOG_USO - Historial completo de pr�stamos (cabecera azul marino)
   writeFormattedSheet(workbook, "LOG_USO", [
     { key: "id", header: "id", width: 8 },
     { key: "biometrico", header: "biometrico", width: 12 },
@@ -245,7 +245,7 @@ function writeAuxiliarySheets(workbook, state) {
     { key: "estado", header: "estado", width: 12 }
   ], state.logs, "002060");
 
-  // LOG_TINTAS - Cambios de cartucho/tinta (cabecera púrpura)
+  // LOG_TINTAS - Cambios de cartucho/tinta (cabecera p�rpura)
   writeFormattedSheet(workbook, "LOG_TINTAS", [
     { key: "id", header: "id", width: 8 },
     { key: "biometrico", header: "biometrico", width: 12 },
