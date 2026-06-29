@@ -2636,39 +2636,39 @@ function renderAnalytics() {
   
   async function handleWebAuthn() {
     if (!window.PublicKeyCredential) {
-      showToast(Tu dispositivo no soporta biometr�a nativa., error);
+      showToast("Tu dispositivo no soporta biometría nativa.", "error");
       return;
     }
     try {
       const isRegistered = localStorage.getItem('webauthn_registered');
       if (!isRegistered) {
-        showToast(Configurando biometr�a... Usa FaceID o TouchID., info);
+        showToast("Configurando biometría... Usa FaceID o TouchID.", "info");
         const publicKey = {
           challenge: new Uint8Array([1,2,3,4,5,6]),
-          rp: { name: Biom�tricos 134 },
-          user: { id: new Uint8Array(16), name: admin@biometricos, displayName: Admin },
-          pubKeyCredParams: [{type: public-key, alg: -7}],
-          authenticatorSelection: { authenticatorAttachment: platform },
+          rp: { name: "Biométricos 134" },
+          user: { id: new Uint8Array(16), name: "admin@biometricos", displayName: "Admin" },
+          pubKeyCredParams: [{type: "public-key", alg: -7}],
+          authenticatorSelection: { authenticatorAttachment: "platform" },
           timeout: 60000,
-          attestation: none
+          attestation: "none"
         };
         await navigator.credentials.create({ publicKey });
         localStorage.setItem('webauthn_registered', 'true');
-        showToast(Biometr�a configurada correctamente., success);
-        state.currentUser = { name: Admin (Biometr�a), role: admin };
+        showToast("Biometría configurada correctamente.", "success");
+        state.currentUser = { name: "Admin (Biometría)", role: "admin" };
         document.getElementById('admin-name').textContent = state.currentUser.name;
         document.getElementById('profile-name').textContent = state.currentUser.name;
-        document.getElementById('profile-role').textContent = Administrador;
+        document.getElementById('profile-role').textContent = "Administrador";
         renderBiometrics();
         showView('admin-view');
       } else {
         const publicKey = { challenge: new Uint8Array([1,2,3,4,5,6]), timeout: 60000 };
         await navigator.credentials.get({ publicKey });
-        showToast(Autenticado con biometr�a, success);
-        state.currentUser = { name: Admin (Biometr�a), role: admin };
+        showToast("Autenticado con biometría", "success");
+        state.currentUser = { name: "Admin (Biometría)", role: "admin" };
         document.getElementById('admin-name').textContent = state.currentUser.name;
         document.getElementById('profile-name').textContent = state.currentUser.name;
-        document.getElementById('profile-role').textContent = Administrador;
+        document.getElementById('profile-role').textContent = "Administrador";
         renderBiometrics();
         showView('admin-view');
       }
