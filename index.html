@@ -11,7 +11,7 @@
   
   <!-- CACHE NUKE SCRIPT -->
   <script>
-    if (!localStorage.getItem('cache_nuked_v43')) {
+    if (!localStorage.getItem('cache_nuked_v45')) {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for(let registration of registrations) {
@@ -19,14 +19,10 @@
           }
         });
       }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (let name of names) {
-            caches.delete(name);
-          }
-        });
-      }
-      localStorage.setItem('cache_nuked_v43', 'true');
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+      localStorage.setItem('cache_nuked_v45', 'true');
       window.location.reload(true);
     }
   </script>
@@ -42,7 +38,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=412">
+  <link rel="stylesheet" href="styles.css?v=415">
   
   <!-- SheetJS for browser Excel parsing/exporting -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -50,17 +46,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx-populate@1.21.0/browser/xlsx-populate.min.js"></script>
 </head>
 <body>
-  <!-- LIQUID GLASS REFRACTION FILTER (Apple 2026 Style) -->
-  <svg class="hidden-svg" width="0" height="0" style="display:none;">
-    <filter id="liquid-refraction">
-      <!-- Creates fluid noise -->
-      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise" />
-      <!-- Bends the pixels underneath based on the noise -->
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G" />
-      <!-- Optional: Combine with a standard blur -->
-      <feGaussianBlur stdDeviation="12" result="blur" />
-    </filter>
-  </svg>
+
   
   <div id="pull-to-refresh-indicator" style="position: fixed; top: 0; left: 0; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: transparent; transform: translateY(-100%); transition: transform 0.2s; z-index: 9999;">
     <div style="background: var(--bg-card); padding: 8px 16px; border-radius: 20px; box-shadow: var(--shadow-md); font-size: 0.9em; font-weight: bold; color: var(--accent);">⬇️ Suelta para actualizar</div>
@@ -85,7 +71,7 @@
 
     <!-- 1. LOGIN SCREEN -->
     <section id="login-view" class="view-panel active">
-      <div class="login-card glass spatial-pane liquid-glass-panel">
+      <div class="login-card glass">
         <div class="logo-area">
           <img src="app_icon.png" class="logo-image" alt="N134 Logo">
           <h1>Notaría 134</h1>
