@@ -2453,7 +2453,7 @@ document.addEventListener('click', (e) => {
 
 // 3. Screensaver (Idle Timer)
 let idleTimer;
-const IDLE_TIMEOUT = 10 * 60 * 1000; // 5 minutos en milisegundos
+const IDLE_TIMEOUT = 30 * 1000; // 30 segundos de inactividad para activar el Stand-By
 
 // Variables para DVD Bounce
 let dvdX = 50;
@@ -2496,6 +2496,9 @@ function showScreensaver() {
   if (ss && ss.classList.contains('hidden')) {
     ss.classList.remove('hidden');
     updateScreensaver(true);
+    initParticles();
+    if (animFrame) cancelAnimationFrame(animFrame);
+    animateParticles();
     
     // Iniciar Bounce
     dvdX = Math.random() * (window.innerWidth - 300);
@@ -2509,6 +2512,7 @@ function hideScreensaver() {
   if (ss && !ss.classList.contains('hidden')) {
     ss.classList.add('hidden');
     if (dvdAnimationFrame) cancelAnimationFrame(dvdAnimationFrame);
+    if (animFrame) cancelAnimationFrame(animFrame);
   }
 }
 
@@ -2671,4 +2675,79 @@ function renderAnalytics() {
     if (typeof renderAdminDashboard === 'function') {
       renderAdminDashboard();
     }
+  };
+
+  // --- PREMIUM PARTICLES ENGINE (Celeste Claro Tech) ---
+  const canvas = document.getElementById('particles-bg');
+  const ctx = canvas ? canvas.getContext('2d') : null;
+  let particles = [];
+  let animFrame;
+  let pMouse = { x: null, y: null };
+
+  function initParticles() {
+    if (!canvas || !ctx) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    particles = [];
+    const numParticles = Math.floor(window.innerWidth / 15);
+    for (let i = 0; i < numParticles; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        radius: Math.random() * 2 + 1,
+        color: `rgba(135, 206, 235, ${Math.random() * 0.5 + 0.1})` // Celeste tech
+      });
+    }
+  }
+
+  function animateParticles() {
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      
+      if (pMouse.x != null && pMouse.y != null) {
+        let dx = pMouse.x - p.x;
+        let dy = pMouse.y - p.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100) {
+          p.x -= dx * 0.05;
+          p.y -= dy * 0.05;
+        }
+      }
+      
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    });
+    animFrame = requestAnimationFrame(animateParticles);
+  }
+
+  document.addEventListener('mousemove', e => { pMouse.x = e.clientX; pMouse.y = e.clientY; });
+  document.addEventListener('touchmove', e => { pMouse.x = e.touches[0].clientX; pMouse.y = e.touches[0].clientY; }, {passive: true});
+  document.addEventListener('mouseleave', () => { pMouse.x = null; pMouse.y = null; });
+  document.addEventListener('touchend', () => { pMouse.x = null; pMouse.y = null; });
+  window.addEventListener('resize', initParticles);
+
+  // --- PREMIUM HAPTICS ---
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.btn')) {
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+  }, true);
+  
+  const originalShowToast = window.showToast;
+  window.showToast = function(msg, type = "info") {
+    if (navigator.vibrate) {
+      if (type === 'error') navigator.vibrate([30, 50, 30]);
+      else if (type === 'success') navigator.vibrate([20, 30, 20]);
+      else navigator.vibrate(15);
+    }
+    if (originalShowToast) originalShowToast(msg, type);
   };

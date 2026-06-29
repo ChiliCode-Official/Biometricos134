@@ -50,6 +50,18 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx-populate@1.21.0/browser/xlsx-populate.min.js"></script>
 </head>
 <body>
+  <!-- LIQUID GLASS REFRACTION FILTER (Apple 2026 Style) -->
+  <svg class="hidden-svg" width="0" height="0" style="display:none;">
+    <filter id="liquid-refraction">
+      <!-- Creates fluid noise -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise" />
+      <!-- Bends the pixels underneath based on the noise -->
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G" />
+      <!-- Optional: Combine with a standard blur -->
+      <feGaussianBlur stdDeviation="12" result="blur" />
+    </filter>
+  </svg>
+  
   <div id="pull-to-refresh-indicator" style="position: fixed; top: 0; left: 0; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: transparent; transform: translateY(-100%); transition: transform 0.2s; z-index: 9999;">
     <div style="background: var(--bg-card); padding: 8px 16px; border-radius: 20px; box-shadow: var(--shadow-md); font-size: 0.9em; font-weight: bold; color: var(--accent);">⬇️ Suelta para actualizar</div>
   </div>
@@ -73,9 +85,9 @@
 
     <!-- 1. LOGIN SCREEN -->
     <section id="login-view" class="view-panel active">
-      <div class="login-card glass">
+      <div class="login-card glass spatial-pane liquid-glass-panel">
         <div class="logo-area">
-          <div class="apple-logo-sim">N134</div>
+          <img src="app_icon.png" class="logo-image" alt="N134 Logo">
           <h1>Notaría 134</h1>
           <p>Control de Equipos Biométricos</p>
         </div>
@@ -577,10 +589,10 @@
     </div>
   </a>
 
-  <!-- 10. Screensaver -->
-  <div id="screensaver" class="hidden">
-    <div class="screensaver-background"></div>
-    <div id="screensaver-content" class="screensaver-content">
+  <!-- 10. SCREENSAVER (Stand-By) -->
+  <div id="screensaver" class="screensaver hidden">
+    <canvas id="particles-bg"></canvas>
+    <div class="screensaver-content liquid-glass-panel spatial-pane">
       <div id="screensaver-time">12:00 PM</div>
       <div id="screensaver-date">Lunes, 1 de Enero</div>
       <div class="screensaver-stats">

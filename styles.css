@@ -1957,3 +1957,63 @@ input[type="checkbox"].ios-switch:checked {
 input[type="checkbox"].ios-switch:checked::after {
   transform: translateX(20px);
 }
+
+/* --- PREMIUM LIQUID GLASS 2026 --- */
+.logo-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  margin-bottom: 10px;
+}
+
+.liquid-glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: url('#liquid-refraction') blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 20px 40px rgba(0,0,0,0.4);
+  border-radius: 30px;
+  background-image: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.2) 0%,
+    rgba(255,255,255,0) 40%,
+    rgba(255,255,255,0) 60%,
+    rgba(255,255,255,0.05) 100%
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  .liquid-glass-panel {
+    background: rgba(30, 30, 30, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.spatial-pane {
+  contain: strict;
+  will-change: transform, backdrop-filter;
+}
+
+.btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn:active {
+  transform: scale(0.96);
+  transition: transform 0.1s;
+}
+
+#particles-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+#screensaver.screensaver {
+  background: rgba(10, 10, 12, 0.7);
+  backdrop-filter: blur(5px);
+}
