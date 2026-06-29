@@ -944,7 +944,7 @@ function logout() {
    UI RENDERING
    ========================================================================== */
 
-function showView(viewId) {
+function _showViewInternal(viewId) {
   // Manejar el contenedor principal del Dashboard vs Login
   const loginView = document.getElementById("login-view");
   const dashboardLayout = document.getElementById("dashboard-layout");
@@ -973,14 +973,23 @@ function showView(viewId) {
     // Actualizar estado activo de los botones del menÃº lateral
     const navDashboard = document.getElementById("nav-dashboard");
     const navProfile = document.getElementById("nav-profile");
-    if (navDashboard && navProfile) {
+    const navAnalytics = document.getElementById("nav-analytics");
+    if (navDashboard && navProfile && navAnalytics) {
+      navDashboard.classList.remove("active");
+      navProfile.classList.remove("active");
+      navAnalytics.classList.remove("active");
+      
       if (viewId === "profile-view") {
-        navDashboard.classList.remove("active");
         navProfile.classList.add("active");
+      } else if (viewId === "analytics-view") {
+        navAnalytics.classList.add("active");
       } else if (viewId === "admin-view" || viewId === "user-view") {
-        navProfile.classList.remove("active");
         navDashboard.classList.add("active");
       }
+    }
+    
+    if (viewId === "analytics-view") {
+      renderAnalytics();
     }
   }
   
@@ -1180,6 +1189,16 @@ function renderBiometrics() {
       if (quickBox) quickBox.style.display = "block";
       if (othersSection) othersSection.style.display = "block";
     }
+  }
+
+  // Initialize VanillaTilt for 3D effect
+  if (window.VanillaTilt) {
+    VanillaTilt.init(document.querySelectorAll(".bio-card"), {
+      max: 15,
+      speed: 400,
+      glare: true,
+      "max-glare": 0.2
+    });
   }
 }
 
@@ -2435,11 +2454,52 @@ document.addEventListener('click', (e) => {
 let idleTimer;
 const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutos en milisegundos
 
+// Variables para DVD Bounce
+let dvdX = 50;
+let dvdY = 50;
+let dvdVx = 2; // velocidad X
+let dvdVy = 2; // velocidad Y
+let dvdAnimationFrame = null;
+
+function animateDVD() {
+  const ss = document.getElementById('screensaver');
+  const box = document.getElementById('screensaver-content');
+  if (!ss || ss.classList.contains('hidden') || !box) return;
+
+  const ssRect = ss.getBoundingClientRect();
+  const boxRect = box.getBoundingClientRect();
+
+  // Mover
+  dvdX += dvdVx;
+  dvdY += dvdVy;
+
+  // Rebotar en los bordes
+  if (dvdX + boxRect.width >= ssRect.width || dvdX <= 0) {
+    dvdVx = -dvdVx;
+    dvdX = Math.max(0, Math.min(dvdX, ssRect.width - boxRect.width));
+  }
+  if (dvdY + boxRect.height >= ssRect.height || dvdY <= 0) {
+    dvdVy = -dvdVy;
+    dvdY = Math.max(0, Math.min(dvdY, ssRect.height - boxRect.height));
+  }
+
+  box.style.left = dvdX + 'px';
+  box.style.top = dvdY + 'px';
+  box.style.transform = 'none'; // Quitar el translate -50%
+
+  dvdAnimationFrame = requestAnimationFrame(animateDVD);
+}
+
 function showScreensaver() {
   const ss = document.getElementById('screensaver');
   if (ss && ss.classList.contains('hidden')) {
     ss.classList.remove('hidden');
     updateScreensaver();
+    
+    // Iniciar Bounce
+    dvdX = Math.random() * (window.innerWidth - 300);
+    dvdY = Math.random() * (window.innerHeight - 300);
+    animateDVD();
   }
 }
 
@@ -2447,6 +2507,7 @@ function hideScreensaver() {
   const ss = document.getElementById('screensaver');
   if (ss && !ss.classList.contains('hidden')) {
     ss.classList.add('hidden');
+    if (dvdAnimationFrame) cancelAnimationFrame(dvdAnimationFrame);
   }
 }
 
@@ -2490,3 +2551,129 @@ function updateScreensaver() {
     setTimeout(updateScreensaver, 1000);
   }
 }
+
+/* ==========================================================================
+   ANALITICAS VIEW (CHART.JS)
+   ========================================================================== */
+let biometricsChartInstance = null;
+let usersChartInstance = null;
+
+function renderAnalytics() {
+  if (typeof Chart === 'undefined') return;
+
+  const logs = state.logs || [];
+  const bioCount = {};
+  const userCount = {};
+
+  logs.forEach(log => {
+    if (log.action === "Salida" || log.action === "Asignado") {
+      bioCount[log.biometrico] = (bioCount[log.biometrico] || 0) + 1;
+      userCount[log.holder] = (userCount[log.holder] || 0) + 1;
+    }
+  });
+
+  const ctxBio = document.getElementById('chart-biometrics');
+  const ctxUser = document.getElementById('chart-users');
+
+  if (ctxBio) {
+    if (biometricsChartInstance) biometricsChartInstance.destroy();
+    biometricsChartInstance = new Chart(ctxBio, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(bioCount).map(b => 'Bio ' + b),
+        datasets: [{
+          data: Object.values(bioCount),
+          backgroundColor: ['#0071e3', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#FF2D55', '#5856D6', '#5AC8FA'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#fff' } }
+        }
+      }
+    });
+  }
+
+  if (ctxUser) {
+    if (usersChartInstance) usersChartInstance.destroy();
+    usersChartInstance = new Chart(ctxUser, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(userCount),
+        datasets: [{
+          label: 'Salidas',
+          data: Object.values(userCount),
+          backgroundColor: '#0071e3',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#fff' } },
+          x: { ticks: { color: '#fff' } }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+}
+  function showView(viewId) {
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        _showViewInternal(viewId);
+      });
+    } else {
+      _showViewInternal(viewId);
+    }
+  }
+  
+  async function handleWebAuthn() {
+    if (!window.PublicKeyCredential) {
+      showToast(Tu dispositivo no soporta biometría nativa., error);
+      return;
+    }
+    try {
+      const isRegistered = localStorage.getItem('webauthn_registered');
+      if (!isRegistered) {
+        showToast(Configurando biometría... Usa FaceID o TouchID., info);
+        const publicKey = {
+          challenge: new Uint8Array([1,2,3,4,5,6]),
+          rp: { name: Biométricos 134 },
+          user: { id: new Uint8Array(16), name: admin@biometricos, displayName: Admin },
+          pubKeyCredParams: [{type: public-key, alg: -7}],
+          authenticatorSelection: { authenticatorAttachment: platform },
+          timeout: 60000,
+          attestation: none
+        };
+        await navigator.credentials.create({ publicKey });
+        localStorage.setItem('webauthn_registered', 'true');
+        showToast(Biometría configurada correctamente., success);
+        state.currentUser = { name: Admin (Biometría), role: admin };
+        document.getElementById('admin-name').textContent = state.currentUser.name;
+        document.getElementById('profile-name').textContent = state.currentUser.name;
+        document.getElementById('profile-role').textContent = Administrador;
+        renderBiometrics();
+        showView('admin-view');
+      } else {
+        const publicKey = { challenge: new Uint8Array([1,2,3,4,5,6]), timeout: 60000 };
+        await navigator.credentials.get({ publicKey });
+        showToast(Autenticado con biometría, success);
+        state.currentUser = { name: Admin (Biometría), role: admin };
+        document.getElementById('admin-name').textContent = state.currentUser.name;
+        document.getElementById('profile-name').textContent = state.currentUser.name;
+        document.getElementById('profile-role').textContent = Administrador;
+        renderBiometrics();
+        showView('admin-view');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(Cancelado o fallo en la biometría, error);
+    }
+  }
