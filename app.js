@@ -1312,7 +1312,8 @@ function renderAdminDashboard() {
     tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay registros aún</td></tr>`;
   } else {
     // Clonar e invertir para ver primero lo más nuevo
-    const sortedLogs = [...state.logs].reverse();
+    window.historyLimit = window.historyLimit || 50;
+    const sortedLogs = [...state.logs].reverse().slice(0, window.historyLimit);
     sortedLogs.forEach(log => {
       const tr = document.createElement("tr");
       const isReturned = log.estado === "Entregado";
@@ -2640,40 +2641,34 @@ function renderAnalytics() {
       return;
     }
     try {
-      const isRegistered = localStorage.getItem('webauthn_registered');
-      if (!isRegistered) {
-        showToast("Configurando biometría... Usa FaceID o TouchID.", "info");
-        const publicKey = {
-          challenge: new Uint8Array([1,2,3,4,5,6]),
-          rp: { name: "Biométricos 134" },
-          user: { id: new Uint8Array(16), name: "admin@biometricos", displayName: "Admin" },
-          pubKeyCredParams: [{type: "public-key", alg: -7}],
-          authenticatorSelection: { authenticatorAttachment: "platform" },
-          timeout: 60000,
-          attestation: "none"
-        };
-        await navigator.credentials.create({ publicKey });
-        localStorage.setItem('webauthn_registered', 'true');
-        showToast("Biometría configurada correctamente.", "success");
-        state.currentUser = { name: "Admin (Biometría)", role: "admin" };
-        document.getElementById('admin-name').textContent = state.currentUser.name;
-        document.getElementById('profile-name').textContent = state.currentUser.name;
-        document.getElementById('profile-role').textContent = "Administrador";
-        renderBiometrics();
-        showView('admin-view');
-      } else {
-        const publicKey = { challenge: new Uint8Array([1,2,3,4,5,6]), timeout: 60000 };
-        await navigator.credentials.get({ publicKey });
-        showToast("Autenticado con biometría", "success");
-        state.currentUser = { name: "Admin (Biometría)", role: "admin" };
-        document.getElementById('admin-name').textContent = state.currentUser.name;
-        document.getElementById('profile-name').textContent = state.currentUser.name;
-        document.getElementById('profile-role').textContent = "Administrador";
-        renderBiometrics();
-        showView('admin-view');
-      }
+      showToast("Autenticando biometría...", "info");
+      const publicKey = {
+        challenge: new Uint8Array([1,2,3,4,5,6]),
+        rp: { name: "Biométricos 134" },
+        user: { id: new Uint8Array(16), name: "admin@biometricos", displayName: "Admin" },
+        pubKeyCredParams: [{type: "public-key", alg: -7}],
+        authenticatorSelection: { authenticatorAttachment: "platform" },
+        timeout: 60000,
+        attestation: "none"
+      };
+      await navigator.credentials.create({ publicKey });
+      showToast("Autenticado con biometría", "success");
+      state.currentUser = { name: "Admin (Biometría)", role: "admin" };
+      document.getElementById('admin-name').textContent = state.currentUser.name;
+      document.getElementById('profile-name').textContent = state.currentUser.name;
+      document.getElementById('profile-role').textContent = "Administrador";
+      renderBiometrics();
+      showView('admin-view');
     } catch (err) {
       console.error(err);
       showToast("Cancelado o fallo en la biometría", "error");
     }
   }
+
+  // --- Pagination Function ---
+  window.loadMoreHistory = function() {
+    window.historyLimit = (window.historyLimit || 50) + 50;
+    if (typeof renderAdminDashboard === 'function') {
+      renderAdminDashboard();
+    }
+  };
