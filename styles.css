@@ -1970,7 +1970,7 @@ input[type="checkbox"].ios-switch:checked::after {
 
 .liquid-glass-panel {
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: url('#liquid-refraction') blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 20px 40px rgba(0,0,0,0.4);
@@ -1992,7 +1992,6 @@ input[type="checkbox"].ios-switch:checked::after {
 }
 
 .spatial-pane {
-  contain: strict;
   will-change: transform, backdrop-filter;
 }
 
