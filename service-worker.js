@@ -1,4 +1,4 @@
-const CACHE_NAME = 'n134-biometricos-v33';
+const CACHE_NAME = 'n134-biometricos-v35';
 const ASSETS = [
   'index.html',
   'styles.css',
