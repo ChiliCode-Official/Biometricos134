@@ -913,7 +913,7 @@ function loginAsAdmin() {
     renderBiometrics();
     renderAdminDashboard();
     updateSequentialSuggestion();
-    showToast("Sesión de administrador iniciada.");
+    showToast("Sesión de administrador iniciada.", 2500);
     document.getElementById("admin-pin").value = "";
     
     // Notifications init
@@ -2177,7 +2177,9 @@ function closeModal() {
   document.querySelectorAll(".modal").forEach(modal => modal.classList.remove("active"));
 }
 
+let toastTimeout;
 function showToast(message, duration = 3000) {
+  if (toastTimeout) clearTimeout(toastTimeout);
   const toast = document.getElementById("toast");
   let icon = "✨";
   if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
@@ -2196,7 +2198,7 @@ function showToast(message, duration = 3000) {
   toast.classList.add("show");
   
   if (duration > 0) {
-    setTimeout(hideToast, duration);
+    toastTimeout = setTimeout(hideToast, duration);
   }
 }
 
@@ -2645,11 +2647,11 @@ function renderAnalytics() {
       return;
     }
     try {
-      showToast("Autenticando biometría...", "info");
+      showToast("Autenticando biometría...", "info", 60000);
       const publicKey = {
-        challenge: new Uint8Array([1,2,3,4,5,6]),
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
         rp: { name: "Biométricos 134" },
-        user: { id: new Uint8Array(16), name: "admin@biometricos", displayName: "Admin" },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "admin@biometricos", displayName: "Admin" },
         pubKeyCredParams: [{type: "public-key", alg: -7}],
         authenticatorSelection: { authenticatorAttachment: "platform" },
         timeout: 60000,

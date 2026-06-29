@@ -428,7 +428,7 @@ textarea:focus {
 
 /* --- Connection Status Bar --- */
 .connection-bar {
-  position: sticky;
+  position: relative;
   top: 0;
   left: 0;
   width: 100%;
