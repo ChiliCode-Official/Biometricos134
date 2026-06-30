@@ -604,7 +604,17 @@ function updateSequentialSuggestion() {
   const btn = document.getElementById("btn-request-sequential");
   const btnText = document.getElementById("btn-request-sequential-text");
   
-  if (!suggestSpan) return;
+  if (!suggestSpan || !container) return;
+
+  if (state.currentUser && state.currentUser.role === "user") {
+    const hasActive = state.logs.some(l => l.usuario === state.currentUser.name && l.estado === "Activo");
+    if (hasActive) {
+      container.style.display = "none";
+      return;
+    }
+  }
+  
+  container.style.display = "";
 
   const nextBio = getNextSequentialBiometric();
   if (nextBio) {
@@ -668,9 +678,14 @@ async function sendAction(action, payload) {
       hora_salida_real: timeStr,
       fecha_entrada: "",
       hora_entrada: "",
-      estado: "Activo",
+      estado: "Pendiente",
       devuelto_por: ""
     });
+  } else if (action === "confirm") {
+    const logItem = state.logs.find(l => l.id === payload.id);
+    if (logItem) {
+      logItem.estado = "Activo";
+    }
   } else if (action === "return") {
     const logItem = state.logs.find(l => l.id === payload.id);
     if (logItem) {
@@ -1548,7 +1563,6 @@ window.confirmDelivery = async function(logId, bioNum) {
   const res = await sendAction("confirm", { id: logId, biometrico: bioNum });
   if (res && res.success) {
     showToast("Entrega confirmada con éxito");
-    fetchDatabase();
   } else {
     showToast("Error al confirmar la entrega", true);
   }
@@ -1563,7 +1577,6 @@ window.cancelDelivery = async function(logId, bioNum) {
     const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
     if (res && res.success) {
       showToast("Solicitud cancelada");
-      fetchDatabase();
     }
   }
 }
@@ -2178,10 +2191,15 @@ function closeModal() {
 }
 
 let toastTimeout;
-function showToast(message, duration = 3000) {
-  if (toastTimeout) clearTimeout(toastTimeout);
-  const toast = document.getElementById("toast");
-  let icon = "✨";
+function showToast(message, duration = 2500) {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    
+    if (typeof duration !== "number" || isNaN(duration)) {
+        duration = 2500;
+    }
+
+    const toast = document.getElementById("toast");
+    let icon = "💬";
   if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
     icon = "⚠️";
     if (window.SoundManager) SoundManager.error();
@@ -2300,7 +2318,7 @@ function startNotificationPolling() {
   // Clone current logs to avoid firing notifications on startup
   lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
   
-  notificationPollingTimer = setInterval(pollForUpdates, 15000); // 15 seconds
+  notificationPollingTimer = setInterval(pollForUpdates, 5000); // 5 seconds
 }
 
 function stopNotificationPolling() {
@@ -2666,6 +2684,8 @@ function renderAnalytics() {
       document.getElementById('admin-name').textContent = state.currentUser.name;
       document.getElementById('profile-name').textContent = state.currentUser.name;
       document.getElementById('profile-role').textContent = "Administrador";
+      requestNotificationPermission();
+      startNotificationPolling();
       renderBiometrics();
       showView('admin-view');
     } catch (err) {
