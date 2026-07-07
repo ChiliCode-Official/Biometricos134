@@ -356,7 +356,7 @@ function getLogsFromEstadisticas(ss) {
       }
     }
   }
-  return null;
+  return logs;
 }
 
 // ============================================================================
