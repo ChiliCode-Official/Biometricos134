@@ -37,6 +37,12 @@ function doGet(e) {
         result = cancelBiometric(e.parameter.id, e.parameter.biometrico);
       } else if (action === "confirm") {
         result = confirmBiometric(e.parameter.id, e.parameter.biometrico);
+      } else if (action === "addUser") {
+        result = addUser(e.parameter.nombre);
+      } else if (action === "editUser") {
+        result = editUser(e.parameter.oldName, e.parameter.newName);
+      } else if (action === "deleteUser") {
+        result = deleteUser(e.parameter.nombre);
       } else if (action === "getDatabase") {
         return handleResponse(getData());
       } else {
@@ -80,6 +86,12 @@ function doPost(e) {
       result = cancelBiometric(params.id, params.biometrico);
     } else if (action === "confirm") {
       result = confirmBiometric(params.id, params.biometrico);
+    } else if (action === "addUser") {
+      result = addUser(params.nombre);
+    } else if (action === "editUser") {
+      result = editUser(params.oldName, params.newName);
+    } else if (action === "deleteUser") {
+      result = deleteUser(params.nombre);
     } else if (action === "getDatabase") {
       return handleResponse(getData());
     } else {
@@ -344,7 +356,70 @@ function getLogsFromEstadisticas(ss) {
       }
     }
   }
-  return logs;
+  return null;
+}
+
+// ============================================================================
+// FUNCIONES DE GESTIÓN DE USUARIOS
+// ============================================================================
+
+function addUser(nombre) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("USUARIOS");
+  if (!sheet) return { success: false, error: "No existe la hoja USUARIOS" };
+  
+  var lastRow = sheet.getLastRow();
+  var startRow = 4;
+  
+  if (lastRow >= startRow) {
+    var values = sheet.getRange(startRow, 2, lastRow - startRow + 1, 1).getValues();
+    for (var i = 0; i < values.length; i++) {
+      if (values[i][0] === "" || values[i][0].toString().trim() === "") {
+        sheet.getRange(startRow + i, 2).setValue(nombre);
+        return { success: true };
+      }
+    }
+  }
+  
+  // Si no hay celdas vacías, agregar al final
+  sheet.getRange(Math.max(lastRow + 1, startRow), 2).setValue(nombre);
+  return { success: true };
+}
+
+function editUser(oldName, newName) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("USUARIOS");
+  if (!sheet) return { success: false, error: "No existe la hoja USUARIOS" };
+  
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 4) return { success: false, error: "No hay usuarios" };
+  
+  var values = sheet.getRange(4, 2, lastRow - 3, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][0] && values[i][0].toString().trim() === oldName.trim()) {
+      sheet.getRange(4 + i, 2).setValue(newName);
+      return { success: true };
+    }
+  }
+  return { success: false, error: "Usuario no encontrado" };
+}
+
+function deleteUser(nombre) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("USUARIOS");
+  if (!sheet) return { success: false, error: "No existe la hoja USUARIOS" };
+  
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 4) return { success: false, error: "No hay usuarios" };
+  
+  var values = sheet.getRange(4, 2, lastRow - 3, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][0] && values[i][0].toString().trim() === nombre.trim()) {
+      sheet.getRange(4 + i, 2).clearContent();
+      return { success: true };
+    }
+  }
+  return { success: false, error: "Usuario no encontrado" };
 }
 
 // 3. Obtener el listado de usuarios de la pestaña original "USUARIOS"

@@ -289,7 +289,7 @@
     </section>
 
 
-    <!-- 3. ADMIN DASHBOARD VIEW -->
+      <!-- 3. ADMIN DASHBOARD VIEW -->
     <section id="admin-view" class="view-panel">
       <div class="admin-top-actions" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
          <button id="btn-excel-actions" class="btn btn-secondary" style="display:flex; align-items:center; gap:6px;"><img src="assets/icons/excel.png" class="hw-icon-img" alt="Excel" style="margin:0;"> Gestionar Excel</button>
@@ -301,9 +301,10 @@
         <button class="tab-link" data-target="admin-tab-ink">Control de Tintas</button>
         <button class="tab-link" data-target="admin-tab-internet">Planes BAM</button>
         <button class="tab-link" data-target="admin-tab-history">Historial de Uso</button>
+        <button class="tab-link" data-target="admin-tab-users">Gestión de Usuarios</button>
       </nav>
 
-      <!-- Admin Tab Content: Inventory / Overview -->
+        <!-- Admin Tab Content: Inventory / Overview -->
       <div id="admin-tab-overview" class="tab-content active">
         <div class="stats-bar">
           <div class="stat-card glass">
@@ -484,6 +485,27 @@
   </main>
 
   <!-- 4. MODALS -->
+
+  <!-- User Management Modal -->
+  <div id="modal-user" class="modal">
+    <div class="modal-content glass animate-slide-up">
+      <div class="modal-header">
+        <h3 id="modal-user-title">Añadir Usuario</h3>
+        <button class="modal-close" onclick="closeUserModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="user-name-input">Nombre del Usuario</label>
+          <input type="text" id="user-name-input" placeholder="Ej. Juan Pérez">
+          <input type="hidden" id="user-old-name-input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close" onclick="closeUserModal()">Cancelar</button>
+        <button id="btn-save-user" class="btn btn-primary" onclick="saveUser()">Guardar</button>
+      </div>
+    </div>
+  </div>
   
   <!-- A. Reservation Confirm Modal -->
   <div id="modal-reserve" class="modal">
