@@ -455,13 +455,13 @@ async function loadDatabase() {
         // Si no hay usuarios en la nube, precargar del config.js
         if (state.users.length === 0) state.users = CONFIG.USUARIOS;
 
-        state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
-        state.logs = db.logs;
+        state.biometrics = db.biometrics && db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
+        state.logs = db.logs || [];
         // Fix for notifications firing on initial load:
         lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
         
-        state.inkLogs = db.inkLogs;
-        state.internetLogs = db.internetLogs;
+        state.inkLogs = db.inkLogs || [];
+        state.internetLogs = db.internetLogs || [];
         
         // Calcular estado de biometria dinámicamente con base en LOG_USO activo
         recalculateBiometricStates();
@@ -753,14 +753,18 @@ async function sendAction(action, payload) {
             alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la acción no se aplicó en Google Sheets.\n\nPor favor, actualiza tu script.");
           }
           
-          if (db.logs) {
-            state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
-            if (state.users.length === 0) state.users = CONFIG.USUARIOS;
-
-            state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
-            state.logs = db.logs;
-            state.inkLogs = db.inkLogs;
-            state.internetLogs = db.internetLogs;
+          if (db.users || db.logs || db.biometrics) {
+            if (db.users) {
+              state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
+              if (state.users.length === 0) state.users = CONFIG.USUARIOS;
+            }
+  
+            if (db.biometrics) {
+              state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
+            }
+            state.logs = db.logs || [];
+            state.inkLogs = db.inkLogs || [];
+            state.internetLogs = db.internetLogs || [];
           }
           
           recalculateBiometricStates();
@@ -2340,14 +2344,16 @@ async function pollForUpdates() {
     if (!res.ok) return;
     const db = await res.json();
     if (db.success) {
-      const newLogs = db.logs;
+      const newLogs = db.logs || [];
       checkNotificationChanges(lastKnownLogs, newLogs);
       lastKnownLogs = JSON.parse(JSON.stringify(newLogs));
       
       // Optionally update local state seamlessly if there are changes
       if (JSON.stringify(state.logs) !== JSON.stringify(newLogs)) {
         state.logs = newLogs;
-        state.biometrics = db.biometrics;
+        if (db.biometrics) {
+           state.biometrics = db.biometrics;
+        }
         recalculateBiometricStates();
         renderBiometrics();
         if (state.currentUser && state.currentUser.role === "admin") {
