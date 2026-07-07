@@ -431,7 +431,7 @@ async function loadDatabase() {
       }
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
       
       const response = await fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?_t=${Date.now()}`, {
         redirect: 'follow',
@@ -477,6 +477,8 @@ async function loadDatabase() {
           }, 600);
         }
         return;
+      } else {
+        throw new Error(db.error || "Error de respuesta del servidor Google");
       }
     } catch (err) {
       console.error("Error al sincronizar con Google Sheets, cayendo en respaldo local:", err);
@@ -718,6 +720,13 @@ async function sendAction(action, payload) {
     if (logItem) {
       logItem.estado = "Cancelado";
     }
+  } else if (action === "addUser") {
+    state.users.push(payload.nombre);
+  } else if (action === "editUser") {
+    const idx = state.users.indexOf(payload.oldName);
+    if (idx !== -1) state.users[idx] = payload.newName;
+  } else if (action === "deleteUser") {
+    state.users = state.users.filter(u => u !== payload.nombre);
   }
 
   // Guardar local, refrescar UI y sugerencias secuenciales
