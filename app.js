@@ -658,7 +658,7 @@ async function sendAction(action, payload) {
       hora_salida_real: timeStr,
       fecha_entrada: "",
       hora_entrada: "",
-      estado: "Activo",
+      estado: "Pendiente",
       devuelto_por: ""
     });
   } else if (action === "return") {
@@ -846,6 +846,7 @@ function sendAdminEmail(subject, message) {
     })
     .catch((err) => {
       console.error("Fallo al enviar el correo:", err);
+      showToast("Error de EmailJS: " + (err.text || "Revisa la Public Key"));
     });
 }
 

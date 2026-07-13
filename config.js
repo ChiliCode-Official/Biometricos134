@@ -6,7 +6,7 @@ const CONFIG = {
 
   // Configuración de EmailJS para Notificaciones al Administrador
   EMAILJS: {
-    PUBLIC_KEY: "clc-pLTGPJuHnGpiy", // Llave pública proporcionada
+    PUBLIC_KEY: "cIc-pLTGPJuHnGPiy", // Llave pública proporcionada
     SERVICE_ID: "service_xeucb87", // Reemplazado con el ID de la imagen
     TEMPLATE_ID: "template_2mhjv8c" // ID de plantilla proporcionado
   },
