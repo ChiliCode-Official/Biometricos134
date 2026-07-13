@@ -2,9 +2,14 @@
 
 const CONFIG = {
   // Pegar aquí la URL de la Web App obtenida de Google Apps Script.
-  // Ejemplo: "https://script.google.com/macros/s/AKfycbz.../exec"
-  // Si está vacío, la app funcionará en modo DEMO (LocalStorage local).
-  GOOGLE_SHEET_API_URL: "https://script.google.com/macros/s/AKfycbwZHsTa9U_TpkZU2qgB4D3GkVXwrRW-TXkkvUfKTmPPIKznuIJSRyhDDL3mU0xt_9B-mw/exec", 
+  GOOGLE_SHEET_API_URL: "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec", 
+
+  // Configuración de EmailJS para Notificaciones al Administrador
+  EMAILJS: {
+    PUBLIC_KEY: "clc-pLTGPJuHnGpiy", // Llave pública proporcionada
+    SERVICE_ID: "service_xeucb87", // Reemplazado con el ID de la imagen
+    TEMPLATE_ID: "template_2mhjv8c" // ID de plantilla proporcionado
+  },
 
   // PIN de Acceso para el Administrador
   ADMIN_PIN: "134134",

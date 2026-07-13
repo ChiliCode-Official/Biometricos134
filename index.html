@@ -44,6 +44,8 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- XlsxPopulate for style-preserving Excel exporting -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx-populate@1.21.0/browser/xlsx-populate.min.js"></script>
+  <!-- EmailJS SDK -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -162,7 +164,7 @@
           </div>
           
           <div class="topbar-right">
-            <button class="btn btn-secondary" onclick="location.reload()" title="Sincronizar">🔄 Sincronizar</button>
+            <button class="btn btn-secondary" onclick="manualSync()" title="Sincronizar">🔄 Sincronizar</button>
             <span id="user-offline-badge" class="offline-badge hidden" style="background: #FF9500; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">☁️ 0</span>
           </div>
         </header>
@@ -289,8 +291,20 @@
     </section>
 
 
-      <!-- 3. ADMIN DASHBOARD VIEW -->
+    <!-- 3. ADMIN DASHBOARD VIEW -->
     <section id="admin-view" class="view-panel">
+      <!-- Admin EmailJS Progress Bar -->
+      <div id="email-progress-container" class="glass" style="margin-bottom: 20px; padding: 15px; border-radius: 12px; border-left: 4px solid var(--accent);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h4 style="margin: 0; font-size: 1rem;">Cuota de Emails (EmailJS)</h4>
+          <span id="email-progress-text" style="font-weight: bold; font-size: 0.9rem;">0 / 200</span>
+        </div>
+        <div style="width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+          <div id="email-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #34c759, #FF9500); transition: width 0.3s ease;"></div>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; text-align: right;">Reinicia el día 13 de cada mes</div>
+      </div>
+
       <div class="admin-top-actions" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
          <button id="btn-excel-actions" class="btn btn-secondary" style="display:flex; align-items:center; gap:6px;"><img src="assets/icons/excel.png" class="hw-icon-img" alt="Excel" style="margin:0;"> Gestionar Excel</button>
       </div>
@@ -301,10 +315,9 @@
         <button class="tab-link" data-target="admin-tab-ink">Control de Tintas</button>
         <button class="tab-link" data-target="admin-tab-internet">Planes BAM</button>
         <button class="tab-link" data-target="admin-tab-history">Historial de Uso</button>
-        <button class="tab-link" data-target="admin-tab-users">Gestión de Usuarios</button>
       </nav>
 
-        <!-- Admin Tab Content: Inventory / Overview -->
+      <!-- Admin Tab Content: Inventory / Overview -->
       <div id="admin-tab-overview" class="tab-content active">
         <div class="stats-bar">
           <div class="stat-card glass">
@@ -472,36 +485,12 @@
             <div style="text-align:center; margin-top: 15px;">
               <button class="btn btn-secondary" onclick="loadMoreHistory()">Cargar 50 más</button>
             </div>
-        </div>
-      </div>
-      </div>
-
-      <!-- Admin Tab Content: User Management -->
-      <div id="admin-tab-users" class="tab-content">
-        <div class="logistics-container">
-          <div class="history-container glass" style="width: 100%;">
-            <div class="history-header" style="display:flex; justify-content:space-between; align-items:center;">
-              <h4>Gestión de Pasantes</h4>
-              <button class="btn btn-primary" onclick="openAddUserModal()">+ Añadir Usuario</button>
-            </div>
-            <p class="form-desc" style="margin-bottom:15px; color:var(--text-secondary);">Administra los usuarios autorizados para utilizar los biométricos.</p>
-            <div class="table-wrapper">
-              <table id="users-table">
-                <thead>
-                  <tr>
-                    <th>Nombre de Usuario</th>
-                    <th style="width: 180px; text-align:center;">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="user-management-tbody">
-                  <tr><td colspan="2" class="text-center">Cargando usuarios...</td></tr>
-                </tbody>
-              </table>
-            </div>
           </div>
+        </div>
         </div>
       </div>
     </section>
+
         </div> <!-- /.dashboard-views -->
       </div> <!-- /.dashboard-content -->
     </div> <!-- /#dashboard-layout -->
@@ -509,27 +498,6 @@
   </main>
 
   <!-- 4. MODALS -->
-
-  <!-- User Management Modal -->
-  <div id="modal-user" class="modal">
-    <div class="modal-content glass animate-slide-up">
-      <div class="modal-header">
-        <h3 id="modal-user-title">Añadir Usuario</h3>
-        <button class="modal-close" onclick="closeUserModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="input-group">
-          <label for="user-name-input">Nombre del Usuario</label>
-          <input type="text" id="user-name-input" placeholder="Ej. Juan Pérez">
-          <input type="hidden" id="user-old-name-input">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary modal-close" onclick="closeUserModal()">Cancelar</button>
-        <button id="btn-save-user" class="btn btn-primary" onclick="saveUser()">Guardar</button>
-      </div>
-    </div>
-  </div>
   
   <!-- A. Reservation Confirm Modal -->
   <div id="modal-reserve" class="modal">

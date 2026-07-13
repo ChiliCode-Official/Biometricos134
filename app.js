@@ -179,44 +179,27 @@ async function initApp() {
     }
   }
 
+  // Inicializar EmailJS
+  if (window.emailjs && typeof window.emailjs.init === "function") {
+    emailjs.init(CONFIG.EMAILJS.PUBLIC_KEY);
+    initEmailJSProgress();
+  }
+
   // 2. Determinar modo de conexión
   if (CONFIG.GOOGLE_SHEET_API_URL && CONFIG.GOOGLE_SHEET_API_URL.trim() !== "") {
     state.connectionMode = "online";
-    updateConnectionBar("loading", "Revisando biométricos disponibles...");
+    updateConnectionBar("loading", "Revisando biométricos en la nube...");
   } else {
     state.connectionMode = "demo";
-    updateConnectionBar("demo", "Modo Demostración (Local) - Edita config.js para conectar Google Sheets");
+    updateConnectionBar("demo", "Falta URL de Google Sheets en config.js");
   }
 
-  // Cargar base local de inmediato para respuesta instantánea antes de red
-  loadLocalDatabase();
-  renderBiometrics();
+  // Render inicial vacío (Skeletons)
+  renderSkeletons();
   populateExitTimeDropdown();
-  updateSequentialSuggestion();
 
-  // Intentar precargar la plantilla de Excel original en segundo plano
-  try {
-    const response = await fetch('RESPONSIVA DE EQUIPO DE COMPUTO Firmas 1 JULIO 2022.xlsx');
-    if (response.ok) {
-      const arrayBuffer = await response.arrayBuffer();
-      state.originalWorkbookBuffer = arrayBuffer;
-      state.originalWorkbook = XLSX.read(new Uint8Array(arrayBuffer), { 
-        type: "array", 
-        cellStyles: true, 
-        cellFormulas: true, 
-        cellDates: true, 
-        cellNF: true 
-      });
-      console.log("Plantilla Excel precargada con éxito");
-    }
-  } catch (err) {
-    console.warn("No se pudo precargar la plantilla Excel automáticamente:", err);
-  }
-
-  // 3. Cargar Base de Datos (Nube) de forma asíncrona sin bloquear la UI
-  setButtonsState(false); // Deshabilitar botones durante la carga
+  // 3. Cargar Base de Datos (Nube) sin bloquear la UI
   loadDatabase().then(() => {
-    setButtonsState(true); // Habilitar botones al terminar de cargar
     renderBiometrics();
     updateSequentialSuggestion();
     if (state.currentUser && state.currentUser.role === "admin") {
@@ -431,7 +414,7 @@ async function loadDatabase() {
       }
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
       
       const response = await fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?_t=${Date.now()}`, {
         redirect: 'follow',
@@ -455,13 +438,13 @@ async function loadDatabase() {
         // Si no hay usuarios en la nube, precargar del config.js
         if (state.users.length === 0) state.users = CONFIG.USUARIOS;
 
-        state.biometrics = db.biometrics && db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
-        state.logs = db.logs || [];
+        state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
+        state.logs = db.logs;
         // Fix for notifications firing on initial load:
         lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
         
-        state.inkLogs = db.inkLogs || [];
-        state.internetLogs = db.internetLogs || [];
+        state.inkLogs = db.inkLogs;
+        state.internetLogs = db.internetLogs;
         
         // Calcular estado de biometria dinámicamente con base en LOG_USO activo
         recalculateBiometricStates();
@@ -477,19 +460,24 @@ async function loadDatabase() {
           }, 600);
         }
         return;
-      } else {
-        throw new Error(db.error || "Error de respuesta del servidor Google");
       }
     } catch (err) {
-      console.error("Error al sincronizar con Google Sheets, cayendo en respaldo local:", err);
+      console.error("Error al sincronizar con Google Sheets:", err);
       if (progressContainer) progressContainer.style.display = "none";
+      updateConnectionBar("offline", "Error de conexión con la nube. Trabajando offline.");
     }
   }
-
-  // Respaldo local
-  updateConnectionBar("demo", "Modo Local (Respaldo/Sin conexión) - Cambios guardados en navegador");
-  loadLocalDatabase();
 }
+
+// Sync Manual
+window.manualSync = async function() {
+  await processOfflineQueue();
+  await loadDatabase();
+  renderBiometrics();
+  if (state.currentUser && state.currentUser.role === "admin") {
+    renderAdminDashboard();
+  }
+};
 
 // Recalcular estado de los biométricos con base en LOG_USO
 function recalculateBiometricStates() {
@@ -606,17 +594,7 @@ function updateSequentialSuggestion() {
   const btn = document.getElementById("btn-request-sequential");
   const btnText = document.getElementById("btn-request-sequential-text");
   
-  if (!suggestSpan || !container) return;
-
-  if (state.currentUser && state.currentUser.role === "user") {
-    const hasActive = state.logs.some(l => l.usuario === state.currentUser.name && l.estado === "Activo");
-    if (hasActive) {
-      container.style.display = "none";
-      return;
-    }
-  }
-  
-  container.style.display = "";
+  if (!suggestSpan) return;
 
   const nextBio = getNextSequentialBiometric();
   if (nextBio) {
@@ -680,14 +658,9 @@ async function sendAction(action, payload) {
       hora_salida_real: timeStr,
       fecha_entrada: "",
       hora_entrada: "",
-      estado: "Pendiente",
+      estado: "Activo",
       devuelto_por: ""
     });
-  } else if (action === "confirm") {
-    const logItem = state.logs.find(l => l.id === payload.id);
-    if (logItem) {
-      logItem.estado = "Activo";
-    }
   } else if (action === "return") {
     const logItem = state.logs.find(l => l.id === payload.id);
     if (logItem) {
@@ -720,13 +693,6 @@ async function sendAction(action, payload) {
     if (logItem) {
       logItem.estado = "Cancelado";
     }
-  } else if (action === "addUser") {
-    state.users.push(payload.nombre);
-  } else if (action === "editUser") {
-    const idx = state.users.indexOf(payload.oldName);
-    if (idx !== -1) state.users[idx] = payload.newName;
-  } else if (action === "deleteUser") {
-    state.users = state.users.filter(u => u !== payload.nombre);
   }
 
   // Guardar local, refrescar UI y sugerencias secuenciales
@@ -762,18 +728,19 @@ async function sendAction(action, payload) {
             alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la acción no se aplicó en Google Sheets.\n\nPor favor, actualiza tu script.");
           }
           
-          if (db.users || db.logs || db.biometrics) {
-            if (db.users) {
-              state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
-              if (state.users.length === 0) state.users = CONFIG.USUARIOS;
-            }
-  
-            if (db.biometrics) {
-              state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
-            }
-            state.logs = db.logs || [];
-            state.inkLogs = db.inkLogs || [];
-            state.internetLogs = db.internetLogs || [];
+          if (db.logs) {
+            state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
+            if (state.users.length === 0) state.users = CONFIG.USUARIOS;
+
+            state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
+            
+            // Fix sync bug: preserve local logs not yet in db.logs
+            const cloudLogIds = new Set(db.logs.map(l => l.id));
+            const pendingLocalLogs = state.logs.filter(l => l.id.startsWith("LOG-") && !cloudLogIds.has(l.id));
+            state.logs = [...db.logs, ...pendingLocalLogs];
+            
+            state.inkLogs = db.inkLogs;
+            state.internetLogs = db.internetLogs;
           }
           
           recalculateBiometricStates();
@@ -803,16 +770,83 @@ async function sendAction(action, payload) {
         updateOfflineBadge();
         
         if (err.name === 'AbortError') {
-          showToast("Red muy lenta. Acción guardada en la nube pendiente (Offline).");
+          showToast("Red lenta. Guardado local, sincronizará de fondo.");
         } else {
-          showToast("Sin internet. Acción guardada en cola local (Offline).");
+          showToast("Sin internet. Guardado local, sincronizará al conectar.");
         }
       });
-  } else {
-    showToast("Registrado localmente.");
+  }
+
+  // Enviar correo de notificación al admin (solo si es request)
+  if (action === "request") {
+    sendAdminEmail(
+      `Nuevo Préstamo: Biométrico ${payload.biometrico}`,
+      `El usuario ${payload.usuario} ha solicitado el Biométrico ${payload.biometrico} para las ${payload.hora_salida || 'Al momento'}.`
+    );
   }
 
   return { success: true };
+}
+
+/* ==========================================================================
+   EMAILJS LOGIC
+   ========================================================================== */
+function initEmailJSProgress() {
+  const now = new Date();
+  const resetDate = new Date(now.getFullYear(), now.getMonth(), 13);
+  if (now.getDate() >= 13) {
+    resetDate.setMonth(resetDate.getMonth() + 1);
+  }
+  
+  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+  
+  if (now.getTime() > savedData.resetTimestamp) {
+    savedData.count = 0;
+    savedData.resetTimestamp = resetDate.getTime();
+    localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+  }
+  
+  updateEmailProgressUI(savedData.count);
+}
+
+function updateEmailProgressUI(count) {
+  const progressBar = document.getElementById("email-progress-bar");
+  const progressText = document.getElementById("email-progress-text");
+  if (progressBar && progressText) {
+    const max = 200;
+    const percentage = Math.min((count / max) * 100, 100);
+    progressBar.style.width = `${percentage}%`;
+    progressText.innerText = `${count} / ${max}`;
+    if (percentage > 90) progressBar.style.background = "#FF3B30";
+  }
+}
+
+function sendAdminEmail(subject, message) {
+  if (!CONFIG.EMAILJS.SERVICE_ID || CONFIG.EMAILJS.SERVICE_ID === "SERVICE_ID_AQUI") return;
+  
+  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+  if (savedData.count >= 200) {
+    console.warn("Límite de correos gratis de EmailJS alcanzado (200).");
+    return;
+  }
+  
+  const templateParams = {
+    subject: subject,
+    message: message,
+    // Optional if your template uses them
+    company_name: "Notaría 134",
+    website_link: window.location.href
+  };
+  
+  emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams)
+    .then(() => {
+      savedData.count++;
+      localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+      updateEmailProgressUI(savedData.count);
+    })
+    .catch((err) => {
+      console.error("Fallo al enviar el correo:", err);
+    });
 }
 
 /* ==========================================================================
@@ -941,7 +975,7 @@ function loginAsAdmin() {
     renderBiometrics();
     renderAdminDashboard();
     updateSequentialSuggestion();
-    showToast("Sesión de administrador iniciada.", 2500);
+    showToast("Sesión de administrador iniciada.");
     document.getElementById("admin-pin").value = "";
     
     // Notifications init
@@ -1406,11 +1440,6 @@ function renderAdminDashboard() {
       netTbody.appendChild(tr);
     });
   }
-
-  // Render User Management Tab
-  if (typeof renderUserManagement === "function") {
-    renderUserManagement();
-  }
 }
 
 // Rellenar horas de salida de 7:00 AM a 4:00 PM
@@ -1581,6 +1610,7 @@ window.confirmDelivery = async function(logId, bioNum) {
   const res = await sendAction("confirm", { id: logId, biometrico: bioNum });
   if (res && res.success) {
     showToast("Entrega confirmada con éxito");
+    fetchDatabase();
   } else {
     showToast("Error al confirmar la entrega", true);
   }
@@ -1595,6 +1625,7 @@ window.cancelDelivery = async function(logId, bioNum) {
     const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
     if (res && res.success) {
       showToast("Solicitud cancelada");
+      fetchDatabase();
     }
   }
 }
@@ -2208,16 +2239,9 @@ function closeModal() {
   document.querySelectorAll(".modal").forEach(modal => modal.classList.remove("active"));
 }
 
-let toastTimeout;
-function showToast(message, duration = 2500) {
-    if (toastTimeout) clearTimeout(toastTimeout);
-    
-    if (typeof duration !== "number" || isNaN(duration)) {
-        duration = 2500;
-    }
-
-    const toast = document.getElementById("toast");
-    let icon = "💬";
+function showToast(message, duration = 3000) {
+  const toast = document.getElementById("toast");
+  let icon = "✨";
   if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
     icon = "⚠️";
     if (window.SoundManager) SoundManager.error();
@@ -2234,7 +2258,7 @@ function showToast(message, duration = 2500) {
   toast.classList.add("show");
   
   if (duration > 0) {
-    toastTimeout = setTimeout(hideToast, duration);
+    setTimeout(hideToast, duration);
   }
 }
 
@@ -2336,7 +2360,7 @@ function startNotificationPolling() {
   // Clone current logs to avoid firing notifications on startup
   lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
   
-  notificationPollingTimer = setInterval(pollForUpdates, 5000); // 5 seconds
+  notificationPollingTimer = setInterval(pollForUpdates, 15000); // 15 seconds
 }
 
 function stopNotificationPolling() {
@@ -2353,16 +2377,14 @@ async function pollForUpdates() {
     if (!res.ok) return;
     const db = await res.json();
     if (db.success) {
-      const newLogs = db.logs || [];
+      const newLogs = db.logs;
       checkNotificationChanges(lastKnownLogs, newLogs);
       lastKnownLogs = JSON.parse(JSON.stringify(newLogs));
       
       // Optionally update local state seamlessly if there are changes
       if (JSON.stringify(state.logs) !== JSON.stringify(newLogs)) {
         state.logs = newLogs;
-        if (db.biometrics) {
-           state.biometrics = db.biometrics;
-        }
+        state.biometrics = db.biometrics;
         recalculateBiometricStates();
         renderBiometrics();
         if (state.currentUser && state.currentUser.role === "admin") {
@@ -2685,16 +2707,13 @@ function renderAnalytics() {
       return;
     }
     try {
-      showToast("Autenticando biometría...", "info", 60000);
+      showToast("Autenticando biometría...", "info");
       const publicKey = {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        challenge: new Uint8Array([1,2,3,4,5,6]),
         rp: { name: "Biométricos 134" },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "admin@biometricos", displayName: "Admin" },
+        user: { id: new Uint8Array(16), name: "admin@biometricos", displayName: "Admin" },
         pubKeyCredParams: [{type: "public-key", alg: -7}],
-        authenticatorSelection: { 
-          authenticatorAttachment: "platform",
-          userVerification: "required"
-        },
+        authenticatorSelection: { authenticatorAttachment: "platform" },
         timeout: 60000,
         attestation: "none"
       };
@@ -2704,13 +2723,11 @@ function renderAnalytics() {
       document.getElementById('admin-name').textContent = state.currentUser.name;
       document.getElementById('profile-name').textContent = state.currentUser.name;
       document.getElementById('profile-role').textContent = "Administrador";
-      requestNotificationPermission();
-      startNotificationPolling();
       renderBiometrics();
       showView('admin-view');
     } catch (err) {
       console.error(err);
-      showToast(`Fallo: ${err.name} - ${err.message}`, "error");
+      showToast("Cancelado o fallo en la biometría", "error");
     }
   }
 
@@ -2796,74 +2813,3 @@ function renderAnalytics() {
     }
     if (originalShowToast) originalShowToast(msg, type);
   };
-// --- User Management Logic ---
-function renderUserManagement() {
-  const tbody = document.getElementById("user-management-tbody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-  
-  if (!state.users || state.users.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="2" class="text-center">No hay usuarios registrados</td></tr>`;
-    return;
-  }
-  
-  state.users.forEach(user => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${user}</td>
-      <td style="text-align: center;">
-        <div style="display:flex; gap:6px; justify-content:center;">
-          <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem;" onclick="openEditUserModal('${user}')">Editar</button>
-          <button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem; background-color:#ff3b30;" onclick="deleteUser('${user}')">Eliminar</button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-window.openAddUserModal = function() {
-  document.getElementById("modal-user-title").innerText = "Añadir Usuario";
-  document.getElementById("user-name-input").value = "";
-  document.getElementById("user-old-name-input").value = "";
-  openModal("modal-user");
-};
-
-window.openEditUserModal = function(username) {
-  document.getElementById("modal-user-title").innerText = "Editar Usuario";
-  document.getElementById("user-name-input").value = username;
-  document.getElementById("user-old-name-input").value = username;
-  openModal("modal-user");
-};
-
-window.closeUserModal = function() {
-  closeModal("modal-user");
-};
-
-window.saveUser = async function() {
-  const newName = document.getElementById("user-name-input").value.trim();
-  const oldName = document.getElementById("user-old-name-input").value;
-  
-  if (!newName) {
-    showToast("El nombre del usuario no puede estar vacío");
-    return;
-  }
-  
-  closeUserModal();
-  setButtonsState(false);
-  
-  if (oldName) {
-    await sendAction("editUser", { oldName: oldName, newName: newName });
-  } else {
-    await sendAction("addUser", { nombre: newName });
-  }
-  setButtonsState(true);
-};
-
-window.deleteUser = async function(username) {
-  if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${username}"?`)) {
-    setButtonsState(false);
-    await sendAction("deleteUser", { nombre: username });
-    setButtonsState(true);
-  }
-};
