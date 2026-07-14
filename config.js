@@ -1,18 +1,30 @@
 // CONFIGURACIÓN CENTRAL DE LA APLICACIÓN DE BIOMÉTRICOS (NOTARÍA 134)
 
 const CONFIG = {
-  // Pegar aquí la URL de la Web App obtenida de Google Apps Script.
+  // Pegar aquí la URL de la Web App obtenida de Google Apps Script. (Temporalmente restaurado)
   GOOGLE_SHEET_API_URL: "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec", 
+
+  // Configuración de Firebase (Reemplaza a Google Apps Script)
+  FIREBASE: {
+    apiKey: "AIzaSyCymtsWtTR5QRJRDtxOuVLElUj44hOB0xg",
+    authDomain: "biometricos-134.firebaseapp.com",
+    projectId: "biometricos-134",
+    storageBucket: "biometricos-134.firebasestorage.app",
+    messagingSenderId: "349392321937",
+    appId: "1:349392321937:web:ada027b727cf2a0959ee30",
+    measurementId: "G-FSJJPFM15Q"
+  },
 
   // Configuración de EmailJS para Notificaciones al Administrador
   EMAILJS: {
-    PUBLIC_KEY: "cIc-pLTGPJuHnGPiy", // Llave pública proporcionada
+    PUBLIC_KEY: "clc-pLTGPJuHnGpiy", // Llave pública proporcionada
     SERVICE_ID: "service_xeucb87", // Reemplazado con el ID de la imagen
     TEMPLATE_ID: "template_2mhjv8c" // ID de plantilla proporcionado
   },
 
-  // PIN de Acceso para el Administrador
-  ADMIN_PIN: "134134",
+  // PIN de Acceso para el Administrador (Ahora es un Hash SHA-256 para que no sea visible con F12)
+  // El PIN actual corresponde a "134134"
+  ADMIN_PIN_HASH: "2657e7c5668443b62182a9dcf8706fa20ccbe837b152406c68533ef7daa7daea",
 
   // Datos precargados de los 8 Biométricos (Extraídos del Excel original)
   BIOMETRICOS: [

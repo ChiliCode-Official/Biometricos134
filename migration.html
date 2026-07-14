@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Migración a Firebase</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #111; color: #fff; }
+    #log { background: #222; padding: 1rem; border-radius: 8px; height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>Migrador de Datos (GAS -> Firebase)</h1>
+  <button id="btn-start" style="padding: 1rem 2rem; font-size: 1.2rem; cursor: pointer;">Iniciar Migración</button>
+  <div id="log">Esperando...</div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, writeBatch, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCymtsWtTR5QRJRDtxOuVLElUj44hOB0xg",
+      authDomain: "biometricos-134.firebaseapp.com",
+      projectId: "biometricos-134",
+      storageBucket: "biometricos-134.firebasestorage.app",
+      messagingSenderId: "349392321937",
+      appId: "1:349392321937:web:ada027b727cf2a0959ee30",
+      measurementId: "G-FSJJPFM15Q"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec";
+    const logEl = document.getElementById('log');
+
+    function log(msg) {
+      logEl.innerHTML += msg + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    document.getElementById('btn-start').addEventListener('click', async () => {
+      try {
+        log("1. Descargando datos desde Google Apps Script...");
+        const res = await fetch(`${GAS_URL}?action=getAllData`);
+        const data = await res.json();
+        log(`✓ Datos descargados: ${data.biometrics?.length || 0} bioms, ${data.logs?.length || 0} logs, ${data.inkLogs?.length || 0} tintas, ${data.internetLogs?.length || 0} internet.`);
+        
+        log("2. Subiendo a Firestore...");
+        
+        // Save Biometrics as a single document (since there are only 8 and they represent state)
+        if (data.biometrics && data.biometrics.length > 0) {
+          log("-> Subiendo biometrics...");
+          await setDoc(doc(db, "app_data", "biometrics"), { items: data.biometrics });
+        }
+        
+        // Save users
+        if (data.users && data.users.length > 0) {
+           log("-> Subiendo users...");
+           await setDoc(doc(db, "app_data", "users"), { items: data.users });
+        }
+
+        // Upload logs in batches
+        const uploadArray = async (collectionName, arrayData) => {
+          if (!arrayData || arrayData.length === 0) return;
+          log(`-> Subiendo ${arrayData.length} registros a ${collectionName}...`);
+          let batch = writeBatch(db);
+          let count = 0;
+          for (let i = 0; i < arrayData.length; i++) {
+            const item = arrayData[i];
+            const ref = doc(collection(db, collectionName));
+            batch.set(ref, item);
+            count++;
+            if (count === 490) { // Firestore batch limit is 500
+              await batch.commit();
+              batch = writeBatch(db);
+              count = 0;
+            }
+          }
+          if (count > 0) {
+            await batch.commit();
+          }
+        };
+
+        await uploadArray("logs", data.logs);
+        await uploadArray("inkLogs", data.inkLogs);
+        await uploadArray("internetLogs", data.internetLogs);
+
+        log("🎉 ¡MIGRACIÓN COMPLETADA EXITOSAMENTE! 🎉");
+      } catch (err) {
+        log("❌ ERROR: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
