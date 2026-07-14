@@ -37,17 +37,13 @@ function setupRealtime() {
            }
         }
         
-        // Trigger UI Re-render if it's not the first initial burst
-        if (!isFirstLoad) {
-           if (typeof renderBiometrics === "function") renderBiometrics();
-           if (typeof renderAdminDashboard === "function") renderAdminDashboard();
-           if (typeof updateSequentialSuggestion === "function") updateSequentialSuggestion();
-        }
+        // Trigger UI Re-render always to keep things perfectly in sync
+        if (typeof recalculateBiometricStates === "function") recalculateBiometricStates();
+        if (typeof renderBiometrics === "function") renderBiometrics();
+        if (typeof renderAdminDashboard === "function") renderAdminDashboard();
+        if (typeof updateSequentialSuggestion === "function") updateSequentialSuggestion();
       });
   });
-  
-  // Give it 1.5 seconds to fetch initial data before triggering renders
-  setTimeout(() => { isFirstLoad = false; }, 1500);
 }
 
 // 3. Override window.fetch to hijack GAS calls
@@ -73,9 +69,17 @@ window.fetch = async function() {
     await new Promise(r => setTimeout(r, 200));
 
     try {
-      if (action === 'getDatabase' || action === 'getAllData') {
-         // Return current state synced from Firebase
-         return new Response(JSON.stringify(state), { status: 200 });
+      if (!action || action === 'getDatabase' || action === 'getAllData') {
+         // Return current state synced from Firebase formatted for app.js
+         return new Response(JSON.stringify({
+            success: true,
+            version: "v2",
+            users: state.users,
+            biometrics: state.biometrics,
+            logs: state.logs,
+            inkLogs: state.inkLogs,
+            internetLogs: state.internetLogs
+         }), { status: 200 });
       }
       
       if (action === 'saveBiometrics') {

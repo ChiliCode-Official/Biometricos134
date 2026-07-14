@@ -777,8 +777,8 @@ async function sendAction(action, payload) {
       });
   }
 
-  // Enviar correo de notificación al admin (solo si es request)
-  if (action === "request") {
+  // Enviar correo de notificación al admin (solo si es request de un pasante)
+  if (action === "request" && state.currentUser && state.currentUser.role !== "admin") {
     sendAdminEmail(
       `Nuevo Préstamo: Biométrico ${payload.biometrico}`,
       `El usuario ${payload.usuario} ha solicitado el Biométrico ${payload.biometrico} para las ${payload.hora_salida || 'Al momento'}.`
@@ -791,22 +791,27 @@ async function sendAction(action, payload) {
 /* ==========================================================================
    EMAILJS LOGIC
    ========================================================================== */
-function initEmailJSProgress() {
+async function initEmailJSProgress() {
   const now = new Date();
   const resetDate = new Date(now.getFullYear(), now.getMonth(), 13);
   if (now.getDate() >= 13) {
     resetDate.setMonth(resetDate.getMonth() + 1);
   }
   
-  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
-  
-  if (now.getTime() > savedData.resetTimestamp) {
-    savedData.count = 0;
-    savedData.resetTimestamp = resetDate.getTime();
-    localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+  if (typeof firebase !== 'undefined') {
+    const db = firebase.firestore();
+    const docRef = db.collection('app_data').doc('email_stats');
+    
+    // Sincronización en tiempo real de la barra de correos
+    docRef.onSnapshot(doc => {
+      let savedData = doc.exists ? doc.data() : { count: 0, resetTimestamp: 0 };
+      if (now.getTime() > savedData.resetTimestamp) {
+        savedData = { count: 0, resetTimestamp: resetDate.getTime() };
+        docRef.set(savedData);
+      }
+      updateEmailProgressUI(savedData.count);
+    });
   }
-  
-  updateEmailProgressUI(savedData.count);
 }
 
 function updateEmailProgressUI(count) {
@@ -821,10 +826,16 @@ function updateEmailProgressUI(count) {
   }
 }
 
-function sendAdminEmail(subject, message) {
+async function sendAdminEmail(subject, message) {
   if (!CONFIG.EMAILJS.SERVICE_ID || CONFIG.EMAILJS.SERVICE_ID === "SERVICE_ID_AQUI") return;
   
-  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+  if (typeof firebase === 'undefined') return;
+  const db = firebase.firestore();
+  const docRef = db.collection('app_data').doc('email_stats');
+  
+  const docSnap = await docRef.get();
+  let savedData = docSnap.exists ? docSnap.data() : { count: 0, resetTimestamp: 0 };
+  
   if (savedData.count >= 200) {
     console.warn("Límite de correos gratis de EmailJS alcanzado (200).");
     return;
@@ -833,15 +844,13 @@ function sendAdminEmail(subject, message) {
   const templateParams = {
     subject: subject,
     message: message,
-    // Optional if your template uses them
-    company_name: "Notaría 134",
-    website_link: window.location.href
+    time: new Date().toLocaleString()
   };
   
   emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams)
-    .then(() => {
+    .then(async () => {
       savedData.count++;
-      localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+      await docRef.set(savedData);
       updateEmailProgressUI(savedData.count);
     })
     .catch((err) => {
@@ -962,9 +971,23 @@ function loginAsUser() {
 }
 
 // Iniciar sesión como Administrador
-function loginAsAdmin() {
-  const pin = document.getElementById("admin-pin").value;
-  if (pin === CONFIG.ADMIN_PIN) {
+async function loginAsAdmin() {
+  const rawPin = document.getElementById("admin-pin").value;
+  const pin = rawPin.replace(/\s+/g, ''); // Remover espacios por si escriben "134 134"
+  
+  let hashHex = "";
+  try {
+    // Hashing el PIN ingresado con SHA-256 nativo (Solo funciona en HTTPS o Localhost)
+    const msgUint8 = new TextEncoder().encode(pin);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (err) {
+    // Fallback para cuando se abre el archivo index.html localmente (file:///)
+    if (pin === "134134") hashHex = CONFIG.ADMIN_PIN_HASH;
+  }
+
+  if (hashHex === CONFIG.ADMIN_PIN_HASH) {
     state.currentUser = { name: "Administrador", role: "admin" };
     localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
     
@@ -2240,7 +2263,7 @@ function closeModal() {
   document.querySelectorAll(".modal").forEach(modal => modal.classList.remove("active"));
 }
 
-function showToast(message, duration = 3000) {
+function showToast(message, duration = 1500) {
   const toast = document.getElementById("toast");
   let icon = "✨";
   if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
