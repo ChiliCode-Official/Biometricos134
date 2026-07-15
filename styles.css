@@ -94,7 +94,12 @@ body.light-theme {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body, html { overflow-x: hidden; }`nbody {
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
   font-family: var(--font-body);
   background-color: var(--bg-system);
   color: var(--text-primary);
@@ -215,6 +220,7 @@ body, html { overflow-x: hidden; }`nbody {
 /* --- Dashboard Content Area --- */
 .dashboard-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -269,6 +275,7 @@ body.dark-theme .dashboard-content {
 .dashboard-views {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 40px 60px 80px 60px;
 }
 
@@ -701,7 +708,7 @@ textarea:focus {
 
 .biometrics-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 30px;
 }
 
@@ -2218,4 +2225,5 @@ body:not(.light-theme) .glass {
     max-width: 110px !important;
   }
 }
+
 
