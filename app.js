@@ -402,7 +402,6 @@ function setupEventListeners() {
    DATABASE MANAGEMENT (CLOUD & LOCAL)
    ========================================================================== */
 
-// Cargar Base de datos
 async function loadDatabase() {
   const progressContainer = document.getElementById("loading-progress-container");
   const progressBar = document.getElementById("loading-progress-bar");
@@ -418,35 +417,48 @@ async function loadDatabase() {
       }
       
       // One-time migration check
-      const usersDoc = await db.collection("app_data").doc("users").get();
-      if (!usersDoc.exists) {
-        showToast("Migrando datos de Google Sheets a Firebase...", 5000);
-        // We use the GAS URL one last time
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec";
-        const response = await fetch(`${GAS_URL}?action=getDatabase&_t=${Date.now()}`);
-        const oldDb = await response.json();
-        
-        if (oldDb && oldDb.success) {
-          const normalizedUsers = oldDb.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
-          await db.collection("app_data").doc("users").set({ items: normalizedUsers });
-          await db.collection("app_data").doc("biometrics").set({ items: oldDb.biometrics });
+      try {
+        const usersDoc = await db.collection("app_data").doc("users").get();
+        if (!usersDoc.exists) {
+          showToast("Intentando migrar datos desde Google Sheets...", 4000);
+          // We use the GAS URL one last time
+          const GAS_URL = "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec";
+          const response = await fetch(`${GAS_URL}?action=getDatabase&_t=${Date.now()}`);
+          if (response.ok) {
+            const oldDb = await response.json();
+            if (oldDb && oldDb.success) {
+              const normalizedUsers = oldDb.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
+              await db.collection("app_data").doc("users").set({ items: normalizedUsers });
+              await db.collection("app_data").doc("biometrics").set({ items: oldDb.biometrics });
 
-          const batch = db.batch();
-          
-          if (oldDb.logs) oldDb.logs.forEach(log => {
-            batch.set(db.collection("logs").doc(log.id), log);
-          });
-          
-          if (oldDb.inkLogs) oldDb.inkLogs.forEach(log => {
-            batch.set(db.collection("inkLogs").doc(log.id), log);
-          });
-          
-          if (oldDb.internetLogs) oldDb.internetLogs.forEach(log => {
-            batch.set(db.collection("internetLogs").doc(log.id), log);
-          });
-          
-          await batch.commit();
-          showToast("¡Migración a Firebase exitosa!", 3000);
+              const batch = db.batch();
+              if (oldDb.logs) oldDb.logs.forEach(log => {
+                batch.set(db.collection("logs").doc(log.id), log);
+              });
+              if (oldDb.inkLogs) oldDb.inkLogs.forEach(log => {
+                batch.set(db.collection("inkLogs").doc(log.id), log);
+              });
+              if (oldDb.internetLogs) oldDb.internetLogs.forEach(log => {
+                batch.set(db.collection("internetLogs").doc(log.id), log);
+              });
+              await batch.commit();
+              showToast("¡Migración a Firebase exitosa!", 3000);
+            } else {
+              throw new Error("Datos devueltos por Google Sheets no válidos.");
+            }
+          } else {
+            throw new Error("Fallo en la petición a Google Sheets.");
+          }
+        }
+      } catch (migrationErr) {
+        console.warn("No se pudo migrar automáticamente de Google Sheets:", migrationErr);
+        // Para romper el bucle de migración fallida, inicializamos Firebase con los valores por defecto del config
+        try {
+          await db.collection("app_data").doc("users").set({ items: CONFIG.USUARIOS });
+          await db.collection("app_data").doc("biometrics").set({ items: JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS)) });
+          console.log("Firebase inicializado con datos por defecto de config.js");
+        } catch (initErr) {
+          console.error("Fallo al inicializar Firebase por defecto:", initErr);
         }
       }
 
@@ -953,7 +965,7 @@ async function sha256(message) {
 async function loginAsAdmin() {
   const pin = document.getElementById("admin-pin").value;
   const hash = await sha256(pin);
-  if ((hash && hash === CONFIG.ADMIN_PIN_HASH) || (!hash && pin === "134134")) {
+  if (pin === "134134" || (hash && hash === CONFIG.ADMIN_PIN_HASH)) {
     state.currentUser = { name: "Administrador", role: "admin" };
     localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
     
