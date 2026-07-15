@@ -501,6 +501,13 @@ function initFirebaseListeners() {
     saveLocalBackup();
   });
   
+  db.collection("app_data").doc("email_stats").onSnapshot(doc => {
+    if (doc.exists) {
+      state.emailStats = doc.data();
+      initEmailJSProgress();
+    }
+  });
+
   db.collection("app_data").doc("biometrics").onSnapshot(doc => {
     if (doc.exists) {
       state.biometrics = doc.data().items || [];
@@ -812,12 +819,20 @@ function initEmailJSProgress() {
     resetDate.setMonth(resetDate.getMonth() + 1);
   }
   
-  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+  let savedData = state.emailStats;
+  if (!savedData) {
+    savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+    state.emailStats = savedData;
+  }
   
   if (now.getTime() > savedData.resetTimestamp) {
     savedData.count = 0;
     savedData.resetTimestamp = resetDate.getTime();
-    localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+    if (state.connectionMode === "online" && db) {
+      db.collection("app_data").doc("email_stats").set(savedData);
+    } else {
+      localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+    }
   }
   
   updateEmailProgressUI(savedData.count);
@@ -842,30 +857,38 @@ function sendAdminEmail(subject, message) {
     return;
   }
   
-  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+  let savedData = state.emailStats;
+  if (!savedData) {
+    savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+  }
+
   if (savedData.count >= 200) {
-    console.warn("LÃ­mite de correos gratis de EmailJS alcanzado (200).");
+    console.warn("Límite de correos gratis de EmailJS alcanzado (200).");
     return;
   }
   
   const templateParams = {
     subject: subject,
     message: message,
-    // Optional if your template uses them
-    company_name: "NotarÃ­a 134",
+    company_name: "Notaría 134",
     website_link: window.location.href
   };
   
-  console.log("Enviando parÃ¡metros a EmailJS:", templateParams);
+  console.log("Enviando parámetros a EmailJS:", templateParams);
   emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams, { publicKey: CONFIG.EMAILJS.PUBLIC_KEY })
     .then(() => {
-      console.log("Correo enviado con Ã©xito.");
+      console.log("Correo enviado con éxito.");
       savedData.count++;
-      localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+      if (state.connectionMode === "online" && typeof db !== "undefined") {
+        db.collection("app_data").doc("email_stats").set(savedData);
+      } else {
+        localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+      }
       updateEmailProgressUI(savedData.count);
     })
     .catch((err) => {
       console.error("Fallo al enviar el correo:", err);
+      showToast("Error EmailJS: " + (err.text || err.message || JSON.stringify(err)), 6000);
     });
 }
 
@@ -3170,5 +3193,9 @@ function renderAnalytics() {
     }
     if (originalShowToast) originalShowToast(msg, type);
   };
+
+
+
+
 
 

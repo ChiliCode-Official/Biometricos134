@@ -94,7 +94,7 @@ body.light-theme {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+body, html { overflow-x: hidden; }`nbody {
   font-family: var(--font-body);
   background-color: var(--bg-system);
   color: var(--text-primary);
@@ -1016,7 +1016,7 @@ tr:hover td {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   z-index: 1500;
   display: none; /* Controlled by JS */
@@ -1068,7 +1068,7 @@ tr:hover td {
   color: var(--text-primary);
 }
 
-.modal-body {
+.modal-body, html { overflow-x: hidden; }`nbody {
   margin-bottom: 24px;
 }
 
@@ -1151,7 +1151,7 @@ tr:hover td {
 /* ==========================================================================
    PRINT PREVIEW & PAPER
    ========================================================================== */
-.print-preview-body {
+.print-preview-body, html { overflow-x: hidden; }`nbody {
   background-color: var(--bg-system);
   border-radius: var(--border-radius-md);
   padding: 20px;
@@ -1844,7 +1844,7 @@ body.light-theme .skeleton::before {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   z-index: 10000;
   display: block; /* Removed flex center for DVD bounce */
@@ -2218,3 +2218,4 @@ body:not(.light-theme) .glass {
     max-width: 110px !important;
   }
 }
+
