@@ -1,4 +1,4 @@
-const CACHE_NAME = 'n134-biometricos-v50';
+const CACHE_NAME = 'n134-biometricos-v51';
 const ASSETS = [
   'index.html',
   'styles.css',
@@ -67,3 +67,4 @@ self.addEventListener('fetch', (e) => {
     );
   }
 });
+

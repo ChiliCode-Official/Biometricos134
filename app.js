@@ -191,7 +191,7 @@ async function initApp() {
 
   // Inicializar EmailJS
   if (window.emailjs && typeof window.emailjs.init === "function") {
-    emailjs.init(CONFIG.EMAILJS.PUBLIC_KEY);
+    emailjs.init({ publicKey: CONFIG.EMAILJS.PUBLIC_KEY });
     initEmailJSProgress();
   }
 
@@ -857,7 +857,7 @@ function sendAdminEmail(subject, message) {
   };
   
   console.log("Enviando parámetros a EmailJS:", templateParams);
-  emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams)
+  emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams, { publicKey: CONFIG.EMAILJS.PUBLIC_KEY })
     .then(() => {
       console.log("Correo enviado con éxito.");
       savedData.count++;
@@ -3170,3 +3170,5 @@ function renderAnalytics() {
     }
     if (originalShowToast) originalShowToast(msg, type);
   };
+
+
