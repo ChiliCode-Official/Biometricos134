@@ -418,8 +418,8 @@ async function loadDatabase() {
       }
       
       // One-time migration check
-      const logsSnap = await db.collection("logs").limit(1).get();
-      if (logsSnap.empty) {
+      const usersDoc = await db.collection("app_data").doc("users").get();
+      if (!usersDoc.exists) {
         showToast("Migrando datos de Google Sheets a Firebase...", 5000);
         // We use the GAS URL one last time
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec";
@@ -427,21 +427,14 @@ async function loadDatabase() {
         const oldDb = await response.json();
         
         if (oldDb && oldDb.success) {
+          const normalizedUsers = oldDb.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
+          await db.collection("app_data").doc("users").set({ items: normalizedUsers });
+          await db.collection("app_data").doc("biometrics").set({ items: oldDb.biometrics });
+
           const batch = db.batch();
           
           if (oldDb.logs) oldDb.logs.forEach(log => {
             batch.set(db.collection("logs").doc(log.id), log);
-          });
-          
-          if (oldDb.biometrics && oldDb.biometrics.length > 0) {
-            oldDb.biometrics.forEach(bio => {
-              batch.set(db.collection("biometrics").doc(bio.biometrico.toString()), bio);
-            });
-          }
-          
-          if (oldDb.users) oldDb.users.forEach(u => {
-            let name = typeof u === "object" ? (u.nombre || u.name) : u;
-            if (name) batch.set(db.collection("users").doc(), { nombre: name });
           });
           
           if (oldDb.inkLogs) oldDb.inkLogs.forEach(log => {
@@ -477,19 +470,25 @@ async function loadDatabase() {
 }
 
 function initFirebaseListeners() {
-  db.collection("users").onSnapshot(snap => {
-    state.users = snap.docs.map(doc => doc.data().nombre);
-    if (state.users.length === 0) state.users = CONFIG.USUARIOS;
+  db.collection("app_data").doc("users").onSnapshot(doc => {
+    if (doc.exists) {
+      state.users = doc.data().items || [];
+    }
+    if (!state.users || state.users.length === 0) {
+      state.users = CONFIG.USUARIOS;
+    }
+    saveLocalBackup();
   });
   
-  db.collection("biometrics").onSnapshot(snap => {
-    if (!snap.empty) {
-      state.biometrics = snap.docs.map(doc => doc.data());
+  db.collection("app_data").doc("biometrics").onSnapshot(doc => {
+    if (doc.exists) {
+      state.biometrics = doc.data().items || [];
       recalculateBiometricStates();
       renderBiometrics();
     } else {
       state.biometrics = JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
     }
+    saveLocalBackup();
   });
   
   db.collection("logs").onSnapshot(snap => {
@@ -505,11 +504,11 @@ function initFirebaseListeners() {
   });
   
   db.collection("inkLogs").onSnapshot(snap => {
-    state.inkLogs = snap.docs.map(doc => doc.data());
+    state.inkLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   });
   
   db.collection("internetLogs").onSnapshot(snap => {
-    state.internetLogs = snap.docs.map(doc => doc.data());
+    state.internetLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   });
 }
 
@@ -742,9 +741,7 @@ async function sendAction(action, payload) {
       const bio = state.biometrics.find(b => b.biometrico == payload.biometrico);
       if (bio) {
         bio.internet_plan = payload.plan;
-        await db.collection("biometrics").doc(bio.biometrico.toString()).update({
-          internet_plan: payload.plan
-        });
+        await db.collection("app_data").doc("biometrics").set({ items: state.biometrics });
       }
     } else if (action === "cancel") {
       await db.collection("logs").doc(payload.id).update({
@@ -944,10 +941,19 @@ function loginAsUser() {
   showToast(`Sesión iniciada como ${name}`);
 }
 
+async function sha256(message) {
+  if (!window.crypto || !crypto.subtle) return null;
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Iniciar sesión como Administrador
-function loginAsAdmin() {
+async function loginAsAdmin() {
   const pin = document.getElementById("admin-pin").value;
-  if (pin === CONFIG.ADMIN_PIN) {
+  const hash = await sha256(pin);
+  if ((hash && hash === CONFIG.ADMIN_PIN_HASH) || (!hash && pin === "134134")) {
     state.currentUser = { name: "Administrador", role: "admin" };
     localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
     
@@ -2035,19 +2041,8 @@ function processExcelFile(file) {
       // Enviar a la nube en caso de modo online
       if (state.connectionMode === "online") {
         showToast("Sincronizando Excel con Firebase...", 3000);
-        const batch = db.batch();
-        // Upload biometrics
-        state.biometrics.forEach(bio => {
-          batch.set(db.collection("biometrics").doc(bio.biometrico.toString()), bio);
-        });
-        // Upload users
-        const usersArray = state.users.map(u => ({ nombre: u, rol: "Pasante" }));
-        // Clear old users (not trivial with batch, but we can just write new ones with generated IDs, 
-        // however Firestore merge could be better. For simplicity, we just add them).
-        usersArray.forEach(u => {
-           batch.set(db.collection("users").doc(), u);
-        });
-        await batch.commit();
+        await db.collection("app_data").doc("biometrics").set({ items: state.biometrics });
+        await db.collection("app_data").doc("users").set({ items: state.users });
         showToast("¡Excel sincronizado con Firebase!", 3000);
       } else {
         saveLocalBackup();
@@ -2233,26 +2228,44 @@ function closeModal() {
   document.querySelectorAll(".modal").forEach(modal => modal.classList.remove("active"));
 }
 
-function showToast(message, duration = 2500) {
+let toastTimeout = null;
+let toastHiddenTimeout = null;
+
+function showToast(message, durationOrType = 2500) {
   const toast = document.getElementById("toast");
+  
+  if (toastTimeout) clearTimeout(toastTimeout);
+  if (toastHiddenTimeout) clearTimeout(toastHiddenTimeout);
+  
+  let duration = 2500;
+  let type = "info";
+  
+  if (typeof durationOrType === "number") {
+    duration = durationOrType;
+  } else if (typeof durationOrType === "string") {
+    type = durationOrType;
+    duration = type === "error" ? 4000 : 2500;
+  }
+  
   let icon = "✨";
-  if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
+  if (type === "error" || message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {
     icon = "⚠️";
     if (window.SoundManager) SoundManager.error();
   } else if (message.toLowerCase().includes("cargando") || message.toLowerCase().includes("sincronizando")) {
     icon = "⏳";
+    duration = 0;
   } else {
-    // Para éxitos genéricos si no es cargando ni error
-    if (window.SoundManager && message.toLowerCase().includes("éxito")) SoundManager.success();
+    if (window.SoundManager && (type === "success" || message.toLowerCase().includes("éxito"))) SoundManager.success();
   }
+  
   toast.innerHTML = `<span class="toast-icon">${icon}</span> ${message}`;
   toast.classList.remove("hidden");
-  // Reflow trigger to allow animation restart
+  
   void toast.offsetWidth;
   toast.classList.add("show");
   
   if (duration > 0) {
-    setTimeout(hideToast, duration);
+    toastTimeout = setTimeout(hideToast, duration);
   }
 }
 
@@ -2262,8 +2275,10 @@ function showLoadingToast(message) {
 
 function hideToast() {
   const toast = document.getElementById("toast");
+  if (!toast) return;
   toast.classList.remove("show");
-  setTimeout(() => {
+  if (toastHiddenTimeout) clearTimeout(toastHiddenTimeout);
+  toastHiddenTimeout = setTimeout(() => {
     toast.classList.add("hidden");
   }, 400);
 }
