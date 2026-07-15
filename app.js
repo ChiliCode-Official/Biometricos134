@@ -836,7 +836,11 @@ function updateEmailProgressUI(count) {
 }
 
 function sendAdminEmail(subject, message) {
-  if (!CONFIG.EMAILJS.SERVICE_ID || CONFIG.EMAILJS.SERVICE_ID === "SERVICE_ID_AQUI") return;
+  console.log("Intentando enviar correo...", { subject, message });
+  if (!CONFIG.EMAILJS.SERVICE_ID || CONFIG.EMAILJS.SERVICE_ID === "SERVICE_ID_AQUI") {
+    console.warn("EmailJS SERVICE_ID no configurado.");
+    return;
+  }
   
   const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
   if (savedData.count >= 200) {
@@ -852,8 +856,10 @@ function sendAdminEmail(subject, message) {
     website_link: window.location.href
   };
   
+  console.log("Enviando parámetros a EmailJS:", templateParams);
   emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams)
     .then(() => {
+      console.log("Correo enviado con éxito.");
       savedData.count++;
       localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
       updateEmailProgressUI(savedData.count);
