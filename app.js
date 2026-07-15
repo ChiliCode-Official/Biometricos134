@@ -497,6 +497,7 @@ function initFirebaseListeners() {
       state.biometrics = doc.data().items || [];
       recalculateBiometricStates();
       renderBiometrics();
+      updateSequentialSuggestion();
     } else {
       state.biometrics = JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
     }
@@ -509,6 +510,7 @@ function initFirebaseListeners() {
     lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
     recalculateBiometricStates();
     renderBiometrics();
+    updateSequentialSuggestion();
     if (state.currentUser && state.currentUser.role === "admin") {
       renderAdminDashboard();
     }
@@ -1021,6 +1023,12 @@ function _showViewInternal(viewId) {
       panel.classList.remove("active");
     });
   } else {
+    // SECURITY REDIRECT: Interns (role === "user") cannot view analytics
+    if (viewId === "analytics-view" && (!state.currentUser || state.currentUser.role !== "admin")) {
+      showView(state.currentUser ? (state.currentUser.role === "admin" ? "admin-view" : "user-view") : "login-view");
+      return;
+    }
+
     loginView.classList.remove("active");
     dashboardLayout.classList.remove("hidden");
     
@@ -1034,11 +1042,18 @@ function _showViewInternal(viewId) {
     // Ocultar sidebar en móvil al cambiar vista
     document.querySelector('.dashboard-sidebar').classList.remove('open');
       
-    // Actualizar estado activo de los botones del menú lateral
+    // Actualizar estado activo de los botones del menú lateral y ocultar analytics para pasantes
     const navDashboard = document.getElementById("nav-dashboard");
     const navProfile = document.getElementById("nav-profile");
     const navAnalytics = document.getElementById("nav-analytics");
     if (navDashboard && navProfile && navAnalytics) {
+      // Hide nav-analytics for non-admins
+      if (state.currentUser && state.currentUser.role === "admin") {
+        navAnalytics.style.display = "flex";
+      } else {
+        navAnalytics.style.display = "none";
+      }
+
       navDashboard.classList.remove("active");
       navProfile.classList.remove("active");
       navAnalytics.classList.remove("active");
@@ -2650,14 +2665,29 @@ function renderAnalytics() {
   if (typeof Chart === 'undefined') return;
 
   const logs = state.logs || [];
+  const noDataMessage = document.getElementById("analytics-no-data-msg");
+  const chartsContainer = document.getElementById("analytics-charts-container");
+
+  // Filter out cancelled logs
+  const validLogs = logs.filter(log => log.estado !== "Cancelado" && log.estado !== "Cancelada");
+
+  if (validLogs.length === 0) {
+    if (noDataMessage) noDataMessage.classList.remove("hidden");
+    if (chartsContainer) chartsContainer.classList.add("hidden");
+    return;
+  }
+
+  if (noDataMessage) noDataMessage.classList.add("hidden");
+  if (chartsContainer) chartsContainer.classList.remove("hidden");
+
   const bioCount = {};
   const userCount = {};
 
-  logs.forEach(log => {
-    if (log.action === "Salida" || log.action === "Asignado") {
-      bioCount[log.biometrico] = (bioCount[log.biometrico] || 0) + 1;
-      userCount[log.holder] = (userCount[log.holder] || 0) + 1;
-    }
+  validLogs.forEach(log => {
+    const bioNum = log.biometrico;
+    const user = log.usuario;
+    if (bioNum) bioCount[bioNum] = (bioCount[bioNum] || 0) + 1;
+    if (user) userCount[user] = (userCount[user] || 0) + 1;
   });
 
   const ctxBio = document.getElementById('chart-biometrics');

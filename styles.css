@@ -1708,7 +1708,7 @@ body.light-theme .skeleton::before {
   margin-right: 8px;
   font-size: 1.2rem;
 }
-@media (max-width: 1200px) { .biometrics-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) and (min-width: 769px) { .biometrics-grid { grid-template-columns: repeat(2, 1fr); } }
 .hw-icon-img { width: 22px; height: 22px; object-fit: contain; margin-right: 4px; }
 
 @media (max-width: 768px) {
@@ -2021,4 +2021,158 @@ input[type="checkbox"].ios-switch:checked::after {
 #screensaver.screensaver {
   background: rgba(10, 10, 12, 0.7);
   backdrop-filter: blur(5px);
+}
+
+/* ==========================================================================
+   PREMIUM NOTARY UX & RESPONSIVE ENHANCEMENTS
+   ========================================================================== */
+
+/* Glassmorphic Top Navbar with Blur (Apple Style) */
+.dashboard-topbar {
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+body:not(.light-theme) .dashboard-topbar {
+  background-color: rgba(28, 28, 30, 0.8) !important;
+}
+body.light-theme .dashboard-topbar {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Beautiful Cards Glassmorphism styling */
+.glass {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04) !important;
+  border-radius: var(--border-radius-lg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+body:not(.light-theme) .glass {
+  background: rgba(28, 28, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Premium Apple-style suggested box */
+.quick-sequential-box {
+  padding: 30px 24px;
+  margin-bottom: 35px;
+  text-align: center;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.quick-sequential-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, #5ac8fa 100%);
+}
+.quick-sequential-box h3 {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+}
+.quick-sequential-box p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.4;
+}
+
+.suggested-bio-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-bottom: 24px;
+  letter-spacing: -0.01em;
+  transition: var(--transition-smooth);
+}
+.suggested-bio-badge.suggested {
+  background-color: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid rgba(0, 113, 227, 0.15);
+}
+.suggested-bio-badge.empty {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid rgba(220, 53, 69, 0.15);
+}
+.hold-to-confirm-btn {
+  padding: 16px 36px;
+  font-size: 1.05rem;
+  border-radius: 50px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.15);
+  transition: var(--transition-smooth);
+}
+
+/* Mobile responsive styles overrides */
+@media (max-width: 768px) {
+  .biometrics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+  }
+  .bio-card {
+    padding: 20px 16px !important;
+    min-height: auto !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.02) !important;
+  }
+  body:not(.light-theme) .bio-card {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+  }
+  .quick-sequential-box {
+    padding: 24px 16px;
+    margin-bottom: 24px;
+  }
+  .quick-sequential-box h3 {
+    font-size: 1.2rem;
+  }
+  .suggested-bio-badge {
+    font-size: 1rem;
+    padding: 10px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Collapse "Sincronizar" text on mobile topbar to avoid overflow */
+  .sync-text {
+    display: none;
+  }
+  .btn-sync {
+    width: 38px;
+    height: 38px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    font-size: 1.1rem;
+  }
+  
+  .dashboard-topbar {
+    padding: 10px 12px;
+  }
+  .user-greeting strong {
+    max-width: 110px !important;
+  }
 }

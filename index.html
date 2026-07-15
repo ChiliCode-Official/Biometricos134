@@ -164,7 +164,7 @@
           </div>
           
           <div class="topbar-right">
-            <button class="btn btn-secondary" onclick="manualSync()" title="Sincronizar">🔄 Sincronizar</button>
+            <button class="btn btn-secondary btn-sync" onclick="manualSync()" title="Sincronizar"><span class="sync-icon">🔄</span><span class="sync-text"> Sincronizar</span></button>
             <span id="user-offline-badge" class="offline-badge hidden" style="background: #FF9500; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">☁️ 0</span>
           </div>
         </header>
@@ -176,22 +176,20 @@
       <!-- App Header moved to topbar -->
 
       <div class="content-section">
-        <!-- Quick Round-Robin Request Panel -->
-        <div class="quick-sequential-box glass" style="padding: 24px; margin-bottom: 30px; text-align: center; border-left: 5px solid var(--accent); background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);">
-          <h3 style="font-size: 1.3rem; margin-bottom: 8px; font-family: var(--font-heading);">Asignación Equitativa de Equipos</h3>
-          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 16px;">Para equilibrar el desgaste de los equipos, el sistema asignará el biométrico de manera rotativa.</p>
+                <div class="quick-sequential-box glass">
+          <h3>Asignación Equitativa de Equipos</h3>
+          <p>Para equilibrar el desgaste de los equipos, el sistema asignará el biométrico de manera rotativa.</p>
           
-          <div id="sequential-suggested-container" class="suggested-bio-badge" style="display: inline-block; padding: 12px 24px; border-radius: 12px; background-color: var(--accent-light); color: var(--accent); font-weight: 700; font-size: 1.2rem; margin-bottom: 20px;">
+          <div id="sequential-suggested-container" class="suggested-bio-badge suggested">
             Siguiente sugerido: <span id="suggested-bio-name">Cargando...</span>
           </div>
           
-          <div>
-            <button id="btn-request-sequential" class="btn btn-primary btn-lg hold-to-confirm-btn" style="padding: 16px 32px; font-size: 1.1rem; box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25);">
-              <div class="progress-fill"></div>
-              <span id="btn-request-sequential-text">⚡ Mantén para Solicitar Sugerencia</span>
+          <div style="margin-top: 10px;">
+            <button id="btn-request-sequential" class="btn btn-primary btn-lg hold-to-confirm-btn">
+              <span id="btn-request-sequential-text">🚀 Mantén para Solicitar Equipo</span>
             </button>
           </div>
-          </div>
+        </div>
 
           <div id="user-active-equipment-section" style="display: none; margin-bottom: 30px;">
             <div class="section-title">
@@ -224,7 +222,13 @@
           <p>Métricas en tiempo real del desgaste de equipos y demanda de pasantes.</p>
         </div>
         
-        <div class="analytics-grid">
+        <div id="analytics-no-data-msg" class="glass text-center hidden" style="padding: 40px 20px; border-radius: 16px;">
+          <div style="font-size: 3rem; margin-bottom: 16px;">📊</div>
+          <h4 style="margin-bottom: 8px; font-size: 1.25rem;">Sin datos de uso para mostrar</h4>
+          <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto; font-size: 0.95rem;">Una vez que los pasantes comiencen a solicitar préstamos o subas el archivo de Excel, aquí verás las gráficas de desgaste en tiempo real.</p>
+        </div>
+
+        <div id="analytics-charts-container" class="analytics-grid">
           <div class="analytics-card glass">
             <h4>Frecuencia de Uso por Biométrico</h4>
             <div class="chart-container">
