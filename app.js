@@ -1969,6 +1969,67 @@ function sanitizeForFirestore(obj) {
   }));
 }
 
+function formatDateToYYYYMMDD(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatTimeToHHMMSS(d) {
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function parseExcelDate(val) {
+  if (val instanceof Date) {
+    return {
+      date: formatDateToYYYYMMDD(val),
+      time: formatTimeToHHMMSS(val)
+    };
+  }
+  if (typeof val === 'number') {
+    const date = new Date((val - 25569) * 86400 * 1000);
+    return {
+      date: formatDateToYYYYMMDD(date),
+      time: formatTimeToHHMMSS(date)
+    };
+  }
+  if (typeof val === 'string') {
+    const cleanStr = val.trim();
+    const parts = cleanStr.split(/\s+/);
+    let datePart = parts[0] || "";
+    let timePart = parts[1] || "08:00:00";
+    datePart = datePart.replace(/\//g, "-");
+    const d = new Date(datePart + (timePart ? " " + timePart : ""));
+    if (!isNaN(d.getTime())) {
+      return {
+        date: formatDateToYYYYMMDD(d),
+        time: formatTimeToHHMMSS(d)
+      };
+    }
+  }
+  return { date: "", time: "" };
+}
+
+async function batchWriteToFirestore(collectionName, items) {
+  const chunks = [];
+  const chunkSize = 400;
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  for (const chunk of chunks) {
+    const batch = db.batch();
+    chunk.forEach(item => {
+      const docRef = db.collection(collectionName).doc(item.id);
+      batch.set(docRef, sanitizeForFirestore(item));
+    });
+    await batch.commit();
+  }
+}
+
 function processExcelFile(file) {
   const statusDiv = document.getElementById("import-status");
   statusDiv.className = "import-status";
@@ -2065,6 +2126,184 @@ function processExcelFile(file) {
         throw new Error("No se encontró una estructura compatible en el archivo Excel.");
       }
 
+      // Parsear Historico de ESTADISTICAS si existe la hoja
+      let importedLogs = [];
+      let importedInkLogs = [];
+      let importedInternetLogs = [];
+      
+      if (workbook.Sheets["ESTADISTICAS"]) {
+        const estSheet = workbook.Sheets["ESTADISTICAS"];
+        const range = XLSX.utils.decode_range(estSheet['!ref']);
+        
+        for (let r = 5; r <= range.e.r; r++) { // Fila 6 es 5 indexada
+          const userCell = estSheet[XLSX.utils.encode_cell({ r: r, c: 0 })];
+          const userVal = userCell ? (userCell.v || "").toString().trim() : "";
+          
+          if (!userVal) {
+            // Verificar si es una recarga BAM en Columna B (1)
+            const bCell = estSheet[XLSX.utils.encode_cell({ r: r, c: 1 })];
+            const bVal = bCell ? (bCell.v || "").toString().trim() : "";
+            if (bVal && bVal.toUpperCase().includes("RECARGA")) {
+              let dateStr = "";
+              let planStr = "";
+              const dateMatch = bVal.match(/(\d{4}[\/\-]\d{2}[\/\-]\d{2})/g);
+              if (dateMatch && dateMatch.length > 0) {
+                dateStr = dateMatch[0].replace(/\//g, "-") + " 12:00:00";
+                if (dateMatch.length > 1) {
+                  planStr = dateMatch[1].replace(/\//g, "-");
+                }
+              } else {
+                dateStr = "2026-07-07 12:00:00"; // Fallback
+              }
+              
+              importedInternetLogs.push({
+                id: "NET-" + new Date(dateStr.replace(/-/g, "/")).getTime() + "-" + r,
+                biometrico: 1,
+                fecha: dateStr,
+                usuario: "Administrador",
+                plan: planStr || "Plan Recarga",
+                observaciones: bVal
+              });
+            }
+            continue;
+          }
+          
+          // Es un registro de pasante
+          for (let x = 1; x <= 9; x++) {
+            const colSalida = 2 * x - 1; // 1-based index (B=1, D=3, F=5...)
+            const colEntrada = 2 * x;   // (C=2, E=4, G=6...)
+            
+            const cellSalida = estSheet[XLSX.utils.encode_cell({ r: r, c: colSalida })];
+            const cellEntrada = estSheet[XLSX.utils.encode_cell({ r: r, c: colEntrada })];
+            
+            if (cellSalida && cellSalida.v) {
+              let dateSalida = cellSalida.v;
+              let dateSalidaStr = "";
+              let horaSalidaStr = "08:00:00";
+              
+              if (dateSalida instanceof Date) {
+                dateSalidaStr = formatDateToYYYYMMDD(dateSalida);
+                horaSalidaStr = formatTimeToHHMMSS(dateSalida);
+              } else {
+                const parsed = parseExcelDate(dateSalida);
+                dateSalidaStr = parsed.date;
+                horaSalidaStr = parsed.time;
+              }
+              
+              if (!dateSalidaStr) continue;
+              
+              let hasEntrada = false;
+              let dateEntradaStr = "";
+              let horaEntradaStr = "";
+              let obsEntrada = "";
+              
+              if (cellEntrada && cellEntrada.v) {
+                let dateEntrada = cellEntrada.v;
+                if (dateEntrada instanceof Date) {
+                  dateEntradaStr = formatDateToYYYYMMDD(dateEntrada);
+                  horaEntradaStr = formatTimeToHHMMSS(dateEntrada);
+                  hasEntrada = true;
+                } else {
+                  const strVal = dateEntrada.toString().trim();
+                  if (strVal.match(/(\d{4}[\/\-]\d{2}[\/\-]\d{2})/) || strVal.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/)) {
+                    const parsed = parseExcelDate(strVal);
+                    dateEntradaStr = parsed.date;
+                    horaEntradaStr = parsed.time;
+                    hasEntrada = true;
+                  } else if (strVal) {
+                    obsEntrada = strVal;
+                  }
+                }
+              }
+              
+              if (obsEntrada) {
+                const inkUpper = obsEntrada.toUpperCase();
+                if (inkUpper.includes("TINTA") || inkUpper.includes("CARTUCHO") || inkUpper.includes("CABEZAL") || inkUpper.includes("TONER")) {
+                  importedInkLogs.push({
+                    id: "INK-" + new Date(dateSalidaStr.replace(/-/g, "/")).getTime() + "-" + r + "-" + x,
+                    biometrico: x,
+                    fecha: dateSalidaStr + " " + horaSalidaStr,
+                    usuario: "Administrador",
+                    observaciones: obsEntrada
+                  });
+                } else if (inkUpper.includes("RECARGA") || inkUpper.includes("INTERNET")) {
+                  importedInternetLogs.push({
+                    id: "NET-" + new Date(dateSalidaStr.replace(/-/g, "/")).getTime() + "-" + r + "-" + x,
+                    biometrico: x,
+                    fecha: dateSalidaStr + " " + horaSalidaStr,
+                    usuario: userVal,
+                    plan: "BAM",
+                    observaciones: obsEntrada
+                  });
+                }
+              }
+              
+              importedLogs.push({
+                id: "LOG-" + new Date(dateSalidaStr.replace(/-/g, "/")).getTime() + "-" + r + "-" + x,
+                biometrico: x,
+                usuario: userVal,
+                fecha_salida: dateSalidaStr,
+                hora_salida_real: horaSalidaStr,
+                fecha_entrada: hasEntrada ? dateEntradaStr : (obsEntrada ? dateSalidaStr : ""),
+                hora_entrada: hasEntrada ? horaEntradaStr : (obsEntrada ? horaSalidaStr : ""),
+                estado: (hasEntrada || obsEntrada) ? "Entregado" : "Activo",
+                devuelto_por: (hasEntrada || obsEntrada) ? "Admin" : ""
+              });
+            }
+          }
+        }
+      }
+
+      // Combinar LOG_TINTAS y LOG_INTERNET si existen
+      if (workbook.Sheets["LOG_TINTAS"]) {
+        const inkRows = XLSX.utils.sheet_to_json(workbook.Sheets["LOG_TINTAS"]);
+        inkRows.forEach(r => {
+          if (r.fecha) {
+            let dateStr = "";
+            if (r.fecha instanceof Date) {
+              dateStr = formatDateToYYYYMMDD(r.fecha) + " " + formatTimeToHHMMSS(r.fecha);
+            } else {
+              dateStr = r.fecha.toString();
+            }
+            const exists = importedInkLogs.some(ink => ink.biometrico == r.biometrico && ink.fecha == dateStr);
+            if (!exists) {
+              importedInkLogs.push({
+                id: r.id || ("INK-" + new Date(dateStr.replace(/-/g, "/")).getTime() + "-" + Math.floor(Math.random()*1000)),
+                biometrico: parseInt(r.biometrico),
+                fecha: dateStr,
+                usuario: r.usuario || "Administrador",
+                observaciones: r.observaciones || ""
+              });
+            }
+          }
+        });
+      }
+
+      if (workbook.Sheets["LOG_INTERNET"]) {
+        const netRows = XLSX.utils.sheet_to_json(workbook.Sheets["LOG_INTERNET"]);
+        netRows.forEach(r => {
+          if (r.fecha) {
+            let dateStr = "";
+            if (r.fecha instanceof Date) {
+              dateStr = formatDateToYYYYMMDD(r.fecha) + " " + formatTimeToHHMMSS(r.fecha);
+            } else {
+              dateStr = r.fecha.toString();
+            }
+            const exists = importedInternetLogs.some(net => net.biometrico == r.biometrico && net.fecha == dateStr);
+            if (!exists) {
+              importedInternetLogs.push({
+                id: r.id || ("NET-" + new Date(dateStr.replace(/-/g, "/")).getTime() + "-" + Math.floor(Math.random()*1000)),
+                biometrico: parseInt(r.biometrico),
+                fecha: dateStr,
+                usuario: r.usuario || "Administrador",
+                plan: r.plan || "Plan Recarga",
+                observaciones: r.observaciones || ""
+              });
+            }
+          }
+        });
+      }
+
       // Sincronizar localmente y enviar a Google Sheets si aplica
       if (importedUsers.length > 0) state.users = importedUsers;
       if (importedBiometrics.length > 0) {
@@ -2077,15 +2316,31 @@ function processExcelFile(file) {
         showToast("Sincronizando Excel con Firebase...", 3000);
         await db.collection("app_data").doc("biometrics").set({ items: sanitizeForFirestore(state.biometrics) });
         await db.collection("app_data").doc("users").set({ items: sanitizeForFirestore(state.users) });
+        
+        // Sincronizar logs en Firebase en lotes
+        if (importedLogs.length > 0) {
+          await batchWriteToFirestore("logs", importedLogs);
+        }
+        if (importedInkLogs.length > 0) {
+          await batchWriteToFirestore("inkLogs", importedInkLogs);
+        }
+        if (importedInternetLogs.length > 0) {
+          await batchWriteToFirestore("internetLogs", importedInternetLogs);
+        }
+        
         showToast("¡Excel sincronizado con Firebase!", 3000);
       } else {
+        if (importedLogs.length > 0) state.logs = importedLogs;
+        if (importedInkLogs.length > 0) state.inkLogs = importedInkLogs;
+        if (importedInternetLogs.length > 0) state.internetLogs = importedInternetLogs;
+        
         saveLocalBackup();
         renderBiometrics();
         renderAdminDashboard();
       }
 
       statusDiv.className = "import-status success";
-      statusDiv.innerHTML = `<strong>Éxito:</strong> Archivo procesado correctamente. Cargados ${state.users.length} usuarios y ${state.biometrics.length} equipos biométricos.`;
+      statusDiv.innerHTML = `<strong>Éxito:</strong> Archivo procesado correctamente. Cargados ${state.users.length} usuarios, ${state.biometrics.length} equipos, ${importedLogs.length} préstamos, ${importedInkLogs.length} tintas y ${importedInternetLogs.length} planes.`;
       
       setTimeout(() => {
         closeModal();

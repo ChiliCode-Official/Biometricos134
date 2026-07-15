@@ -434,38 +434,53 @@ textarea:focus {
 
 /* --- Connection Status Bar --- */
 .connection-bar {
-  position: sticky;
-  top: 0;
-  left: 0;
-  width: 100%;
-  padding: 10px;
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: 500;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  z-index: 1000;
+  z-index: 9999;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   background-color: rgba(28, 28, 30, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: #FFFFFF;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: var(--transition-smooth);
 }
 
 .connection-bar.online {
-  background-color: rgba(52, 199, 89, 0.95);
+  background-color: rgba(28, 28, 30, 0.85);
+  color: #34C759;
+  border: 1px solid rgba(52, 199, 89, 0.2);
+  animation: fadeOutStatus 0.5s ease 5s forwards;
+}
+
+.connection-bar.offline {
+  background-color: rgba(255, 59, 48, 0.9);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 59, 48, 0.3);
 }
 
 .connection-bar.demo {
-  background-color: rgba(0, 113, 227, 0.95);
+  background-color: rgba(0, 113, 227, 0.9);
+  color: #FFFFFF;
+  border: 1px solid rgba(0, 113, 227, 0.3);
+}
+
+.connection-bar.loading {
+  background-color: rgba(28, 28, 30, 0.85);
+  color: #FF9500;
+  border: 1px solid rgba(255, 149, 0, 0.2);
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: #FF3B30;
   display: inline-block;
@@ -473,13 +488,26 @@ textarea:focus {
 }
 
 .connection-bar.online .status-dot {
-  background-color: #FFFFFF;
+  background-color: #34C759;
   animation: none;
 }
 
 .connection-bar.demo .status-dot {
   background-color: #FFFFFF;
   animation: none;
+}
+
+.connection-bar.loading .status-dot {
+  background-color: #FF9500;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes fadeOutStatus {
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+  }
 }
 
 /* --- Toast Notification --- */
