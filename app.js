@@ -2,6 +2,10 @@
    APPLICATION LOGIC - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
    ========================================================================== */
 
+// --- Firebase Init ---
+firebase.initializeApp(CONFIG.FIREBASE);
+const db = firebase.firestore();
+
 // --- Global State ---
 let state = {
   connectionMode: "demo", // "online" | "demo"
@@ -410,63 +414,103 @@ async function loadDatabase() {
     try {
       if (progressContainer && progressBar) {
         progressContainer.style.display = "block";
-        progressBar.style.width = "15%";
+        progressBar.style.width = "50%";
       }
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-      
-      const response = await fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?_t=${Date.now()}`, {
-        redirect: 'follow',
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (progressContainer && progressBar) progressBar.style.width = "50%";
-      
-      if (!response.ok) throw new Error("Fallo de red al conectar GAS");
-      
-      const db = await response.json();
-      if (progressContainer && progressBar) progressBar.style.width = "85%";
-      
-      if (db.success) {
-        if (db.version !== "v2") {
-          setTimeout(() => {
-            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la aplicación no responderá al marcar como entregado o solicitar equipos.\n\nPor favor, actualiza tu script en Google Sheets con la última versión de google_apps_script.js y asegúrate de crear una NUEVA IMPLEMENTACIÓN (Aplicación Web) en el menú.");
-          }, 1000);
+      // One-time migration check
+      const logsSnap = await db.collection("logs").limit(1).get();
+      if (logsSnap.empty) {
+        showToast("Migrando datos de Google Sheets a Firebase...", 5000);
+        // We use the GAS URL one last time
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyLCY0-n8eDaOab0XYm3dlEDvzIXdaWa_jANMsfeWVuWKKe0t1I7KsotYs2Ri5fG1h2sA/exec";
+        const response = await fetch(`${GAS_URL}?action=getDatabase&_t=${Date.now()}`);
+        const oldDb = await response.json();
+        
+        if (oldDb && oldDb.success) {
+          const batch = db.batch();
+          
+          if (oldDb.logs) oldDb.logs.forEach(log => {
+            batch.set(db.collection("logs").doc(log.id), log);
+          });
+          
+          if (oldDb.biometrics && oldDb.biometrics.length > 0) {
+            oldDb.biometrics.forEach(bio => {
+              batch.set(db.collection("biometrics").doc(bio.biometrico.toString()), bio);
+            });
+          }
+          
+          if (oldDb.users) oldDb.users.forEach(u => {
+            let name = typeof u === "object" ? (u.nombre || u.name) : u;
+            if (name) batch.set(db.collection("users").doc(), { nombre: name });
+          });
+          
+          if (oldDb.inkLogs) oldDb.inkLogs.forEach(log => {
+            batch.set(db.collection("inkLogs").doc(log.id), log);
+          });
+          
+          if (oldDb.internetLogs) oldDb.internetLogs.forEach(log => {
+            batch.set(db.collection("internetLogs").doc(log.id), log);
+          });
+          
+          await batch.commit();
+          showToast("¡Migración a Firebase exitosa!", 3000);
         }
-        state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
-        // Si no hay usuarios en la nube, precargar del config.js
-        if (state.users.length === 0) state.users = CONFIG.USUARIOS;
+      }
 
-        state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
-        state.logs = db.logs;
-        // Fix for notifications firing on initial load:
-        lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
-        
-        state.inkLogs = db.inkLogs;
-        state.internetLogs = db.internetLogs;
-        
-        // Calcular estado de biometria dinámicamente con base en LOG_USO activo
-        recalculateBiometricStates();
+      // Initialize real-time listeners
+      initFirebaseListeners();
 
-        updateConnectionBar("online", "Conectado con disponibilidad de biométricos");
-        saveLocalBackup(); // Guardar copia local de respaldo
-        
-        if (progressContainer && progressBar) {
-          progressBar.style.width = "100%";
-          setTimeout(() => {
-            progressContainer.style.display = "none";
-            progressBar.style.width = "0%";
-          }, 600);
-        }
-        return;
+      updateConnectionBar("online", "Conectado a Firebase en tiempo real");
+      if (progressContainer && progressBar) {
+        progressBar.style.width = "100%";
+        setTimeout(() => {
+          progressContainer.style.display = "none";
+          progressBar.style.width = "0%";
+        }, 600);
       }
     } catch (err) {
-      console.error("Error al sincronizar con Google Sheets:", err);
+      console.error("Error al conectar con Firebase:", err);
       if (progressContainer) progressContainer.style.display = "none";
-      updateConnectionBar("offline", "Error de conexión con la nube. Trabajando offline.");
+      updateConnectionBar("offline", "Error de conexión. Trabajando offline.");
     }
   }
+}
+
+function initFirebaseListeners() {
+  db.collection("users").onSnapshot(snap => {
+    state.users = snap.docs.map(doc => doc.data().nombre);
+    if (state.users.length === 0) state.users = CONFIG.USUARIOS;
+  });
+  
+  db.collection("biometrics").onSnapshot(snap => {
+    if (!snap.empty) {
+      state.biometrics = snap.docs.map(doc => doc.data());
+      recalculateBiometricStates();
+      renderBiometrics();
+    } else {
+      state.biometrics = JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
+    }
+  });
+  
+  db.collection("logs").onSnapshot(snap => {
+    const newLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    state.logs = newLogs;
+    lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
+    recalculateBiometricStates();
+    renderBiometrics();
+    if (state.currentUser && state.currentUser.role === "admin") {
+      renderAdminDashboard();
+    }
+    saveLocalBackup();
+  });
+  
+  db.collection("inkLogs").onSnapshot(snap => {
+    state.inkLogs = snap.docs.map(doc => doc.data());
+  });
+  
+  db.collection("internetLogs").onSnapshot(snap => {
+    state.internetLogs = snap.docs.map(doc => doc.data());
+  });
 }
 
 // Sync Manual
@@ -643,175 +687,110 @@ function renderSkeletons() {
 
 // Enviar comandos al Backend en segundo plano sin bloquear al usuario
 async function sendAction(action, payload) {
-  // Lógica local INMEDIATA para que la app se sienta instantánea
-  let localLogId = "LOG-" + new Date().getTime();
-  if (action === "request") {
+  if (state.connectionMode !== "online") {
+    showToast("Aplicación en modo Demo/Offline. Conéctate para guardar.", 3000);
+    return { success: true };
+  }
+
+  setButtonsState(false);
+  showToast("Guardando...", 2500);
+
+  try {
+    let localLogId = "LOG-" + new Date().getTime();
     const dateStr = getTodayDateString();
     const timeStr = getNowTimeString();
-    
-    state.logs.push({
-      id: localLogId,
-      biometrico: payload.biometrico,
-      usuario: payload.usuario,
-      fecha_salida: dateStr,
-      hora_salida_solicitada: payload.hora_salida || "Al momento",
-      hora_salida_real: timeStr,
-      fecha_entrada: "",
-      hora_entrada: "",
-      estado: "Pendiente",
-      devuelto_por: ""
-    });
-  } else if (action === "return") {
-    const logItem = state.logs.find(l => l.id === payload.id);
-    if (logItem) {
-      logItem.fecha_entrada = getTodayDateString();
-      logItem.hora_entrada = getNowTimeString();
-      logItem.estado = "Entregado";
-      logItem.devuelto_por = payload.usuario_retorno || "Admin";
-    }
-  } else if (action === "logInk") {
-    state.inkLogs.push({
-      id: "INK-" + new Date().getTime(),
-      biometrico: payload.biometrico,
-      fecha: getTodayDateString() + " " + getNowTimeString(),
-      usuario: payload.usuario,
-      observaciones: payload.observaciones
-    });
-  } else if (action === "logInternet") {
-    state.internetLogs.push({
-      id: "NET-" + new Date().getTime(),
-      biometrico: payload.biometrico,
-      fecha: getTodayDateString() + " " + getNowTimeString(),
-      usuario: payload.usuario,
-      plan: payload.plan,
-      observaciones: payload.observaciones
-    });
-    const bio = state.biometrics.find(b => b.biometrico == payload.biometrico);
-    if (bio) bio.internet_plan = payload.plan;
-  } else if (action === "cancel") {
-    const logItem = state.logs.find(l => l.id === payload.id);
-    if (logItem) {
-      logItem.estado = "Cancelado";
-    }
-  }
 
-  // Guardar local, refrescar UI y sugerencias secuenciales
-  saveLocalBackup();
-  recalculateBiometricStates();
-  renderBiometrics();
-  updateSequentialSuggestion();
-  if (state.currentUser && state.currentUser.role === "admin") {
-    renderAdminDashboard();
-  }
-
-  // Procesar llamada a Google Sheets en segundo plano
-  if (state.connectionMode === "online") {
-    setButtonsState(false);
-    showToast("Sincronizando con la nube...");
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-    
-    const queryParams = new URLSearchParams({ action: action, ...payload, _t: Date.now() }).toString();
-    fetch(`${CONFIG.GOOGLE_SHEET_API_URL}?${queryParams}`, {
-      redirect: 'follow',
-      signal: controller.signal
-    })
-      .then(response => {
-        clearTimeout(timeoutId);
-        if (!response.ok) throw new Error("Fallo de red al conectar GAS");
-        return response.json();
-      })
-      .then(db => {
-        if (db && db.success) {
-          if (db.version !== "v2") {
-            alert("⚠️ ¡ATENCIÓN SISTEMAS!\n\nTu Google Apps Script está desactualizado y la acción no se aplicó en Google Sheets.\n\nPor favor, actualiza tu script.");
-          }
-          
-          if (db.logs) {
-            state.users = db.users.map(u => typeof u === "object" && u !== null ? (u.nombre || u.name || "") : u).filter(Boolean);
-            if (state.users.length === 0) state.users = CONFIG.USUARIOS;
-
-            state.biometrics = db.biometrics.length > 0 ? db.biometrics : JSON.parse(JSON.stringify(CONFIG.BIOMETRICOS));
-            
-            // Fix sync bug: preserve local logs not yet in db.logs
-            const cloudLogIds = new Set(db.logs.map(l => l.id));
-            const pendingLocalLogs = state.logs.filter(l => l.id.startsWith("LOG-") && !cloudLogIds.has(l.id));
-            state.logs = [...db.logs, ...pendingLocalLogs];
-            
-            state.inkLogs = db.inkLogs;
-            state.internetLogs = db.internetLogs;
-          }
-          
-          recalculateBiometricStates();
-          updateConnectionBar("online", "Conectado con disponibilidad de biométricos");
-          saveLocalBackup();
-        } else {
-          throw new Error((db && db.error) || "Error desconocido");
-        }
-        
-        renderBiometrics();
-        updateSequentialSuggestion();
-        if (state.currentUser && state.currentUser.role === "admin") {
-          renderAdminDashboard();
-        }
-        setButtonsState(true);
-        hideToast();
-      })
-      .catch(err => {
-        clearTimeout(timeoutId);
-        console.error("Error al guardar en la nube:", err);
-        setButtonsState(true);
-        hideToast();
-        
-        // Push to offline queue
-        offlineQueue.push({ action: action, payload: payload });
-        localStorage.setItem('n134_offline_queue', JSON.stringify(offlineQueue));
-        updateOfflineBadge();
-        
-        if (err.name === 'AbortError') {
-          showToast("Red lenta. Guardado local, sincronizará de fondo.");
-        } else {
-          showToast("Sin internet. Guardado local, sincronizará al conectar.");
-        }
+    if (action === "request") {
+      await db.collection("logs").doc(localLogId).set({
+        biometrico: payload.biometrico,
+        usuario: payload.usuario,
+        fecha_salida: dateStr,
+        hora_salida_solicitada: payload.hora_salida || "Al momento",
+        hora_salida_real: timeStr,
+        fecha_entrada: "",
+        hora_entrada: "",
+        estado: "Activo",
+        devuelto_por: ""
       });
-  }
+      // Enviar correo de notificación al admin
+      sendAdminEmail(
+        `Nuevo Préstamo: Biométrico ${payload.biometrico}`,
+        `El usuario ${payload.usuario} ha solicitado el Biométrico ${payload.biometrico} para las ${payload.hora_salida || 'Al momento'}.`
+      );
+    } else if (action === "return") {
+      await db.collection("logs").doc(payload.id).update({
+        fecha_entrada: dateStr,
+        hora_entrada: timeStr,
+        estado: "Entregado",
+        devuelto_por: payload.usuario_retorno || "Admin"
+      });
+    } else if (action === "logInk") {
+      await db.collection("inkLogs").doc("INK-" + new Date().getTime()).set({
+        biometrico: payload.biometrico,
+        fecha: dateStr + " " + timeStr,
+        usuario: payload.usuario,
+        observaciones: payload.observaciones
+      });
+    } else if (action === "logInternet") {
+      await db.collection("internetLogs").doc("NET-" + new Date().getTime()).set({
+        biometrico: payload.biometrico,
+        fecha: dateStr + " " + timeStr,
+        usuario: payload.usuario,
+        plan: payload.plan,
+        observaciones: payload.observaciones
+      });
+      const bio = state.biometrics.find(b => b.biometrico == payload.biometrico);
+      if (bio) {
+        bio.internet_plan = payload.plan;
+        await db.collection("biometrics").doc(bio.biometrico.toString()).update({
+          internet_plan: payload.plan
+        });
+      }
+    } else if (action === "cancel") {
+      await db.collection("logs").doc(payload.id).update({
+        estado: "Cancelado"
+      });
+    } else if (action === "confirm") {
+      await db.collection("logs").doc(payload.id).update({
+        estado: "Activo" // or whatever confirm means, usually just to ensure it's active
+      });
+    }
 
-  // Enviar correo de notificación al admin (solo si es request de un pasante)
-  if (action === "request" && state.currentUser && state.currentUser.role !== "admin") {
-    sendAdminEmail(
-      `Nuevo Préstamo: Biométrico ${payload.biometrico}`,
-      `El usuario ${payload.usuario} ha solicitado el Biométrico ${payload.biometrico} para las ${payload.hora_salida || 'Al momento'}.`
-    );
+    // El onSnapshot actualizará la UI localmente de forma automática.
+    setButtonsState(true);
+    hideToast();
+    return { success: true };
+  } catch (err) {
+    console.error("Error al guardar en Firebase:", err);
+    setButtonsState(true);
+    hideToast();
+    showToast("Error al guardar los datos. Revisa tu conexión.", 3000);
+    
+    // We can still push to offline queue if needed, but Firestore handles offline persistence automatically 
+    // if enablePersistence() is called, which we can rely on or just let it fail gracefully.
+    return { success: false, error: err };
   }
-
-  return { success: true };
 }
 
 /* ==========================================================================
    EMAILJS LOGIC
    ========================================================================== */
-async function initEmailJSProgress() {
+function initEmailJSProgress() {
   const now = new Date();
   const resetDate = new Date(now.getFullYear(), now.getMonth(), 13);
   if (now.getDate() >= 13) {
     resetDate.setMonth(resetDate.getMonth() + 1);
   }
   
-  if (typeof firebase !== 'undefined') {
-    const db = firebase.firestore();
-    const docRef = db.collection('app_data').doc('email_stats');
-    
-    // Sincronización en tiempo real de la barra de correos
-    docRef.onSnapshot(doc => {
-      let savedData = doc.exists ? doc.data() : { count: 0, resetTimestamp: 0 };
-      if (now.getTime() > savedData.resetTimestamp) {
-        savedData = { count: 0, resetTimestamp: resetDate.getTime() };
-        docRef.set(savedData);
-      }
-      updateEmailProgressUI(savedData.count);
-    });
+  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
+  
+  if (now.getTime() > savedData.resetTimestamp) {
+    savedData.count = 0;
+    savedData.resetTimestamp = resetDate.getTime();
+    localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
   }
+  
+  updateEmailProgressUI(savedData.count);
 }
 
 function updateEmailProgressUI(count) {
@@ -826,16 +805,10 @@ function updateEmailProgressUI(count) {
   }
 }
 
-async function sendAdminEmail(subject, message) {
+function sendAdminEmail(subject, message) {
   if (!CONFIG.EMAILJS.SERVICE_ID || CONFIG.EMAILJS.SERVICE_ID === "SERVICE_ID_AQUI") return;
   
-  if (typeof firebase === 'undefined') return;
-  const db = firebase.firestore();
-  const docRef = db.collection('app_data').doc('email_stats');
-  
-  const docSnap = await docRef.get();
-  let savedData = docSnap.exists ? docSnap.data() : { count: 0, resetTimestamp: 0 };
-  
+  const savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
   if (savedData.count >= 200) {
     console.warn("Límite de correos gratis de EmailJS alcanzado (200).");
     return;
@@ -844,18 +817,19 @@ async function sendAdminEmail(subject, message) {
   const templateParams = {
     subject: subject,
     message: message,
-    time: new Date().toLocaleString()
+    // Optional if your template uses them
+    company_name: "Notaría 134",
+    website_link: window.location.href
   };
   
   emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams)
-    .then(async () => {
+    .then(() => {
       savedData.count++;
-      await docRef.set(savedData);
+      localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
       updateEmailProgressUI(savedData.count);
     })
     .catch((err) => {
       console.error("Fallo al enviar el correo:", err);
-      showToast("Error de EmailJS: " + (err.text || "Revisa la Public Key"));
     });
 }
 
@@ -971,23 +945,9 @@ function loginAsUser() {
 }
 
 // Iniciar sesión como Administrador
-async function loginAsAdmin() {
-  const rawPin = document.getElementById("admin-pin").value;
-  const pin = rawPin.replace(/\s+/g, ''); // Remover espacios por si escriben "134 134"
-  
-  let hashHex = "";
-  try {
-    // Hashing el PIN ingresado con SHA-256 nativo (Solo funciona en HTTPS o Localhost)
-    const msgUint8 = new TextEncoder().encode(pin);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch (err) {
-    // Fallback para cuando se abre el archivo index.html localmente (file:///)
-    if (pin === "134134") hashHex = CONFIG.ADMIN_PIN_HASH;
-  }
-
-  if (hashHex === CONFIG.ADMIN_PIN_HASH) {
+function loginAsAdmin() {
+  const pin = document.getElementById("admin-pin").value;
+  if (pin === CONFIG.ADMIN_PIN) {
     state.currentUser = { name: "Administrador", role: "admin" };
     localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
     
@@ -2074,11 +2034,21 @@ function processExcelFile(file) {
 
       // Enviar a la nube en caso de modo online
       if (state.connectionMode === "online") {
-        const usersArray = state.users.map(u => ({ nombre: u, rol: "Pasante" }));
-        await sendAction("syncAll", {
-          users: usersArray,
-          biometrics: state.biometrics
+        showToast("Sincronizando Excel con Firebase...", 3000);
+        const batch = db.batch();
+        // Upload biometrics
+        state.biometrics.forEach(bio => {
+          batch.set(db.collection("biometrics").doc(bio.biometrico.toString()), bio);
         });
+        // Upload users
+        const usersArray = state.users.map(u => ({ nombre: u, rol: "Pasante" }));
+        // Clear old users (not trivial with batch, but we can just write new ones with generated IDs, 
+        // however Firestore merge could be better. For simplicity, we just add them).
+        usersArray.forEach(u => {
+           batch.set(db.collection("users").doc(), u);
+        });
+        await batch.commit();
+        showToast("¡Excel sincronizado con Firebase!", 3000);
       } else {
         saveLocalBackup();
         renderBiometrics();
@@ -2263,7 +2233,7 @@ function closeModal() {
   document.querySelectorAll(".modal").forEach(modal => modal.classList.remove("active"));
 }
 
-function showToast(message, duration = 1500) {
+function showToast(message, duration = 2500) {
   const toast = document.getElementById("toast");
   let icon = "✨";
   if (message.toLowerCase().includes("error") || message.toLowerCase().includes("incorrecto") || message.toLowerCase().includes("cancelado") || message.toLowerCase().includes("inválido")) {

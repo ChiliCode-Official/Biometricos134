@@ -339,6 +339,9 @@ h4 { font-size: 1.1rem; }
   border: none;
   text-decoration: none;
   gap: 8px;
+  white-space: normal;
+  word-wrap: break-word;
+  text-align: center;
 }
 
 .btn:active {
@@ -388,18 +391,21 @@ h4 { font-size: 1.1rem; }
 
 input[type="text"],
 input[type="password"],
+input[type="time"],
 select,
 textarea {
   width: 100%;
   padding: 14px 16px;
   border-radius: var(--border-radius-md);
   border: 1px solid var(--border);
-  background-color: var(--bg-system);
-  color: var(--text-primary);
+  background-color: var(--bg-system) !important;
+  color: var(--text-primary) !important;
   font-family: var(--font-body);
   font-size: 1rem;
   transition: var(--transition-smooth);
   outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 input:focus,
@@ -428,7 +434,7 @@ textarea:focus {
 
 /* --- Connection Status Bar --- */
 .connection-bar {
-  position: relative;
+  position: sticky;
   top: 0;
   left: 0;
   width: 100%;
@@ -2015,26 +2021,4 @@ input[type="checkbox"].ios-switch:checked::after {
 #screensaver.screensaver {
   background: rgba(10, 10, 12, 0.7);
   backdrop-filter: blur(5px);
-}
-
-/* PREMIUM GLASSMORPHISM OVERRIDE */
-body { 
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important; 
-  color: #f8fafc !important; 
-  font-family: 'Inter', sans-serif !important; 
-}
-.card, .biometric-card { 
-  background: rgba(255, 255, 255, 0.05) !important; 
-  backdrop-filter: blur(10px) !important; 
-  border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-  border-radius: 16px !important; 
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1) !important; 
-}
-button { 
-  transition: all 0.3s ease !important; 
-  border-radius: 8px !important; 
-}
-button:hover { 
-  transform: translateY(-2px) !important; 
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important; 
 }
