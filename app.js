@@ -49,6 +49,12 @@ function setTheme(themeName) {
     document.getElementById('btn-theme-dark').style.border = "none";
   }
   localStorage.setItem("n134_theme", themeName);
+  
+  // Re-render analytics if currently viewing it to update chart colors dynamically
+  const activePanel = document.querySelector(".view-panel.active");
+  if (activePanel && activePanel.id === "analytics-view") {
+    renderAnalytics();
+  }
 }
 
 function setAccentColor(colorHex, save = true) {
@@ -376,8 +382,11 @@ function setupEventListeners() {
     if (!isPulling || window.scrollY > 0) return;
     ptrCurrentY = e.touches[0].clientY;
     const distance = ptrCurrentY - ptrStartY;
-    if (distance > 0 && distance < 150 && ptrIndicator) {
-      ptrIndicator.style.transform = `translateY(${distance - 60}px)`;
+    if (distance > 0) {
+      if (e.cancelable) e.preventDefault(); // Prevent duplicate browser refresh bounce
+      if (distance < 120 && ptrIndicator) {
+        ptrIndicator.style.transform = `translateY(${distance - 60}px)`;
+      }
     }
   }, {passive: false});
 
@@ -385,7 +394,7 @@ function setupEventListeners() {
     if (!isPulling) return;
     isPulling = false;
     const distance = ptrCurrentY - ptrStartY;
-    if (distance > 60 && ptrIndicator) {
+    if (distance > 110 && ptrIndicator) {
       ptrIndicator.style.transform = `translateY(0px)`;
       loadDatabase().then(() => {
         ptrIndicator.style.transform = `translateY(-100%)`;
@@ -506,6 +515,12 @@ function initFirebaseListeners() {
   
   db.collection("logs").onSnapshot(snap => {
     const newLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Trigger real-time notifications on admin devices if we already have initial logs loaded
+    if (state.logs && state.logs.length > 0) {
+      checkNotificationChanges(state.logs, newLogs);
+    }
+
     state.logs = newLogs;
     lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
     recalculateBiometricStates();
@@ -714,6 +729,7 @@ async function sendAction(action, payload) {
     const timeStr = getNowTimeString();
 
     if (action === "request") {
+      const creadoPor = (state.currentUser && state.currentUser.role === "admin") ? "admin" : "user";
       await db.collection("logs").doc(localLogId).set({
         biometrico: payload.biometrico,
         usuario: payload.usuario,
@@ -723,13 +739,16 @@ async function sendAction(action, payload) {
         fecha_entrada: "",
         hora_entrada: "",
         estado: "Activo",
-        devuelto_por: ""
+        devuelto_por: "",
+        creado_por: creadoPor
       });
-      // Enviar correo de notificación al admin
-      sendAdminEmail(
-        `Nuevo Préstamo: Biométrico ${payload.biometrico}`,
-        `El usuario ${payload.usuario} ha solicitado el Biométrico ${payload.biometrico} para las ${payload.hora_salida || 'Al momento'}.`
-      );
+      // SOLO si un pasante solicita un biométrico, se envía el correo electrónico
+      if (creadoPor === "user") {
+        sendAdminEmail(
+          `Nuevo Préstamo: Biométrico ${payload.biometrico}`,
+          `El usuario ${payload.usuario} ha solicitado el Biométrico ${payload.biometrico} para las ${payload.hora_salida || 'Al momento'}.`
+        );
+      }
     } else if (action === "return") {
       await db.collection("logs").doc(payload.id).update({
         fecha_entrada: dateStr,
@@ -2696,7 +2715,10 @@ async function pollForUpdates() {
 }
 
 function checkNotificationChanges(oldLogs, newLogs) {
+  // SOLO a los dispositivos con sesión admin les llega la notificación
+  if (!state.currentUser || state.currentUser.role !== "admin") return;
   if (Notification.permission !== "granted") return;
+  
   // If oldLogs is empty, this is the very first successful load of data. 
   // We should NOT bombard the user with notifications for existing historical data.
   if (!oldLogs || oldLogs.length === 0) return;
@@ -2704,8 +2726,12 @@ function checkNotificationChanges(oldLogs, newLogs) {
   newLogs.forEach(newLog => {
     const oldLog = oldLogs.find(l => l.id === newLog.id);
     if (!oldLog) {
-      // New log!
-      fireNotification("Nueva Solicitud", `${newLog.usuario} solicitó el Biométrico ${newLog.biometrico}`);
+      // New log! Check if assigned by admin or requested by user
+      if (newLog.creado_por === "admin") {
+        fireNotification("Asignación de Biométrico", `El Administrador asignó el Biométrico ${newLog.biometrico} a ${newLog.usuario}`);
+      } else {
+        fireNotification("Nueva Solicitud", `${newLog.usuario} solicitó el Biométrico ${newLog.biometrico}`);
+      }
     } else if (oldLog.estado !== newLog.estado && newLog.estado === "Entregado") {
       // Returned!
       fireNotification("Devolución", `El Biométrico ${newLog.biometrico} ha sido devuelto por ${newLog.usuario_retorno || newLog.usuario}`);
@@ -2955,6 +2981,11 @@ function renderAnalytics() {
   const ctxBio = document.getElementById('chart-biometrics');
   const ctxUser = document.getElementById('chart-users');
 
+  // Dynamic colors depending on active theme
+  const isLightTheme = document.body.classList.contains("light-theme");
+  const textColor = isLightTheme ? "#1D1D1F" : "#F5F5F7";
+  const gridColor = isLightTheme ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)";
+
   if (ctxBio) {
     if (biometricsChartInstance) biometricsChartInstance.destroy();
     biometricsChartInstance = new Chart(ctxBio, {
@@ -2971,7 +3002,7 @@ function renderAnalytics() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { color: '#fff' } }
+          legend: { position: 'bottom', labels: { color: textColor } }
         }
       }
     });
@@ -2994,8 +3025,15 @@ function renderAnalytics() {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { beginAtZero: true, ticks: { color: '#fff' } },
-          x: { ticks: { color: '#fff' } }
+          y: { 
+            beginAtZero: true, 
+            ticks: { color: textColor },
+            grid: { color: gridColor }
+          },
+          x: { 
+            ticks: { color: textColor },
+            grid: { color: gridColor }
+          }
         },
         plugins: {
           legend: { display: false }
