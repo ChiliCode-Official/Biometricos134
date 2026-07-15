@@ -755,7 +755,7 @@ async function sendAction(action, payload) {
       const bio = state.biometrics.find(b => b.biometrico == payload.biometrico);
       if (bio) {
         bio.internet_plan = payload.plan;
-        await db.collection("app_data").doc("biometrics").set({ items: state.biometrics });
+        await db.collection("app_data").doc("biometrics").set({ items: sanitizeForFirestore(state.biometrics) });
       }
     } else if (action === "cancel") {
       await db.collection("logs").doc(payload.id).update({
@@ -1962,6 +1962,13 @@ function generateResponsivaHtml(log, bio, forPrint) {
    EXCEL IMPORT & EXPORT (SheetJS)
    ========================================================================== */
 
+function sanitizeForFirestore(obj) {
+  if (obj === null || obj === undefined) return "";
+  return JSON.parse(JSON.stringify(obj, (key, value) => {
+    return value === undefined ? "" : value;
+  }));
+}
+
 function processExcelFile(file) {
   const statusDiv = document.getElementById("import-status");
   statusDiv.className = "import-status";
@@ -2068,8 +2075,8 @@ function processExcelFile(file) {
       // Enviar a la nube en caso de modo online
       if (state.connectionMode === "online") {
         showToast("Sincronizando Excel con Firebase...", 3000);
-        await db.collection("app_data").doc("biometrics").set({ items: state.biometrics });
-        await db.collection("app_data").doc("users").set({ items: state.users });
+        await db.collection("app_data").doc("biometrics").set({ items: sanitizeForFirestore(state.biometrics) });
+        await db.collection("app_data").doc("users").set({ items: sanitizeForFirestore(state.users) });
         showToast("¡Excel sincronizado con Firebase!", 3000);
       } else {
         saveLocalBackup();
