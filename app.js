@@ -862,21 +862,21 @@ function sendAdminEmail(subject, message) {
   }
 
   if (savedData.count >= 200) {
-    console.warn("LÌmite de correos gratis de EmailJS alcanzado (200).");
+    console.warn("LÔøΩmite de correos gratis de EmailJS alcanzado (200).");
     return;
   }
   
   const templateParams = {
     subject: subject,
     message: message,
-    company_name: "NotarÌa 134",
+    company_name: "NotarÔøΩa 134",
     website_link: window.location.href
   };
   
-  console.log("Enviando par·metros a EmailJS:", templateParams);
+  console.log("Enviando parÔøΩmetros a EmailJS:", templateParams);
   emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams, CONFIG.EMAILJS.PUBLIC_KEY)
     .then(() => {
-      console.log("Correo enviado con Èxito.");
+      console.log("Correo enviado con ÔøΩxito.");
       savedData.count++;
       if (state.connectionMode === "online" && typeof db !== "undefined") {
         db.collection("app_data").doc("email_stats").set(savedData);
@@ -1346,7 +1346,7 @@ function createBiometricCard(bio, role) {
         <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
       </div>
       <span class="state-pill ${statusClass}">${statusText}</span>
-      ${role === 'admin' ? `<button onclick="openEditBiometricModal('${bio.biometrico}')" class="btn btn-icon" style="background:transparent; border:none; font-size:1.1rem; color: var(--text-secondary); cursor:pointer; margin-left:10px; padding:0;" title="Editar Hardware">??</button>` : ''}
+      ${role === 'admin' ? `<button onclick="openEditBiometricModal('${bio.biometrico}')" class="btn btn-icon" style="background:transparent; border:none; font-size:1.1rem; color: var(--text-secondary); cursor:pointer; margin-left:10px; padding:0;" title="Editar Hardware">‚úèÔ∏è</button>` : ''}
     </div>
     
     <div class="hw-info-box">
@@ -3245,7 +3245,15 @@ window.renderUserList = function() {
     return;
   }
 
+  const searchInput = document.getElementById("search-user");
+  const filterText = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+  let found = false;
+
   state.users.forEach((user, index) => {
+    if (filterText && !user.toLowerCase().includes(filterText)) return;
+    found = true;
+
     const div = document.createElement("div");
     div.style.display = "flex";
     div.style.justifyContent = "space-between";
@@ -3256,12 +3264,16 @@ window.renderUserList = function() {
     div.innerHTML = `
       <span style="color: var(--text-primary); font-size: 0.95rem;">${user}</span>
       <div style="display:flex; gap: 8px;">
-        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.8rem;" onclick="editUserItem(${index})" title="Editar">??</button>
+        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.8rem;" onclick="editUserItem(${index})" title="Editar">‚úèÔ∏è</button>
         <button class="btn btn-orange" style="padding: 4px 8px; font-size: 0.8rem;" onclick="deleteUserItem(${index})" title="Eliminar">?</button>
       </div>
     `;
     listContainer.appendChild(div);
   });
+  
+  if (filterText && !found) {
+    listContainer.innerHTML = "<p style='color: var(--text-secondary); text-align: center;'>No se encontraron resultados.</p>";
+  }
 };
 
 window.addUserFromInput = function() {
@@ -3300,7 +3312,7 @@ window.editUserItem = function(index) {
 
 window.deleteUserItem = function(index) {
   const userName = state.users[index];
-  if (confirm(`˝Est˝s seguro de que deseas eliminar a "${userName}"? No podr˝ solicitar m˝s biom˝tricos.`)) {
+  if (confirm(`ÔøΩEstÔøΩs seguro de que deseas eliminar a "${userName}"? No podrÔøΩ solicitar mÔøΩs biomÔøΩtricos.`)) {
     state.users.splice(index, 1);
     renderUserList();
     saveUsersToFirebase();
@@ -3333,7 +3345,7 @@ window.openEditBiometricModal = function(bioNum) {
   const bio = state.biometrics.find(b => b.biometrico == bioNum);
   if (!bio) return;
 
-  document.getElementById("edit-bio-title").innerText = `?? Editar Biom˝trico ${bioNum}`;
+  document.getElementById("edit-bio-title").innerText = `?? Editar BiomÔøΩtrico ${bioNum}`;
   document.getElementById("edit-bio-num").value = bioNum;
 
   document.getElementById("edit-bio-laptop-marca").value = bio.laptop_marca || "";
