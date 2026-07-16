@@ -3199,3 +3199,25 @@ function renderAnalytics() {
 
 
 
+
+
+// --- WhatsApp Support Modal Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+  const btnWhatsapp = document.getElementById('btn-whatsapp-support');
+  const modalSupport = document.getElementById('modal-support');
+  if (btnWhatsapp && modalSupport) {
+    btnWhatsapp.addEventListener('click', () => {
+      modalSupport.classList.add('active');
+    });
+  }
+
+  // Monitor login state to show/hide the button for users only
+  setInterval(() => {
+    if (typeof state !== 'undefined' && state.currentUser && state.currentUser.role === 'user') {
+      if (btnWhatsapp && btnWhatsapp.style.display !== 'flex') btnWhatsapp.style.display = 'flex';
+    } else {
+      if (btnWhatsapp && btnWhatsapp.style.display !== 'none') btnWhatsapp.style.display = 'none';
+    }
+  }, 1000);
+});
+

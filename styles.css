@@ -2227,3 +2227,8 @@ body:not(.light-theme) .glass {
 }
 
 
+
+/* Mobile Sidebar Overlay */
+.sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 99; transition: opacity 0.3s; }
+.sidebar-overlay.hidden { display: none; opacity: 0; }
+@media (min-width: 769px) { .sidebar-overlay { display: none !important; } .mobile-only { display: none !important; } }

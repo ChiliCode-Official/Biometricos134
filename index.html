@@ -116,8 +116,13 @@
     <!-- DASHBOARD WRAPPER (Hidden on Login) -->
     <div id="dashboard-layout" class="dashboard-layout hidden">
       
+      <!-- SIDEBAR OVERLAY (For Mobile) -->
+      <div id="sidebar-overlay" class="sidebar-overlay hidden" onclick="document.querySelector('.dashboard-sidebar').classList.remove('open'); this.classList.add('hidden');"></div>
+
       <!-- DASHBOARD SIDEBAR -->
       <aside class="dashboard-sidebar">
+        <!-- Close button for mobile -->
+        <button id="mobile-close-btn" class="btn btn-icon mobile-only" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 1.5rem; color: var(--text-primary); cursor: pointer;" onclick="document.querySelector('.dashboard-sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.add('hidden');">&times;</button>
         <div class="sidebar-logo">
           <img src="app_icon.png" alt="N134" class="sidebar-app-icon" style="width: 36px; height: 36px; border-radius: 8px;">
           <h2>Notaría 134</h2>
@@ -142,6 +147,11 @@
         </nav>
 
         <div class="sidebar-footer">
+          <!-- WhatsApp Support Button (hidden by default, shown for users) -->
+          <button id="btn-whatsapp-support" class="btn btn-secondary" style="width: 100%; border: none; background: rgba(255,255,255,0.05); color: inherit; margin-bottom: 10px; display: none; align-items: center; justify-content: center; gap: 8px;">
+            <img src="https://cdn-icons-png.flaticon.com/512/124/124034.png" alt="WhatsApp" style="width: 20px; height: 20px;">
+            Soporte / Sugerencias
+          </button>
           <button class="btn btn-secondary logout-btn" style="width: 100%; border: none; background: rgba(255,255,255,0.05); color: inherit;">
             🚪 Cerrar Sesión
           </button>
@@ -154,7 +164,7 @@
         <!-- DASHBOARD TOPBAR -->
         <header class="dashboard-topbar">
           <div class="topbar-left">
-            <button id="mobile-menu-btn" class="btn btn-icon" style="background: transparent; border: none; font-size: 1.5rem; padding: 0 10px; cursor: pointer; color: var(--text-primary);" onclick="document.querySelector('.dashboard-sidebar').classList.toggle('collapsed'); document.querySelector('.dashboard-sidebar').classList.toggle('open');">☰</button>
+            <button id="mobile-menu-btn" class="btn btn-icon" style="background: transparent; border: none; font-size: 1.5rem; padding: 0 10px; cursor: pointer; color: var(--text-primary);" onclick="document.querySelector('.dashboard-sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('hidden');">☰</button>
             <div class="user-greeting">
                 <img src="assets/icons/perfil.png" class="hw-icon-img" alt="Perfil" style="width:36px;height:36px;margin-right:8px;border-radius:50%;background:#e0e0e0;padding:2px;">
                 <span class="subtitle mobile-hide">Bienvenido, </span>
@@ -576,6 +586,24 @@
       <div class="modal-footer">
         <button id="btn-export-excel" class="btn btn-secondary">Exportar a Excel (.xlsx)</button>
         <button class="btn btn-secondary modal-close">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- D. Support / WhatsApp Modal -->
+  <div id="modal-support" class="modal">
+    <div class="modal-content glass animate-slide-up" style="text-align: center;">
+      <div class="modal-header">
+        <h3>Sugerencias y Soporte</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 20px;">¿Tienes alguna sugerencia sobre el aspecto de la aplicación, encontraste algún error o tuviste una mala experiencia?</p>
+        <p style="margin-bottom: 20px;"><strong>¡Queremos escucharte!</strong></p>
+        <a href="https://wa.me/525574123521" target="_blank" class="btn btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background-color: #25D366; color: white;">
+          <img src="https://cdn-icons-png.flaticon.com/512/124/124034.png" alt="WhatsApp" style="width: 24px; height: 24px; filter: brightness(0) invert(1);">
+          Contactar por WhatsApp
+        </a>
       </div>
     </div>
   </div>
