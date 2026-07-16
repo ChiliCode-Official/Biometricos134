@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    APPLICATION LOGIC - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
    ========================================================================== */
 
@@ -3328,7 +3328,9 @@ window.saveUsersToFirebase = async function() {
       populateUserSelects(); // Actualizar el dropdown del modal de reservas
     } catch (error) {
       console.error("Error al guardar usuarios:", error);
-      showToast("Error al guardar en la nube.", 3000);
+      showToast("Guardado localmente (Sin conexión a la nube)", 3000);
+      saveLocalBackup();
+      populateUserSelects();
     }
   } else {
     showToast("Guardado local (Modo Offline).", 2000);
@@ -3397,3 +3399,4 @@ window.saveBiometricHardware = async function() {
     recalculateBiometricStates();
   }
 };
+
