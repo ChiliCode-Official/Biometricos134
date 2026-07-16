@@ -2962,7 +2962,8 @@ function updateScreensaver(force = false) {
     const ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
     m = m < 10 ? '0' + m : m;
-    document.getElementById('screensaver-time').innerText = `${h}:${m} ${ampm}`;
+    // Format AM/PM in smaller span
+    document.getElementById('screensaver-time').innerHTML = `${h}:${m}<span>${ampm}</span>`;
     
     // Update Date
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -2971,8 +2972,21 @@ function updateScreensaver(force = false) {
     // Update Stats
     if (state && state.biometrics) {
       const occupied = state.biometrics.filter(b => b.status === "Ocupado").length;
-      document.getElementById('ss-stat-available').innerText = 8 - occupied;
+      const pending = state.biometrics.filter(b => b.status === "Pendiente").length;
+      const available = 8 - occupied - pending;
+      
+      document.getElementById('ss-stat-available').innerText = available;
       document.getElementById('ss-stat-occupied').innerText = occupied;
+      
+      const pendingContainer = document.getElementById('ss-pill-pending-container');
+      if (pendingContainer) {
+        if (pending > 0) {
+          document.getElementById('ss-stat-pending').innerText = pending;
+          pendingContainer.classList.remove('hidden');
+        } else {
+          pendingContainer.classList.add('hidden');
+        }
+      }
     }
     
     // Loop
