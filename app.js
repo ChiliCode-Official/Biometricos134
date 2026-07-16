@@ -1346,7 +1346,7 @@ function createBiometricCard(bio, role) {
         <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
       </div>
       <span class="state-pill ${statusClass}">${statusText}</span>
-      ${viewType === 'admin' ? `<button onclick="openEditBiometricModal('${bio.biometrico}')" class="btn btn-icon" style="background:transparent; border:none; font-size:1.1rem; color: var(--text-secondary); cursor:pointer; margin-left:10px; padding:0;" title="Editar Hardware">??</button>` : ''}
+      ${role === 'admin' ? `<button onclick="openEditBiometricModal('${bio.biometrico}')" class="btn btn-icon" style="background:transparent; border:none; font-size:1.1rem; color: var(--text-secondary); cursor:pointer; margin-left:10px; padding:0;" title="Editar Hardware">??</button>` : ''}
     </div>
     
     <div class="hw-info-box">
