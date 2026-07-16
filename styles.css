@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    DESIGN SYSTEM - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
    Apple-Inspired Clean & Modern UI
    ========================================================================== */
@@ -96,6 +96,7 @@ body.light-theme {
 
 html {
   overflow-x: hidden;
+  overscroll-behavior: none; /* Previene pull-to-refresh del navegador en m\u00f3vil */
 }
 
 body {

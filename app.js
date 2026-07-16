@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    APPLICATION LOGIC - CONTROL DE BIOMÉTRICOS (NOTARÍA 134)
    ========================================================================== */
 
@@ -370,41 +370,7 @@ function setupEventListeners() {
   // History Filter Search
   document.getElementById("history-search").addEventListener("input", filterHistoryTable);
   
-  // Pull to Refresh Listeners
-  document.addEventListener('touchstart', e => {
-    if (window.scrollY === 0) {
-      ptrStartY = e.touches[0].clientY;
-      isPulling = true;
-    }
-  }, {passive: true});
-
-  document.addEventListener('touchmove', e => {
-    if (!isPulling || window.scrollY > 0) return;
-    ptrCurrentY = e.touches[0].clientY;
-    const distance = ptrCurrentY - ptrStartY;
-    if (distance > 0) {
-      if (e.cancelable) e.preventDefault(); // Prevent duplicate browser refresh bounce
-      if (distance < 120 && ptrIndicator) {
-        ptrIndicator.style.transform = `translateY(${distance - 60}px)`;
-      }
-    }
-  }, {passive: false});
-
-  document.addEventListener('touchend', e => {
-    if (!isPulling) return;
-    isPulling = false;
-    const distance = ptrCurrentY - ptrStartY;
-    if (distance > 110 && ptrIndicator) {
-      ptrIndicator.style.transform = `translateY(0px)`;
-      loadDatabase().then(() => {
-        ptrIndicator.style.transform = `translateY(-100%)`;
-      });
-    } else if (ptrIndicator) {
-      ptrIndicator.style.transform = `translateY(-100%)`;
-    }
-    ptrStartY = 0;
-    ptrCurrentY = 0;
-  });
+  // Pull to Refresh deshabilitado (causaba recargas accidentales en móvil)
 }
 
 /* ==========================================================================
@@ -1070,8 +1036,8 @@ function _showViewInternal(viewId) {
       panel.classList.remove("active");
     });
   } else {
-    // SECURITY REDIRECT: Interns (role === "user") cannot view analytics
-    if (viewId === "analytics-view" && (!state.currentUser || state.currentUser.role !== "admin")) {
+    // SECURITY REDIRECT: Interns (role === "user") cannot view analytics or manage users
+    if ((viewId === "analytics-view" || viewId === "manage-users-view") && (!state.currentUser || state.currentUser.role !== "admin")) {
       showView(state.currentUser ? (state.currentUser.role === "admin" ? "admin-view" : "user-view") : "login-view");
       return;
     }
@@ -1093,17 +1059,21 @@ function _showViewInternal(viewId) {
     const navDashboard = document.getElementById("nav-dashboard");
     const navProfile = document.getElementById("nav-profile");
     const navAnalytics = document.getElementById("nav-analytics");
+    const navManageUsers = document.getElementById("nav-manage-users");
     if (navDashboard && navProfile && navAnalytics) {
-      // Hide nav-analytics for non-admins
+      // Hide/show nav-analytics and nav-manage-users based on role
       if (state.currentUser && state.currentUser.role === "admin") {
         navAnalytics.style.display = "flex";
+        if (navManageUsers) navManageUsers.style.display = "flex";
       } else {
         navAnalytics.style.display = "none";
+        if (navManageUsers) navManageUsers.style.display = "none";
       }
 
       navDashboard.classList.remove("active");
       navProfile.classList.remove("active");
       navAnalytics.classList.remove("active");
+      if (navManageUsers) navManageUsers.classList.remove("active");
       
       if (viewId === "profile-view") {
         navProfile.classList.add("active");
@@ -1111,9 +1081,15 @@ function _showViewInternal(viewId) {
         navAnalytics.classList.add("active");
       } else if (viewId === "admin-view" || viewId === "user-view") {
         navDashboard.classList.add("active");
+      } else if (viewId === "manage-users-view") {
+        if (navManageUsers) navManageUsers.classList.add("active");
       }
     }
     
+    if (viewId === "manage-users-view") {
+      if (typeof renderUserList === "function") renderUserList();
+    }
+
     if (viewId === "analytics-view") {
       renderAnalytics();
     }
@@ -3320,22 +3296,21 @@ window.deleteUserItem = function(index) {
 };
 
 window.saveUsersToFirebase = async function() {
+  // Siempre guardar localmente primero como respaldo
+  saveLocalBackup();
+  populateUserSelects();
+
   if (state.connectionMode === "online" && typeof db !== "undefined") {
     try {
-      showToast("Guardando usuarios...", 2000);
-      await db.collection("app_data").doc("users").set({ items: sanitizeForFirestore(state.users) });
-      showToast("Usuarios guardados.", 2000);
-      populateUserSelects(); // Actualizar el dropdown del modal de reservas
+      const usersToSave = (state.users || []).filter(u => typeof u === 'string' && u.trim());
+      await db.collection("app_data").doc("users").set({ items: usersToSave });
+      showToast("✅ Cambios guardados en la nube.", 2000);
     } catch (error) {
-      console.error("Error al guardar usuarios:", error);
-      showToast("Guardado localmente (Sin conexión a la nube)", 3000);
-      saveLocalBackup();
-      populateUserSelects();
+      console.error("Error al guardar usuarios en Firestore:", error);
+      showToast("⚠️ Sin acceso a la nube. Guardado localmente.", 3000);
     }
   } else {
-    showToast("Guardado local (Modo Offline).", 2000);
-    saveLocalBackup();
-    populateUserSelects();
+    showToast("💾 Guardado local (modo sin conexión).", 2000);
   }
 };
 
