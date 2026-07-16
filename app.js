@@ -790,7 +790,6 @@ async function sendAction(action, payload) {
         estado: "Activo",
         hora_salida_real: timeStr
       });
-    });
     }
 
     // El onSnapshot actualizará la UI localmente de forma automática.
