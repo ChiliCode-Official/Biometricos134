@@ -487,6 +487,12 @@ function initFirebaseListeners() {
       state.users = CONFIG.USUARIOS;
     }
     saveLocalBackup();
+    
+    // Si la vista de gestión de usuarios está abierta, actualizar la lista en tiempo real
+    const manageUsersView = document.getElementById('manage-users-view');
+    if (manageUsersView && manageUsersView.classList.contains('active')) {
+      if (typeof renderUserList === "function") renderUserList();
+    }
   });
   
   db.collection("app_data").doc("email_stats").onSnapshot(doc => {
@@ -3324,7 +3330,7 @@ window.deleteUserItem = function(index) {
 window.saveUsersToFirebase = async function() {
   // Siempre guardar localmente primero como respaldo
   saveLocalBackup();
-  populateUserSelects();
+
 
   if (state.connectionMode === "online" && typeof db !== "undefined") {
     try {
