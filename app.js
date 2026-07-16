@@ -3221,6 +3221,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-window.confirmDelivery = function(logId, bioNum) { handleBiometricAction('confirm', { id: logId, biometrico: bioNum }); };
-window.cancelDelivery = function(logId, bioNum) { handleBiometricAction('cancel', { id: logId, biometrico: bioNum }); };
+window.confirmDelivery = function(logId, bioNum) { sendAction('confirm', { id: logId, biometrico: bioNum }); };
+window.cancelDelivery = function(logId, bioNum) { sendAction('cancel', { id: logId, biometrico: bioNum }); };
 
