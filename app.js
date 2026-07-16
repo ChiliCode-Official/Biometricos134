@@ -236,6 +236,28 @@ async function initApp() {
   }
 }
 
+// --- Sidebar Toggle (Mobile: open/close | Desktop: collapsed/expanded) ---
+window.toggleSidebar = function() {
+  const sidebar = document.querySelector('.dashboard-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isMobile = window.innerWidth <= 768;
+
+  if (isMobile) {
+    // En m\u00f3vil: abrir/cerrar con clase 'open'
+    const isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      sidebar.classList.remove('open');
+      if (overlay) overlay.classList.add('hidden');
+    } else {
+      sidebar.classList.add('open');
+      if (overlay) overlay.classList.remove('hidden');
+    }
+  } else {
+    // En escritorio: colapsar/expandir con clase 'collapsed'
+    sidebar.classList.toggle('collapsed');
+  }
+};
+
 // --- Setup DOM Events ---
 function setupEventListeners() {
   // Login Role Tabs
@@ -1052,8 +1074,12 @@ function _showViewInternal(viewId) {
     const targetView = document.getElementById(viewId);
     if (targetView) targetView.classList.add("active");
     
-    // Ocultar sidebar en móvil al cambiar vista
-    document.querySelector('.dashboard-sidebar').classList.remove('open');
+    // Ocultar sidebar en m\u00f3vil al cambiar vista (en escritorio no hacemos nada)
+    if (window.innerWidth <= 768) {
+      document.querySelector('.dashboard-sidebar').classList.remove('open');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (overlay) overlay.classList.add('hidden');
+    }
       
     // Actualizar estado activo de los botones del menú lateral y ocultar analytics para pasantes
     const navDashboard = document.getElementById("nav-dashboard");

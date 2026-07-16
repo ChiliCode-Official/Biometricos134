@@ -11,7 +11,7 @@
   
   <!-- CACHE NUKE SCRIPT -->
   <script>
-    if (!localStorage.getItem('cache_nuked_v46')) {
+    if (!localStorage.getItem('cache_nuked_v47')) {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for(let registration of registrations) {
@@ -22,7 +22,7 @@
       caches.keys().then(function(names) {
         for (let name of names) caches.delete(name);
       });
-      localStorage.setItem('cache_nuked_v46', 'true');
+      localStorage.setItem('cache_nuked_v47', 'true');
       window.location.reload(true);
     }
   </script>
@@ -38,7 +38,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=55">
+  <link rel="stylesheet" href="styles.css?v=56">
   
   <!-- SheetJS for browser Excel parsing/exporting -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -114,37 +114,37 @@
     <div id="dashboard-layout" class="dashboard-layout hidden">
       
       <!-- SIDEBAR OVERLAY (For Mobile) -->
-      <div id="sidebar-overlay" class="sidebar-overlay hidden" onclick="document.querySelector('.dashboard-sidebar').classList.remove('open'); this.classList.add('hidden');"></div>
+      <div id="sidebar-overlay" class="sidebar-overlay hidden" onclick="toggleSidebar()"></div>
 
       <!-- DASHBOARD SIDEBAR -->
       <aside class="dashboard-sidebar">
         <!-- Close button for mobile -->
-        <button id="mobile-close-btn" class="btn btn-icon mobile-only" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 1.5rem; color: var(--text-primary); cursor: pointer;" onclick="document.querySelector('.dashboard-sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.add('hidden');">&times;</button>
+        <button id="mobile-close-btn" class="btn btn-icon mobile-only" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 1.5rem; color: var(--text-primary); cursor: pointer;" onclick="toggleSidebar()">&times;</button>
         <div class="sidebar-logo">
           <img src="app_icon.png" alt="N134" class="sidebar-app-icon" style="width: 36px; height: 36px; border-radius: 8px;">
           <h2>Notaría 134</h2>
         </div>
         
         <nav class="sidebar-nav">
-          <!-- User / Admin Dashboard Toggle (handled dynamically via JS if needed, but we can just use static buttons) -->
+          <!-- User / Admin Dashboard Toggle -->
           <button id="nav-dashboard" class="nav-btn active" onclick="showView(state.currentUser && state.currentUser.role === 'admin' ? 'admin-view' : 'user-view')">
               <span class="nav-icon"><img src="assets/icons/dashboard.png" alt="Dashboard" style="width:24px; height:24px; object-fit:contain;"></span>
               <span class="nav-label">Dashboard</span>
             </button>
             
           <button id="nav-analytics" class="nav-btn" onclick="showView('analytics-view')">
-              <span class="nav-icon"><img src="analiticas.png" alt="Analíticas" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='assets/icons/dashboard.png'; this.style.filter='hue-rotate(90deg)';"></span>
-              <span class="nav-label">Analíticas</span>
+              <span class="nav-icon"><img src="analiticas.png" alt="Análíticas" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='assets/icons/dashboard.png'; this.style.filter='hue-rotate(90deg)';"></span>
+              <span class="nav-label">Análíticas</span>
+            </button>
+
+          <button id="nav-manage-users" class="nav-btn" onclick="showView('manage-users-view')" style="display: none;">
+              <span class="nav-icon">👥</span>
+              <span class="nav-label">Gestión de Usuarios</span>
             </button>
           
           <button id="nav-profile" class="nav-btn" onclick="showView('profile-view')">
               <span class="nav-icon"><img src="assets/icons/perfil.png" alt="Perfil" style="width:28px; height:28px; object-fit:contain; border-radius:50%; background:#e0e0e0; padding:2px;"></span>
               <span class="nav-label">Perfil y Ajustes</span>
-            </button>
-          
-          <button id="nav-manage-users" class="nav-btn" onclick="showView('manage-users-view')" style="display: none;">
-              <span class="nav-icon">👥</span>
-              <span class="nav-label">Gestión de Usuarios</span>
             </button>
         </nav>
 
@@ -166,7 +166,7 @@
         <!-- DASHBOARD TOPBAR -->
         <header class="dashboard-topbar">
           <div class="topbar-left">
-            <button id="mobile-menu-btn" class="btn btn-icon" style="background: transparent; border: none; font-size: 1.5rem; padding: 0 10px; cursor: pointer; color: var(--text-primary);" onclick="document.querySelector('.dashboard-sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('hidden');">☰</button>
+            <button id="mobile-menu-btn" class="btn btn-icon" style="background: transparent; border: none; font-size: 1.5rem; padding: 0 10px; cursor: pointer; color: var(--text-primary);" onclick="toggleSidebar()">☰</button>
             <div class="user-greeting">
                 <img src="assets/icons/perfil.png" class="hw-icon-img" alt="Perfil" style="width:36px;height:36px;margin-right:8px;border-radius:50%;background:#e0e0e0;padding:2px;">
                 <span class="subtitle mobile-hide">Bienvenido, </span>
@@ -316,20 +316,20 @@
         </div>
 
         <div class="glass" style="padding: 24px; border-radius: 16px;">
+          <!-- Añadir nuevo usuario - ARRIBA -->
+          <div style="display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <input type="text" id="new-user-name" placeholder="➕ Nombre completo del nuevo pasante..." class="form-control" style="flex: 1;" onkeypress="if(event.key === 'Enter') addUserFromInput()">
+            <button class="btn btn-primary" onclick="addUserFromInput()" style="padding: 10px 18px; white-space: nowrap;">➕ Añadir</button>
+          </div>
+
           <!-- Barra de búsqueda -->
-          <div style="margin-bottom: 16px;">
+          <div style="margin-bottom: 12px;">
             <input type="text" id="search-user" placeholder="🔍 Buscar pasante..." class="form-control" style="width: 100%; border-radius: 8px;" oninput="renderUserList()">
           </div>
 
           <!-- Lista de usuarios -->
-          <div id="user-management-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px;">
+          <div id="user-management-list" style="max-height: 50vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px;">
             <!-- Cargado dinámicamente -->
-          </div>
-
-          <!-- Añadir nuevo usuario -->
-          <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <input type="text" id="new-user-name" placeholder="Nombre completo del pasante..." class="form-control" style="flex: 1;" onkeypress="if(event.key === 'Enter') addUserFromInput()">
-            <button class="btn btn-primary" onclick="addUserFromInput()" style="padding: 10px 18px; white-space: nowrap;">➕ Añadir</button>
           </div>
         </div>
       </div>
@@ -655,15 +655,32 @@
 
   <!-- 10. SCREENSAVER (Stand-By) -->
   <div id="screensaver" class="screensaver hidden">
+    <!-- Fondo con partículas -->
     <canvas id="particles-bg"></canvas>
-    <div class="screensaver-content liquid-glass-panel spatial-pane">
+    <!-- Gradiente aurora animado -->
+    <div class="ss-aurora"></div>
+    <!-- Contenido centrado (bouncing via JS) -->
+    <div class="screensaver-content">
+      <!-- Logo notaría -->
+      <div class="ss-logo-ring">
+        <img src="app_icon.png" alt="N134" class="ss-logo-img">
+      </div>
+      <!-- Reloj -->
       <div id="screensaver-time">12:00 PM</div>
       <div id="screensaver-date">Lunes, 1 de Enero</div>
-      <div class="screensaver-stats">
-        <span id="ss-stat-available">--</span> Disponibles • 
-        <span id="ss-stat-occupied">--</span> Ocupados
+      <!-- Pills de estado -->
+      <div class="ss-pills">
+        <div class="ss-pill available">
+          <span class="ss-pill-dot"></span>
+          <span id="ss-stat-available">--</span> disponibles
+        </div>
+        <div class="ss-pill occupied">
+          <span class="ss-pill-dot"></span>
+          <span id="ss-stat-occupied">--</span> en campo
+        </div>
       </div>
-      <div class="screensaver-hint">Mueve el mouse para despertar</div>
+      <!-- Hint -->
+      <div class="screensaver-hint">Toca o mueve el mouse para despertar</div>
     </div>
   </div>
 
@@ -674,9 +691,9 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="config.js?v=55"></script>
-  <script src="excel-export-helpers.js?v=55"></script>
-  <script src="app.js?v=55"></script>
+  <script src="config.js?v=56"></script>
+  <script src="excel-export-helpers.js?v=56"></script>
+  <script src="app.js?v=56"></script>
   <script>
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
