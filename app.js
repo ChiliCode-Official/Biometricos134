@@ -742,10 +742,10 @@ async function sendAction(action, payload) {
         usuario: payload.usuario,
         fecha_salida: dateStr,
         hora_salida_solicitada: payload.hora_salida || "Al momento",
-        hora_salida_real: timeStr,
+        hora_salida_real: "",
         fecha_entrada: "",
         hora_entrada: "",
-        estado: "Activo",
+        estado: "Pendiente",
         devuelto_por: "",
         creado_por: creadoPor
       });
@@ -784,13 +784,13 @@ async function sendAction(action, payload) {
         await db.collection("app_data").doc("biometrics").set({ items: sanitizeForFirestore(state.biometrics) });
       }
     } else if (action === "cancel") {
-      await db.collection("logs").doc(payload.id).update({
-        estado: "Cancelado"
-      });
+      await db.collection("logs").doc(payload.id).delete();
     } else if (action === "confirm") {
       await db.collection("logs").doc(payload.id).update({
-        estado: "Activo" // or whatever confirm means, usually just to ensure it's active
+        estado: "Activo",
+        hora_salida_real: timeStr
       });
+    });
     }
 
     // El onSnapshot actualizará la UI localmente de forma automática.
@@ -3220,4 +3220,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 1000);
 });
+
+
+window.confirmDelivery = function(logId, bioNum) { handleBiometricAction('confirm', { id: logId, biometrico: bioNum }); };
+window.cancelDelivery = function(logId, bioNum) { handleBiometricAction('cancel', { id: logId, biometrico: bioNum }); };
 
