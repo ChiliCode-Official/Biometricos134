@@ -661,37 +661,37 @@
     }
   </script>
 
-  <!-- M�dulo de Gesti�n de Usuarios -->
+  <!-- Módulo de Gestión de Usuarios -->
   <div id="modal-manage-users" class="modal">
     <div class="modal-content glass animate-slide-up" style="max-width: 500px; text-align: left;">
       <div class="modal-header">
-        <h3>?? Gesti�n de Pasantes</h3>
+        <h3>👥 Gestión de Pasantes</h3>
         <button class="modal-close" onclick="document.getElementById('modal-manage-users').classList.remove('active')">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary);">Administra los usuarios autorizados para solicitar biom�tricos. Los cambios se guardan autom�ticamente en la nube.</p>
+        <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary);">Administra los usuarios autorizados para solicitar biométricos. Los cambios se guardan automáticamente en la nube.</p>
         
         
         <div style="margin-bottom: 10px;">
           <input type="text" id="search-user" placeholder="🔍 Buscar pasante..." class="form-control" style="width: 100%; border-radius: 8px;" oninput="renderUserList()">
         </div>
         <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px;" id="user-management-list">
-          <!-- Usuarios cargados din�micamente -->
+          <!-- Usuarios cargados dinámicamente -->
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 15px;">
           <input type="text" id="new-user-name" placeholder="Nombre completo del pasante..." class="form-control" style="flex: 1;" onkeypress="if(event.key === 'Enter') addUserFromInput()">
-          <button class="btn btn-primary" onclick="addUserFromInput()" style="padding: 10px 15px;">? A�adir</button>
+          <button class="btn btn-primary" onclick="addUserFromInput()" style="padding: 10px 15px;">➕ Añadir</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- M�dulo de Edici�n de Biom�tricos -->
+  <!-- Módulo de Edición de Biométricos -->
   <div id="modal-edit-biometric" class="modal">
     <div class="modal-content glass animate-slide-up" style="max-width: 500px; text-align: left;">
       <div class="modal-header">
-        <h3 id="edit-bio-title">?? Editar Biom�trico</h3>
+        <h3 id="edit-bio-title">✏️ Editar Biométrico</h3>
         <button class="modal-close" onclick="document.getElementById('modal-edit-biometric').classList.remove('active')">&times;</button>
       </div>
       <div class="modal-body" style="display:flex; flex-direction:column; gap: 10px;">
@@ -711,7 +711,7 @@
           </div>
         </div>
         <div>
-          <label style="font-size: 0.85rem; color: var(--text-secondary);">?? Lector Biom�trico</label>
+          <label style="font-size: 0.85rem; color: var(--text-secondary);">👆 Lector Biométrico</label>
           <input type="text" id="edit-bio-lector" class="form-control" placeholder="Lector (ej. Lector HID)">
         </div>
         <div>

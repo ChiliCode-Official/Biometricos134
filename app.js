@@ -3265,7 +3265,7 @@ window.renderUserList = function() {
       <span style="color: var(--text-primary); font-size: 0.95rem;">${user}</span>
       <div style="display:flex; gap: 8px;">
         <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.8rem;" onclick="editUserItem(${index})" title="Editar">✏️</button>
-        <button class="btn btn-orange" style="padding: 4px 8px; font-size: 0.8rem;" onclick="deleteUserItem(${index})" title="Eliminar">?</button>
+        <button class="btn btn-orange" style="padding: 4px 8px; font-size: 0.8rem;" onclick="deleteUserItem(${index})" title="Eliminar">❌</button>
       </div>
     `;
     listContainer.appendChild(div);
