@@ -875,7 +875,7 @@ function sendAdminEmail(subject, message) {
   };
   
   console.log("Enviando parámetros a EmailJS:", templateParams);
-  emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams, { publicKey: CONFIG.EMAILJS.PUBLIC_KEY })
+  emailjs.send(CONFIG.EMAILJS.SERVICE_ID, CONFIG.EMAILJS.TEMPLATE_ID, templateParams, CONFIG.EMAILJS.PUBLIC_KEY)
     .then(() => {
       console.log("Correo enviado con éxito.");
       savedData.count++;
