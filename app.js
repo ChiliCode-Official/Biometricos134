@@ -1616,10 +1616,8 @@ async function confirmReservation() {
       showToast("Por favor selecciona o escribe el nombre del usuario.");
       return;
     }
-    if (!state.users.includes(chosenUser)) {
-      showToast("Por favor selecciona un usuario válido del listado oficial.");
-      return;
-    }
+    // No bloqueamos por state.users: el admin puede asignar a usuarios nuevos
+    // aunque Firebase aún no haya sincronizado la lista en este dispositivo.
     userToAssign = chosenUser;
   } else {
     userToAssign = state.currentUser.name;
