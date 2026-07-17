@@ -515,7 +515,7 @@ function initFirebaseListeners() {
   });
   
   db.collection("logs").onSnapshot(snap => {
-    const newLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const newLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
     
     // Trigger real-time notifications on admin devices if we already have initial logs loaded
     if (state.logs && state.logs.length > 0) {
