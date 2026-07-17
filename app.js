@@ -478,7 +478,13 @@ async function loadDatabase() {
   }
 }
 
+let _firebaseListenersInitialized = false;
 function initFirebaseListeners() {
+  if (_firebaseListenersInitialized) {
+    console.log("Firebase listeners already initialized, skipping.");
+    return;
+  }
+  _firebaseListenersInitialized = true;
   db.collection("app_data").doc("users").onSnapshot(doc => {
     if (doc.exists) {
       state.users = doc.data().items || [];
@@ -518,11 +524,19 @@ function initFirebaseListeners() {
     const newLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => {
         function parseId(id) {
           const parts = id.split('-');
+          let ts = 0;
           if (parts[1] === "NaN") {
-            return parseInt(parts[2], 10) || 0;
+            ts = parseInt(parts[2], 10) || 0;
           } else {
-            return parseInt(parts[1], 10) || 0;
+            ts = parseInt(parts[1], 10) || 0;
           }
+          // Fix for misparsed future dates from Excel (e.g. Dec 2026 instead of May 2026)
+          // If the timestamp is in the future (more than 1 day from now), it's malformed.
+          // Treat it as timestamp 0 so it sorts as oldest and doesn't override current actions.
+          if (ts > Date.now() + 86400000) {
+            ts = 0;
+          }
+          return ts;
         }
         return parseId(a.id) - parseId(b.id);
       });
@@ -1702,10 +1716,8 @@ async function triggerReturn(logId, biometrico) {
 window.confirmDelivery = async function(logId, bioNum) {
   const res = await sendAction("confirm", { id: logId, biometrico: bioNum });
   if (res && res.success) {
-    showToast("Entrega confirmada con éxito");
-    if (typeof loadDatabase === "function") {
-      await loadDatabase();
-    }
+    showToast("✅ Entrega confirmada con éxito");
+    // La UI se actualiza automáticamente vía onSnapshot de Firebase
   } else {
     showToast("Error al confirmar la entrega", true);
   }
@@ -1720,9 +1732,7 @@ window.cancelDelivery = async function(logId, bioNum) {
     const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
     if (res && res.success) {
       showToast("Solicitud cancelada");
-      if (typeof loadDatabase === "function") {
-        await loadDatabase();
-      }
+      // La UI se actualiza automáticamente vía onSnapshot de Firebase
     }
   }
 }
