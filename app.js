@@ -2708,13 +2708,7 @@ function requestNotificationPermission() {
 }
 
 function startNotificationPolling() {
-  if (notificationPollingTimer) clearInterval(notificationPollingTimer);
-  if (!CONFIG.GOOGLE_SHEET_API_URL) return;
-  
-  // Clone current logs to avoid firing notifications on startup
-  lastKnownLogs = JSON.parse(JSON.stringify(state.logs));
-  
-  notificationPollingTimer = setInterval(pollForUpdates, 15000); // 15 seconds
+  // Disabled: Firebase onSnapshot now handles real-time updates natively.
 }
 
 function stopNotificationPolling() {
@@ -2725,30 +2719,7 @@ function stopNotificationPolling() {
 }
 
 async function pollForUpdates() {
-  if (!navigator.onLine) return;
-  try {
-    const res = await fetch(CONFIG.GOOGLE_SHEET_API_URL + "?action=getDatabase&_t=" + Date.now());
-    if (!res.ok) return;
-    const db = await res.json();
-    if (db.success) {
-      const newLogs = db.logs;
-      checkNotificationChanges(lastKnownLogs, newLogs);
-      lastKnownLogs = JSON.parse(JSON.stringify(newLogs));
-      
-      // Optionally update local state seamlessly if there are changes
-      if (JSON.stringify(state.logs) !== JSON.stringify(newLogs)) {
-        state.logs = newLogs;
-        state.biometrics = db.biometrics;
-        recalculateBiometricStates();
-        renderBiometrics();
-        if (state.currentUser && state.currentUser.role === "admin") {
-          renderAdminDashboard();
-        }
-      }
-    }
-  } catch (err) {
-    console.error("Error polling notifications:", err);
-  }
+  // Disabled
 }
 
 function checkNotificationChanges(oldLogs, newLogs) {
