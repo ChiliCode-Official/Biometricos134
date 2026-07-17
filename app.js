@@ -515,7 +515,17 @@ function initFirebaseListeners() {
   });
   
   db.collection("logs").onSnapshot(snap => {
-    const newLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
+    const newLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => {
+        function parseId(id) {
+          const parts = id.split('-');
+          if (parts[1] === "NaN") {
+            return parseInt(parts[2], 10) || 0;
+          } else {
+            return parseInt(parts[1], 10) || 0;
+          }
+        }
+        return parseId(a.id) - parseId(b.id);
+      });
     
     // Trigger real-time notifications on admin devices if we already have initial logs loaded
     if (state.logs && state.logs.length > 0) {
