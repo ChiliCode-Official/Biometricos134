@@ -780,6 +780,11 @@ textarea:focus {
   color: var(--color-occupied);
 }
 
+.state-pill.pending {
+  background-color: rgba(255, 149, 0, 0.15);
+  color: #FF9500;
+}
+
 /* Hardware Box */
 .hw-info-box {
   background-color: var(--bg-system);
@@ -1824,6 +1829,16 @@ body.light-theme .skeleton::before {
   0% { opacity: 1; box-shadow: 0 0 5px currentColor; }
   50% { opacity: 0.4; box-shadow: 0 0 2px currentColor; }
   100% { opacity: 1; box-shadow: 0 0 5px currentColor; }
+}
+.led-pending {
+  background-color: #FF9500;
+  color: #FF9500;
+  animation: led-pulse-orange 1.2s infinite ease-in-out;
+}
+@keyframes led-pulse-orange {
+  0% { opacity: 1; box-shadow: 0 0 8px rgba(255,149,0,0.9); }
+  50% { opacity: 0.4; box-shadow: 0 0 2px rgba(255,149,0,0.3); }
+  100% { opacity: 1; box-shadow: 0 0 8px rgba(255,149,0,0.9); }
 }
 
 .card-occupied {

@@ -11,7 +11,7 @@
   
   <!-- CACHE NUKE SCRIPT -->
   <script>
-    if (!localStorage.getItem('cache_nuked_v49')) {
+    if (!localStorage.getItem('cache_nuked_v60')) {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for(let registration of registrations) {
@@ -22,7 +22,7 @@
       caches.keys().then(function(names) {
         for (let name of names) caches.delete(name);
       });
-      localStorage.setItem('cache_nuked_v49', 'true');
+      localStorage.setItem('cache_nuked_v60', 'true');
       window.location.reload(true);
     }
   </script>
@@ -38,7 +38,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=58">
+  <link rel="stylesheet" href="styles.css?v=60">
   
   <!-- SheetJS for browser Excel parsing/exporting -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -695,9 +695,9 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="config.js?v=58"></script>
-  <script src="excel-export-helpers.js?v=58"></script>
-  <script src="app.js?v=58"></script>
+  <script src="config.js?v=60"></script>
+  <script src="excel-export-helpers.js?v=60"></script>
+  <script src="app.js?v=60"></script>
   <script>
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {

@@ -796,7 +796,8 @@ async function sendAction(action, payload) {
       });
     }
 
-    // El onSnapshot actualizará la UI localmente de forma automática.
+    // La UI se actualiza automáticamente vía onSnapshot de Firebase.
+    // NO se hace ninguna modificación local aquí — toda la fuente de verdad es Firestore.
     setButtonsState(true);
     hideToast();
     return { success: true };
@@ -1288,16 +1289,18 @@ function renderBiometrics() {
     if (adminGrid) adminGrid.appendChild(adminCard);
 
     // 3. Crear tarjeta activa con checklist si el usuario actual es el poseedor
+    const holderNorm = (bio.holder || "").trim().toLowerCase();
+    const currentNorm = (state.currentUser?.name || "").trim().toLowerCase();
     if (state.currentUser && state.currentUser.role === "user" && 
        (bio.status === "Ocupado" || bio.status === "Pendiente") && 
-       bio.holder === state.currentUser.name) {
+       holderNorm === currentNorm) {
       hasActiveEquipment = true;
       const activeCard = createActiveEquipmentChecklist(bio);
       if (userActiveGrid) userActiveGrid.appendChild(activeCard);
     }
 
     // 4. Recordatorio de equipo pendiente para pasantes
-    if (state.currentUser && state.currentUser.role === "user" && bio.status === "Pendiente" && bio.holder === state.currentUser.name) {
+    if (state.currentUser && state.currentUser.role === "user" && bio.status === "Pendiente" && holderNorm === currentNorm) {
       const reminderDiv = document.createElement("div");
       reminderDiv.className = "alert alert-warning";
       reminderDiv.style.backgroundColor = "#fff3cd";
@@ -1350,12 +1353,13 @@ function renderBiometrics() {
 function createBiometricCard(bio, role) {
   const card = document.createElement("div");
   const isAvailable = bio.status === "Disponible";
+  const isPending = bio.status === "Pendiente";
   const cardStatusClass = isAvailable ? "card-available" : "card-occupied";
   card.className = `bio-card glass fade-in ${cardStatusClass}`;
   card.id = `bio-card-${bio.biometrico}`;
-  const statusClass = isAvailable ? "available" : "occupied";
-  const ledClass = isAvailable ? "led-available" : "led-occupied";
-  const statusText = isAvailable ? "Disponible" : "Ocupado";
+  const statusClass = isAvailable ? "available" : (isPending ? "pending" : "occupied");
+  const ledClass = isAvailable ? "led-available" : (isPending ? "led-pending" : "led-occupied");
+  const statusText = isAvailable ? "Disponible" : (isPending ? "Pendiente" : "Ocupado");
 
   card.innerHTML = `
     <div class="bio-card-header">
@@ -1442,7 +1446,7 @@ function createBiometricCard(bio, role) {
 function renderAdminDashboard() {
   // Actualizar métricas
   const totalUses = state.logs.length;
-  const occupiedCount = state.biometrics.filter(b => b.status === "Ocupado").length;
+  const occupiedCount = state.biometrics.filter(b => b.status === "Ocupado" || b.status === "Pendiente").length;
   const availableCount = 8 - occupiedCount;
 
   document.getElementById("stat-total-uses").innerText = totalUses;
@@ -1472,7 +1476,7 @@ function renderAdminDashboard() {
         <td>${log.fecha_entrada || '—'}</td>
         <td>${log.hora_entrada || '—'}</td>
         <td>
-          <span class="state-pill ${isReturned ? 'available' : 'occupied'}">
+          <span class="state-pill ${log.estado === 'Entregado' ? 'available' : (log.estado === 'Pendiente' ? 'pending' : 'occupied')}">
             ${log.estado}
           </span>
         </td>
@@ -1616,9 +1620,17 @@ async function confirmReservation() {
       showToast("Por favor selecciona o escribe el nombre del usuario.");
       return;
     }
-    // No bloqueamos por state.users: el admin puede asignar a usuarios nuevos
-    // aunque Firebase aún no haya sincronizado la lista en este dispositivo.
-    userToAssign = chosenUser;
+    // Convertir el nombre a mayúsculas para seguir la convención del sistema
+    userToAssign = chosenUser.toUpperCase();
+
+    // Si el usuario no existe en la lista de usuarios, lo agregamos y guardamos en Firebase
+    // para que sea un usuario válido que pueda iniciar sesión en su interfaz
+    if (!state.users.includes(userToAssign)) {
+      state.users.push(userToAssign);
+      if (typeof saveUsersToFirebase === "function") {
+        await saveUsersToFirebase();
+      }
+    }
   } else {
     userToAssign = state.currentUser.name;
   }
@@ -1691,7 +1703,9 @@ window.confirmDelivery = async function(logId, bioNum) {
   const res = await sendAction("confirm", { id: logId, biometrico: bioNum });
   if (res && res.success) {
     showToast("Entrega confirmada con éxito");
-    fetchDatabase();
+    if (typeof loadDatabase === "function") {
+      await loadDatabase();
+    }
   } else {
     showToast("Error al confirmar la entrega", true);
   }
@@ -1706,7 +1720,9 @@ window.cancelDelivery = async function(logId, bioNum) {
     const res = await sendAction("cancel", { id: logId, biometrico: bioNum });
     if (res && res.success) {
       showToast("Solicitud cancelada");
-      fetchDatabase();
+      if (typeof loadDatabase === "function") {
+        await loadDatabase();
+      }
     }
   }
 }
@@ -3223,8 +3239,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-window.confirmDelivery = function(logId, bioNum) { sendAction('confirm', { id: logId, biometrico: bioNum }); };
-window.cancelDelivery = function(logId, bioNum) { sendAction('cancel', { id: logId, biometrico: bioNum }); };
+// confirmDelivery y cancelDelivery ya están definidas más arriba con su implementación completa.
+// Se eliminaron los duplicados que sobreescribían las funciones correctas.
 
 
 
