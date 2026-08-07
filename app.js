@@ -3707,3 +3707,105 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(initPasanteWavesCanvas, 300);
 });
 
+/* ==========================================================================
+   EVA WALL-E PWA INSTALLER MODULE
+   ========================================================================== */
+let deferredPrompt = null;
+let isIOSDevice = false;
+
+function isPwaStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true ||
+         document.referrer.includes('android-app://');
+}
+
+function initEvaPwaInstaller() {
+  if (isPwaStandalone()) {
+    console.log("App running in PWA standalone mode. Hiding EVA install prompt.");
+    return;
+  }
+
+  isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  // Listen for beforeinstallprompt on Android / Chrome
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showEvaBanner();
+  });
+
+  // If on iOS browser (Safari), show EVA banner
+  if (isIOSDevice) {
+    showEvaBanner();
+  }
+
+  // Fallback check after 2 seconds for Chrome/Android if beforeinstallprompt fired earlier
+  setTimeout(() => {
+    if (!isPwaStandalone() && (deferredPrompt || isIOSDevice || !window.matchMedia('(display-mode: standalone)').matches)) {
+      showEvaBanner();
+    }
+  }, 2000);
+}
+
+function showEvaBanner() {
+  const banner = document.getElementById("eva-pwa-banner");
+  if (banner && !isPwaStandalone()) {
+    banner.style.display = "flex";
+  }
+}
+
+window.openEvaInstallModal = function() {
+  const modal = document.getElementById("eva-install-modal");
+  const titleEl = document.getElementById("eva-modal-title");
+  const descEl = document.getElementById("eva-modal-desc");
+  const btnEl = document.getElementById("eva-install-action-btn");
+
+  if (!modal || !descEl || !btnEl) return;
+
+  if (isIOSDevice) {
+    if (titleEl) titleEl.innerText = "¡Instala nuestra App en iOS!";
+    descEl.innerText = "Notamos que no tienes instalada la app, presiona en la parte de abajo en tu navegador el botón de compartir ➔ desliza hacia arriba ➔ el botón con el recuadro + y que dice 'Agregar a inicio'.";
+    btnEl.innerText = "Cerrar";
+    btnEl.style.background = "linear-gradient(135deg, #48484a, #2c2c2e)";
+  } else {
+    if (titleEl) titleEl.innerText = "¡Instala nuestra App!";
+    descEl.innerText = "Detectamos que no tienes instalada la app, ¿deseas instalarla?";
+    btnEl.innerText = "Instalar";
+    btnEl.style.background = "linear-gradient(135deg, #0071e3, #5e5ce6)";
+  }
+
+  modal.style.display = "flex";
+  modal.classList.add("active");
+};
+
+window.closeEvaInstallModal = function() {
+  const modal = document.getElementById("eva-install-modal");
+  if (modal) {
+    modal.style.display = "none";
+    modal.classList.remove("active");
+  }
+};
+
+window.handleEvaInstallClick = function() {
+  if (isIOSDevice) {
+    closeEvaInstallModal();
+  } else if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the PWA install prompt');
+        const banner = document.getElementById("eva-pwa-banner");
+        if (banner) banner.style.display = "none";
+      }
+      deferredPrompt = null;
+      closeEvaInstallModal();
+    });
+  } else {
+    closeEvaInstallModal();
+  }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  initEvaPwaInstaller();
+});
+
