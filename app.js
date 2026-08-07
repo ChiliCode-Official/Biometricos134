@@ -1418,14 +1418,17 @@ function createBiometricCard(bio, role) {
       </div>
       
       <div class="pasante-card-body">
-        <!-- 3D Opening Laptop Animation (Uiverse.io by Spacious74) -->
+        <!-- 3D Opening Laptop (Uiverse.io by Spacious74) -->
         <div class="laptop-anim-container">
           <div class="laptop-card-anim">
             <div class="screen">
               <div class="header"></div>
-              <div class="text">
-                Biométrico #${bio.biometrico}
-                <div class="screen-subtitle">${bio.laptop_marca} ${bio.laptop_modelo}</div>
+              <div class="laptop-screen-details">
+                <div class="laptop-screen-title">Biométrico #${bio.biometrico}</div>
+                <div class="laptop-hw-line">💻 ${bio.laptop_marca} ${bio.laptop_modelo}</div>
+                <div class="laptop-hw-line">🖨️ ${bio.impresora_marca} ${bio.impresora_modelo}</div>
+                <div class="laptop-hw-line">👆 Lector: ${bio.biometrico_lector}</div>
+                <div class="laptop-hw-line">📡 BAM: ${bio.router_modelo}</div>
               </div>
             </div>
             <div class="keyboard"></div>

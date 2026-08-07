@@ -2849,20 +2849,24 @@ body:not(.light-theme) .bio-card.pasante-card {
 /* ==========================================================================
    UIVERSE.IO - 3D OPENING LAPTOP ANIMATION FOR CARDS (by Spacious74)
    ========================================================================== */
+/* ==========================================================================
+   UIVERSE.IO - 3D OPENING LAPTOP (by Spacious74) - FULL INTERACTIVE CARD
+   ========================================================================== */
 .laptop-anim-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 145px;
-  overflow: hidden;
-  margin: 12px 0 6px 0;
-  perspective: 1000px;
+  min-height: 250px;
+  overflow: visible;
+  margin: 15px 0;
+  perspective: 1200px;
   width: 100%;
 }
 
 .laptop-card-anim {
-  transform: scale(0.38);
-  transform-origin: center center;
+  transform: scale(0.62);
+  transform-origin: center top;
+  margin: 0 auto;
 }
 
 .laptop-card-anim .screen {
@@ -2871,9 +2875,10 @@ body:not(.light-theme) .bio-card.pasante-card {
   height: 318px;
   width: 518px;
   margin: 0 auto;
-  padding: 9px 9px 23px 9px;
+  padding: 18px 24px;
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background-image: linear-gradient(
@@ -2888,18 +2893,23 @@ body:not(.light-theme) .bio-card.pasante-card {
     #f3a469 87%,
     #f7c978 100%
   );
-/* Initial folded/closed laptop state when card is not expanded */
+  transform-style: preserve-3d;
+  transform-origin: 50% 100%;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Folded / closed state when card is not expanded */
 .bio-card.pasante-card:not(.is-expanded) .laptop-card-anim .screen {
-  transform: perspective(1900px) rotateX(-88.5deg);
-  animation: none;
+  transform: perspective(1900px) rotateX(-88.5deg) !important;
+  animation: none !important;
 }
 
-/* Trigger 3D opening animation ONCE when card is clicked/expanded */
+/* Trigger opening animation ONCE when card is clicked/expanded */
 .bio-card.pasante-card.is-expanded .laptop-card-anim .screen {
-  animation: laptopOpenCardOnce 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: laptopOpenCard 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
-@keyframes laptopOpenCardOnce {
+@keyframes laptopOpenCard {
   0% {
     transform: perspective(1900px) rotateX(-88.5deg);
   }
@@ -2919,26 +2929,41 @@ body:not(.light-theme) .bio-card.pasante-card {
   border-radius: 5px 5px;
 }
 
-.laptop-card-anim .text {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+/* Screen Content inside 3D Opened Laptop */
+.laptop-screen-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
   color: #ffffff;
-  letter-spacing: 1.5px;
-  font-size: 2.6rem; /* Texto agrandado */
-  font-weight: 800;
-  text-shadow: 0 0 16px rgba(255, 255, 255, 0.95), 0 3px 12px rgba(0, 0, 0, 0.6);
-  text-align: center;
-  padding: 0 20px;
-  line-height: 1.2;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+  z-index: 5;
 }
 
-.laptop-card-anim .screen-subtitle {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-  margin-top: 6px;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
-  letter-spacing: 0.5px;
+.laptop-screen-title {
+  font-size: 2.3rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.laptop-hw-line {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 4px 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+  width: 85%;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .laptop-card-anim .header {
