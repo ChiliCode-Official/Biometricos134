@@ -1409,14 +1409,114 @@ function createBiometricCard(bio, role) {
       <div class="bio-card-header pasante-card-header" onclick="togglePasanteCardDetails(event, '${bio.biometrico}')">
         <div class="bio-title-box">
           <h4><div class="status-led ${ledClass}"></div>Biométrico ${bio.biometrico}</h4>
-          <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="state-pill ${statusClass}">${statusText}</span>
           <span class="pasante-card-toggle" title="Ver detalles del equipo">▼</span>
         </div>
       </div>
+
+      <!-- ANIMACIÓN DE ESTADO CUANDO LA TARJETA ESTÁ PLEGADA (CLOSED) -->
+      <div class="pasante-folded-anim">
+        ${isAvailable ? `
+        <!-- Space Astronaut Animation for Available State (Uiverse.io by JkHuger) -->
+        <div class="astronaut-wrapper">
+          <div class="box-of-star1">
+            <div class="star star-position1"></div>
+            <div class="star star-position2"></div>
+            <div class="star star-position3"></div>
+            <div class="star star-position4"></div>
+            <div class="star star-position5"></div>
+            <div class="star star-position6"></div>
+            <div class="star star-position7"></div>
+          </div>
+          <div class="box-of-star2">
+            <div class="star star-position1"></div>
+            <div class="star star-position2"></div>
+            <div class="star star-position3"></div>
+            <div class="star star-position4"></div>
+            <div class="star star-position5"></div>
+            <div class="star star-position6"></div>
+            <div class="star star-position7"></div>
+          </div>
+          <div class="box-of-star3">
+            <div class="star star-position1"></div>
+            <div class="star star-position2"></div>
+            <div class="star star-position3"></div>
+            <div class="star star-position4"></div>
+            <div class="star star-position5"></div>
+            <div class="star star-position6"></div>
+            <div class="star star-position7"></div>
+          </div>
+          <div class="box-of-star4">
+            <div class="star star-position1"></div>
+            <div class="star star-position2"></div>
+            <div class="star star-position3"></div>
+            <div class="star star-position4"></div>
+            <div class="star star-position5"></div>
+            <div class="star star-position6"></div>
+            <div class="star star-position7"></div>
+          </div>
+          <div data-js="astro" class="astronaut">
+            <div class="head"></div>
+            <div class="arm arm-left"></div>
+            <div class="arm arm-right"></div>
+            <div class="body">
+              <div class="panel"></div>
+            </div>
+            <div class="leg leg-left"></div>
+            <div class="leg leg-right"></div>
+            <div class="schoolbag"></div>
+          </div>
+        </div>` : ''}
+
+        ${bio.status === "Ocupado" ? `
+        <!-- Coffee Machine Animation for Occupied State (Uiverse.io by isfan4ik) -->
+        <div class="coffee-anim-wrapper">
+          <div class="container">
+            <div class="coffee-header">
+              <div class="coffee-header__buttons coffee-header__button-one"></div>
+              <div class="coffee-header__buttons coffee-header__button-two"></div>
+              <div class="coffee-header__display"></div>
+              <div class="coffee-header__details"></div>
+            </div>
+            <div class="coffee-medium">
+              <div class="coffe-medium__exit"></div>
+              <div class="coffee-medium__arm"></div>
+              <div class="coffee-medium__liquid"></div>
+              <div class="coffee-medium__smoke coffee-medium__smoke-one"></div>
+              <div class="coffee-medium__smoke coffee-medium__smoke-two"></div>
+              <div class="coffee-medium__smoke coffee-medium__smoke-three"></div>
+              <div class="coffee-medium__smoke coffee-medium__smoke-for"></div>
+              <div class="coffee-medium__cup"></div>
+            </div>
+            <div class="coffee-footer"></div>
+          </div>
+        </div>` : ''}
+
+        ${isPending ? `
+        <!-- Sleeping Dog Animation for Pending State (Uiverse.io by Emmaline-ozi) -->
+        <div class="dog-anim-wrapper">
+          <div class="main">
+            <div class="dog">
+              <div class="dog__paws">
+                <div class="dog__bl-leg leg"><div class="dog__bl-paw paw"></div><div class="dog__bl-top top"></div></div>
+                <div class="dog__fl-leg leg"><div class="dog__fl-paw paw"></div><div class="dog__fl-top top"></div></div>
+                <div class="dog__fr-leg leg"><div class="dog__fr-paw paw"></div><div class="dog__fr-top top"></div></div>
+              </div>
+              <div class="dog__body"><div class="dog__tail"></div></div>
+              <div class="dog__head">
+                <div class="dog__snout">
+                  <div class="dog__eyes"><div class="dog__eye-l"></div><div class="dog__eye-r"></div></div>
+                </div>
+              </div>
+              <div class="dog__head-c"><div class="dog__ear-r"></div><div class="dog__ear-l"></div></div>
+            </div>
+          </div>
+        </div>` : ''}
+      </div>
       
+      <!-- CONTENIDO CUANDO LA TARJETA SE DESPLIEGA (EXPANDED) -->
       <div class="pasante-card-body">
         <!-- 3D Opening Laptop (Uiverse.io by Spacious74) -->
         <div class="laptop-anim-container">
@@ -1428,42 +1528,19 @@ function createBiometricCard(bio, role) {
                 <div class="laptop-hw-line">💻 ${bio.laptop_marca} ${bio.laptop_modelo}</div>
                 <div class="laptop-hw-line">🖨️ ${bio.impresora_marca} ${bio.impresora_modelo}</div>
                 <div class="laptop-hw-line">👆 Lector: ${bio.biometrico_lector}</div>
-                <div class="laptop-hw-line">📡 BAM: ${bio.router_modelo}</div>
+                <div class="laptop-hw-line">📡 BAM: ${bio.router_modelo} (${bio.bam_telefono || 'Sin Tel.'})</div>
+                ${bio.internet_plan ? `<div class="laptop-hw-line" style="font-size:0.95rem;">🌐 ${bio.internet_plan}</div>` : ''}
               </div>
             </div>
             <div class="keyboard"></div>
           </div>
         </div>
 
-        <div class="hw-info-box">
-          <div class="hw-item">
-            <span class="hw-icon"><img src="assets/icons/laptop.png" class="hw-icon-img" alt="Laptop"></span>
-            <div class="hw-desc">${bio.laptop_marca} ${bio.laptop_modelo} <span>S/N: ${bio.laptop_serie}</span></div>
-          </div>
-          <div class="hw-item">
-            <span class="hw-icon"><img src="assets/icons/printer.png" class="hw-icon-img" alt="Impresora"></span>
-            <div class="hw-desc">${bio.impresora_marca} ${bio.impresora_modelo} <span>S/N: ${bio.impresora_serie}</span></div>
-          </div>
-          <div class="hw-item">
-            <span class="hw-icon"><img src="assets/icons/touch.png" class="hw-icon-img" alt="Lector"></span>
-            <div class="hw-desc">${bio.biometrico_lector} <span>S/N: ${bio.biometrico_serie}</span></div>
-          </div>
-          <div class="hw-item">
-            <span class="hw-icon"><img src="assets/icons/bam.png" class="hw-icon-img" alt="BAM"></span>
-            <div class="hw-desc">BAM ${bio.router_modelo} <span>IMEI: ${bio.router_imei}</span></div>
-          </div>
-          ${bio.internet_plan ? `
-          <div class="hw-item" style="margin-top: 4px; border-top: 1px solid var(--border-light); padding-top: 4px;">
-            <span class="hw-icon">🌐</span>
-            <div class="hw-desc" style="color: var(--accent); font-weight: 500;">Plan: ${bio.internet_plan}</div>
-          </div>` : ''}
-        </div>
-        
         ${!isAvailable ? `
-        <div class="holder-box">
-          <span class="holder-label">En uso por:</span>
-          <span class="holder-name">${bio.holder}</span>
-          <span class="holder-time">Salida programada: ${bio.time}</span>
+        <div class="holder-box" style="${isPending ? 'border-left-color: #FF9500;' : ''}">
+          <span class="holder-label">${isPending ? 'Solicitud Pendiente:' : 'En uso por:'}</span>
+          <span class="holder-name">${bio.holder || 'En proceso'}</span>
+          <span class="holder-time">${isPending ? 'Preparando equipo...' : `Salida programada: ${bio.time}`}</span>
         </div>` : ''}
       </div>
 
