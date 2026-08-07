@@ -1174,54 +1174,58 @@ function updateConnectionBar(mode, text) {
 
 function createActiveEquipmentChecklist(bio) {
   const card = document.createElement("div");
-  card.className = "bio-card glass fade-in";
+  card.className = "bio-card pasante-card glass fade-in is-expanded";
   card.style.border = "2px solid var(--accent)";
+  card.id = `bio-card-active-${bio.biometrico}`;
   
   const checklistId = `checklist-${bio.biometrico}`;
   
   card.innerHTML = `
-    <div class="bio-card-header" style="background: var(--accent-light); margin: -20px -20px 15px -20px; padding: 15px 20px; border-radius: 12px 12px 0 0;">
+    <div class="bio-card-header pasante-card-header" onclick="togglePasanteCardDetails(event, 'active-${bio.biometrico}')" style="background: var(--accent-light); margin: -20px -20px 15px -20px; padding: 15px 20px; border-radius: 12px 12px 0 0; cursor: pointer;">
       <div class="bio-title-box">
         <h4 style="color: var(--accent); font-size: 1.1rem; font-weight: 700;">Biométrico ${bio.biometrico} Asignado</h4>
       </div>
+      <span class="pasante-card-toggle" title="Ver detalles">▼</span>
     </div>
     
-    ${bio.status === 'Pendiente' ? `
-      <div style="padding: 0 20px 20px; text-align: center; color: var(--text-light);">
-        Tu solicitud está en espera de que pases por el equipo a la oficina.
-      </div>
-      <div class="card-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-primary" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">✅ Ya lo recibí</button>
-        <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">❌ Cancelar</button>
-      </div>
-    ` : `
-      <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
-        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>💻 Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
-        </label>
-        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>🖨️ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
-        </label>
-        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>☝️ Lector ${bio.biometrico_lector}</span>
-        </label>
-        <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-          <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
-          <span>📶 Router BAM ${bio.router_modelo}</span>
-        </label>
-      </div>
-      
-      <div class="card-actions">
-        <button id="btn-return-${bio.biometrico}" class="btn btn-primary hold-to-confirm-btn" disabled 
-                style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">
-          <div class="progress-fill"></div>
-          <span>Mantén presionado para Entregar</span>
-        </button>
-      </div>
-    `}
+    <div class="pasante-card-body">
+      ${bio.status === 'Pendiente' ? `
+        <div style="padding: 0 20px 20px; text-align: center; color: var(--text-light);">
+          Tu solicitud está en espera de que pases por el equipo a la oficina.
+        </div>
+        <div class="card-actions" onclick="event.stopPropagation()" style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">✅ Ya lo recibí</button>
+          <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">❌ Cancelar</button>
+        </div>
+      ` : `
+        <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
+          <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+            <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
+            <span>💻 Laptop ${bio.laptop_marca} ${bio.laptop_modelo}</span>
+          </label>
+          <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+            <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
+            <span>🖨️ Impresora ${bio.impresora_marca} ${bio.impresora_modelo}</span>
+          </label>
+          <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+            <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
+            <span>☝️ Lector ${bio.biometrico_lector}</span>
+          </label>
+          <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+            <input type="checkbox" class="ios-switch" onchange="checkReturnChecklist(${bio.biometrico})" style="margin-right: 12px;">
+            <span>📶 Router BAM ${bio.router_modelo}</span>
+          </label>
+        </div>
+        
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button id="btn-return-${bio.biometrico}" class="btn btn-primary hold-to-confirm-btn" disabled 
+                  style="width: 100%; box-shadow: 0 4px 15px rgba(0, 113, 227, 0.2);">
+            <div class="progress-fill"></div>
+            <span>Mantén presionado para Entregar</span>
+          </button>
+        </div>
+      `}
+    </div>
   `;
   
   // Attach Hold-to-Confirm logic after element is created (done in render loop or here)
@@ -1364,61 +1368,72 @@ function renderBiometrics() {
 }
 
 // Construye la tarjeta de biométrico dinámicamente
+// Construye la tarjeta de biométrico dinámicamente
 function createBiometricCard(bio, role) {
   const card = document.createElement("div");
   const isAvailable = bio.status === "Disponible";
   const isPending = bio.status === "Pendiente";
   const cardStatusClass = isAvailable ? "card-available" : "card-occupied";
-  card.className = `bio-card glass fade-in ${cardStatusClass}`;
+  const isPasante = role === "user";
+  
+  card.className = `bio-card glass fade-in ${cardStatusClass} ${isPasante ? 'pasante-card' : ''}`;
   card.id = `bio-card-${bio.biometrico}`;
   const statusClass = isAvailable ? "available" : (isPending ? "pending" : "occupied");
   const ledClass = isAvailable ? "led-available" : (isPending ? "led-pending" : "led-occupied");
   const statusText = isAvailable ? "Disponible" : (isPending ? "Pendiente" : "Ocupado");
 
-  card.innerHTML = `
-    <div class="bio-card-header">
-      <div class="bio-title-box">
-        <h4><div class="status-led ${ledClass}"></div>Biométrico ${bio.biometrico}</h4>
-        <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
+  if (isPasante) {
+    // Estructura minimalista e interactiva para Pasantes
+    card.innerHTML = `
+      <div class="bio-card-header pasante-card-header" onclick="togglePasanteCardDetails(event, '${bio.biometrico}')">
+        <div class="bio-title-box">
+          <div class="pasante-3d-badge">
+            <span>🧊 Vista 3D WebGL (Open Source)</span>
+          </div>
+          <h4><div class="status-led ${ledClass}"></div>Biométrico ${bio.biometrico}</h4>
+          <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="state-pill ${statusClass}">${statusText}</span>
+          <span class="pasante-card-toggle" title="Ver detalles del equipo">▼</span>
+        </div>
       </div>
-      <span class="state-pill ${statusClass}">${statusText}</span>
-      ${role === 'admin' ? `<button onclick="openEditBiometricModal('${bio.biometrico}')" class="btn btn-icon" style="background:transparent; border:none; font-size:1.1rem; color: var(--text-secondary); cursor:pointer; margin-left:10px; padding:0;" title="Editar Hardware">✏️</button>` : ''}
-    </div>
-    
-    <div class="hw-info-box">
-      <div class="hw-item">
-        <span class="hw-icon"><img src="assets/icons/laptop.png" class="hw-icon-img" alt="Laptop"></span>
-        <div class="hw-desc">${bio.laptop_marca} ${bio.laptop_modelo} <span>S/N: ${bio.laptop_serie}</span></div>
+      
+      <div class="pasante-card-body">
+        <div class="hw-info-box">
+          <div class="hw-item">
+            <span class="hw-icon"><img src="assets/icons/laptop.png" class="hw-icon-img" alt="Laptop"></span>
+            <div class="hw-desc">${bio.laptop_marca} ${bio.laptop_modelo} <span>S/N: ${bio.laptop_serie}</span></div>
+          </div>
+          <div class="hw-item">
+            <span class="hw-icon"><img src="assets/icons/printer.png" class="hw-icon-img" alt="Impresora"></span>
+            <div class="hw-desc">${bio.impresora_marca} ${bio.impresora_modelo} <span>S/N: ${bio.impresora_serie}</span></div>
+          </div>
+          <div class="hw-item">
+            <span class="hw-icon"><img src="assets/icons/touch.png" class="hw-icon-img" alt="Lector"></span>
+            <div class="hw-desc">${bio.biometrico_lector} <span>S/N: ${bio.biometrico_serie}</span></div>
+          </div>
+          <div class="hw-item">
+            <span class="hw-icon"><img src="assets/icons/bam.png" class="hw-icon-img" alt="BAM"></span>
+            <div class="hw-desc">BAM ${bio.router_modelo} <span>IMEI: ${bio.router_imei}</span></div>
+          </div>
+          ${bio.internet_plan ? `
+          <div class="hw-item" style="margin-top: 4px; border-top: 1px solid var(--border-light); padding-top: 4px;">
+            <span class="hw-icon">🌐</span>
+            <div class="hw-desc" style="color: var(--accent); font-weight: 500;">Plan: ${bio.internet_plan}</div>
+          </div>` : ''}
+        </div>
+        
+        ${!isAvailable ? `
+        <div class="holder-box">
+          <span class="holder-label">En uso por:</span>
+          <span class="holder-name">${bio.holder}</span>
+          <span class="holder-time">Salida programada: ${bio.time}</span>
+        </div>` : ''}
       </div>
-      <div class="hw-item">
-        <span class="hw-icon"><img src="assets/icons/printer.png" class="hw-icon-img" alt="Impresora"></span>
-        <div class="hw-desc">${bio.impresora_marca} ${bio.impresora_modelo} <span>S/N: ${bio.impresora_serie}</span></div>
-      </div>
-      <div class="hw-item">
-        <span class="hw-icon"><img src="assets/icons/touch.png" class="hw-icon-img" alt="Lector"></span>
-        <div class="hw-desc">${bio.biometrico_lector} <span>S/N: ${bio.biometrico_serie}</span></div>
-      </div>
-      <div class="hw-item">
-        <span class="hw-icon"><img src="assets/icons/bam.png" class="hw-icon-img" alt="BAM"></span>
-        <div class="hw-desc">BAM ${bio.router_modelo} <span>IMEI: ${bio.router_imei}</span></div>
-      </div>
-      ${bio.internet_plan ? `
-      <div class="hw-item" style="margin-top: 4px; border-top: 1px solid var(--border-light); padding-top: 4px;">
-        <span class="hw-icon">🌐</span>
-        <div class="hw-desc" style="color: var(--accent); font-weight: 500;">Plan: ${bio.internet_plan}</div>
-      </div>` : ''}
-    </div>
-    
-    ${!isAvailable ? `
-    <div class="holder-box">
-      <span class="holder-label">En uso por:</span>
-      <span class="holder-name">${bio.holder}</span>
-      <span class="holder-time">Salida programada: ${bio.time}</span>
-    </div>` : ''}
 
-    <div class="card-actions">
-      ${role === "user" ? 
-        (isAvailable ? 
+      <div class="card-actions" onclick="event.stopPropagation()">
+        ${isAvailable ? 
           (() => {
             const nextBio = getNextSequentialBiometric();
             if (nextBio == bio.biometrico) {
@@ -1431,9 +1446,54 @@ function createBiometricCard(bio, role) {
             `<button class="btn btn-secondary" disabled>En posesión (Ver Mis Equipos arriba)</button>` : 
             `<button class="btn btn-secondary" disabled>No Disponible</button>`
           )
-        ) : 
-        // Acciones del Administrador
-        (isAvailable ? 
+        }
+      </div>
+    `;
+  } else {
+    // Estructura original intacta para Administrador
+    card.innerHTML = `
+      <div class="bio-card-header">
+        <div class="bio-title-box">
+          <h4><div class="status-led ${ledClass}"></div>Biométrico ${bio.biometrico}</h4>
+          <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
+        </div>
+        <span class="state-pill ${statusClass}">${statusText}</span>
+        <button onclick="openEditBiometricModal('${bio.biometrico}')" class="btn btn-icon" style="background:transparent; border:none; font-size:1.1rem; color: var(--text-secondary); cursor:pointer; margin-left:10px; padding:0;" title="Editar Hardware">✏️</button>
+      </div>
+      
+      <div class="hw-info-box">
+        <div class="hw-item">
+          <span class="hw-icon"><img src="assets/icons/laptop.png" class="hw-icon-img" alt="Laptop"></span>
+          <div class="hw-desc">${bio.laptop_marca} ${bio.laptop_modelo} <span>S/N: ${bio.laptop_serie}</span></div>
+        </div>
+        <div class="hw-item">
+          <span class="hw-icon"><img src="assets/icons/printer.png" class="hw-icon-img" alt="Impresora"></span>
+          <div class="hw-desc">${bio.impresora_marca} ${bio.impresora_modelo} <span>S/N: ${bio.impresora_serie}</span></div>
+        </div>
+        <div class="hw-item">
+          <span class="hw-icon"><img src="assets/icons/touch.png" class="hw-icon-img" alt="Lector"></span>
+          <div class="hw-desc">${bio.biometrico_lector} <span>S/N: ${bio.biometrico_serie}</span></div>
+        </div>
+        <div class="hw-item">
+          <span class="hw-icon"><img src="assets/icons/bam.png" class="hw-icon-img" alt="BAM"></span>
+          <div class="hw-desc">BAM ${bio.router_modelo} <span>IMEI: ${bio.router_imei}</span></div>
+        </div>
+        ${bio.internet_plan ? `
+        <div class="hw-item" style="margin-top: 4px; border-top: 1px solid var(--border-light); padding-top: 4px;">
+          <span class="hw-icon">🌐</span>
+          <div class="hw-desc" style="color: var(--accent); font-weight: 500;">Plan: ${bio.internet_plan}</div>
+        </div>` : ''}
+      </div>
+      
+      ${!isAvailable ? `
+      <div class="holder-box">
+        <span class="holder-label">En uso por:</span>
+        <span class="holder-name">${bio.holder}</span>
+        <span class="holder-time">Salida programada: ${bio.time}</span>
+      </div>` : ''}
+
+      <div class="card-actions">
+        ${isAvailable ? 
           `<button class="btn btn-primary" onclick="openRequestModal(${bio.biometrico})">Asignar Equipo</button>` : 
           (() => {
             if (bio.status === "Pendiente") {
@@ -1448,12 +1508,21 @@ function createBiometricCard(bio, role) {
               `;
             }
           })()
-        )
-      }
-    </div>
-  `;
+        }
+      </div>
+    `;
+  }
 
   return card;
+}
+
+// Función helper para alternar colapso/expansión de tarjetas de pasantes
+function togglePasanteCardDetails(event, bioId) {
+  if (event) event.stopPropagation();
+  const card = document.getElementById(`bio-card-${bioId}`);
+  if (card) {
+    card.classList.toggle("is-expanded");
+  }
 }
 
 // Cargar datos en el Panel del Administrador (Métricas, Historial)

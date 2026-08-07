@@ -2320,3 +2320,124 @@ body:not(.light-theme) .glass {
 .sidebar-overlay.hidden { display: none; opacity: 0; }
 @media (min-width: 769px) { .sidebar-overlay { display: none !important; } .mobile-only { display: none !important; } }
 
+/* ==========================================================================
+   PASANTE (USER) MINIMALIST UX & COLLAPSIBLE MOBILE CARDS
+   ========================================================================== */
+
+/* Minimalist container adjustments for Pasante Portal */
+#user-view {
+  transition: var(--transition-smooth);
+}
+
+#user-view .quick-sequential-box {
+  border-radius: var(--border-radius-lg);
+  padding: 28px 24px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Pasante Biometric Cards - Minimalist & Interactive 3D Perspective */
+.bio-card.pasante-card {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.bio-card.pasante-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 12px 30px rgba(0, 113, 227, 0.12);
+}
+
+/* Card Header Collapsible Trigger */
+.pasante-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  user-select: none;
+}
+
+.pasante-card-header .bio-title-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.pasante-card-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  transition: transform 0.3s ease, background-color 0.2s ease;
+}
+
+.bio-card.pasante-card.is-expanded .pasante-card-toggle {
+  transform: rotate(180deg);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* Collapsible Content Wrapper for Details */
+.pasante-card-body {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin-top 0.3s ease;
+  margin-top: 0;
+}
+
+.bio-card.pasante-card.is-expanded .pasante-card-body {
+  max-height: 800px;
+  opacity: 1;
+  margin-top: 16px;
+}
+
+/* Direct Action Bar inside collapsed view for instant access on mobile */
+.pasante-quick-action {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Interactive 3D Canvas / Model Container (Free Open-Source Three.js / CSS 3D) */
+.pasante-3d-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(0,113,227,0.1), rgba(52,199,89,0.1));
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0,113,227,0.2);
+}
+
+/* Mobile specific responsive minimalist behavior */
+@media (max-width: 768px) {
+  /* On mobile, cards default to collapsed state for clean minimalist look */
+  .bio-card.pasante-card {
+    padding: 16px !important;
+    border-radius: 14px;
+  }
+  
+  .bio-card.pasante-card:not(.is-expanded) .hw-info-box,
+  .bio-card.pasante-card:not(.is-expanded) .holder-box {
+    display: none;
+  }
+
+  .bio-card.pasante-card:not(.is-expanded) .card-actions {
+    margin-top: 10px;
+  }
+}
+
+
