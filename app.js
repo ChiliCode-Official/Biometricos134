@@ -1408,9 +1408,6 @@ function createBiometricCard(bio, role) {
     card.innerHTML = `
       <div class="bio-card-header pasante-card-header" onclick="togglePasanteCardDetails(event, '${bio.biometrico}')">
         <div class="bio-title-box">
-          <div class="pasante-3d-badge">
-            <span>🧊 Vista 3D WebGL (Open Source)</span>
-          </div>
           <h4><div class="status-led ${ledClass}"></div>Biométrico ${bio.biometrico}</h4>
           <div class="bio-phone-number">Chip: ${bio.bam_telefono || 'Sin Asignar'}</div>
         </div>
@@ -1421,6 +1418,17 @@ function createBiometricCard(bio, role) {
       </div>
       
       <div class="pasante-card-body">
+        <!-- 3D Opening Laptop Animation (Uiverse.io by Spacious74) -->
+        <div class="laptop-anim-container">
+          <div class="laptop-card-anim">
+            <div class="screen">
+              <div class="header"></div>
+              <div class="text">Biométrico #${bio.biometrico}</div>
+            </div>
+            <div class="keyboard"></div>
+          </div>
+        </div>
+
         <div class="hw-info-box">
           <div class="hw-item">
             <span class="hw-icon"><img src="assets/icons/laptop.png" class="hw-icon-img" alt="Laptop"></span>
