@@ -881,6 +881,56 @@
           onclick="document.getElementById('modal-edit-biometric').classList.remove('active')">Cancelar</button>
         <button class="btn btn-primary" onclick="saveBiometricHardware()">Guardar Cambios</button>
       </div>
+  <!-- Floating EVA PWA Install Banner (Top Right Floating Button) -->
+  <div id="eva-pwa-banner" class="eva-pwa-banner" onclick="openEvaInstallModal()" style="display: none;">
+    <div class="eva-speech-bubble" id="eva-speech-bubble">¡Instálame!</div>
+    <div class="eva-banner-model">
+      <div class="modelViewPort">
+        <div class="eva">
+          <div class="head">
+            <div class="eyeChamber">
+              <div class="eye"></div>
+              <div class="eye"></div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="hand"></div>
+            <div class="hand"></div>
+            <div class="scannerThing"></div>
+            <div class="scannerOrigin"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVA PWA Install Modal -->
+  <div id="eva-install-modal" class="modal" style="display: none; align-items: center; justify-content: center; z-index: 10005;">
+    <div class="modal-content eva-modal-content animate-slide-up">
+      <button class="modal-close" onclick="closeEvaInstallModal()" style="position: absolute; top: 12px; right: 16px; font-size: 1.4rem; color: #fff; background: none; border: none; cursor: pointer;">✕</button>
+      <div class="eva-modal-viewport">
+        <div class="modelViewPort">
+          <div class="eva">
+            <div class="head">
+              <div class="eyeChamber">
+                <div class="eye"></div>
+                <div class="eye"></div>
+              </div>
+            </div>
+            <div class="body">
+              <div class="hand"></div>
+              <div class="hand"></div>
+              <div class="scannerThing"></div>
+              <div class="scannerOrigin"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h3 id="eva-modal-title" class="eva-modal-title">¡Instala nuestra App!</h3>
+      <p id="eva-modal-desc" class="eva-modal-desc"></p>
+      <div class="eva-modal-actions">
+        <button id="eva-install-action-btn" class="eva-btn-install" onclick="handleEvaInstallClick()">Instalar</button>
+      </div>
     </div>
   </div>
 </body>
