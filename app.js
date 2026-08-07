@@ -8,7 +8,7 @@ const db = firebase.firestore();
 
 // --- Global State ---
 let state = {
-  connectionMode: "demo", // "online" | "demo"
+  connectionMode: "online", // "online" | "demo"
   currentUser: null,      // { name: "", role: "user" | "admin" }
   biometrics: [],         // Inventario de 8 equipos y su estado actual
   logs: [],               // Historial de préstamos (LOG_USO)
