@@ -853,28 +853,46 @@ async function sendAction(action, payload) {
    ========================================================================== */
 function initEmailJSProgress() {
   const now = new Date();
-  const resetDate = new Date(now.getFullYear(), now.getMonth(), 13);
-  if (now.getDate() >= 13) {
-    resetDate.setMonth(resetDate.getMonth() + 1);
-  }
   
+  // Próxima fecha de reinicio (día 13 de cada mes a las 00:00)
+  const nextResetDate = new Date(now.getFullYear(), now.getMonth(), 13);
+  if (now.getDate() >= 13) {
+    nextResetDate.setMonth(nextResetDate.getMonth() + 1);
+  }
+  nextResetDate.setHours(0, 0, 0, 0);
+
   let savedData = state.emailStats;
   if (!savedData) {
-    savedData = JSON.parse(localStorage.getItem('n134_email_stats')) || { count: 0, resetTimestamp: 0 };
-    state.emailStats = savedData;
+    savedData = JSON.parse(localStorage.getItem('n134_email_stats'));
   }
   
-  if (now.getTime() > savedData.resetTimestamp) {
-    savedData.count = 0;
-    savedData.resetTimestamp = resetDate.getTime();
+  if (!savedData) {
+    savedData = { count: 0, resetTimestamp: nextResetDate.getTime() };
+    state.emailStats = savedData;
     if (state.connectionMode === "online" && db) {
       db.collection("app_data").doc("email_stats").set(savedData);
-    } else {
-      localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+    }
+  } else {
+    state.emailStats = savedData;
+    // Únicamente reiniciar si ya existía un resetTimestamp anterior y la fecha actual ya lo superó
+    if (savedData.resetTimestamp && savedData.resetTimestamp > 0 && now.getTime() >= savedData.resetTimestamp) {
+      savedData.count = 0;
+      savedData.resetTimestamp = nextResetDate.getTime();
+      if (state.connectionMode === "online" && db) {
+        db.collection("app_data").doc("email_stats").set(savedData);
+      } else {
+        localStorage.setItem('n134_email_stats', JSON.stringify(savedData));
+      }
+    } else if (!savedData.resetTimestamp || savedData.resetTimestamp === 0) {
+      // Preservar el contador existente y asignar la próxima fecha de reinicio
+      savedData.resetTimestamp = nextResetDate.getTime();
+      if (state.connectionMode === "online" && db) {
+        db.collection("app_data").doc("email_stats").set(savedData);
+      }
     }
   }
-  
-  updateEmailProgressUI(savedData.count);
+
+  updateEmailProgressUI(savedData.count || 0);
 }
 
 function updateEmailProgressUI(count) {
@@ -1170,6 +1188,9 @@ function _showViewInternal(viewId) {
 
     if (viewId === "analytics-view") {
       renderAnalytics();
+    }
+    if (viewId === "admin-view") {
+      initEmailJSProgress();
     }
   }
   
@@ -3806,5 +3827,6 @@ window.handleEvaInstallClick = function() {
 
 document.addEventListener("DOMContentLoaded", () => {
   initEvaPwaInstaller();
+  initEmailJSProgress();
 });
 

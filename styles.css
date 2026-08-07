@@ -4396,40 +4396,53 @@ body:not(.light-theme) .bio-card.pasante-card {
 }
 
 .eva-banner-model {
-  width: 52px;
-  height: 52px;
+  position: relative;
+  width: 56px;
+  height: 56px;
   overflow: hidden;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(11, 218, 235, 0.8);
   background: #000;
-  box-shadow: 0 0 15px rgba(11, 218, 235, 0.6);
+  box-shadow: 0 0 18px rgba(11, 218, 235, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .eva-banner-model .modelViewPort {
-  width: 16rem;
-  aspect-ratio: 1;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #000;
   overflow: hidden;
-  transform: scale(0.16);
+  position: relative;
+}
+
+.eva-banner-model .scannerThing {
+  display: none !important;
+}
+
+.eva-banner-model .eva {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -40%) scale(0.24);
   transform-origin: center center;
 }
 
 /* Modal EVA Viewport */
 .eva-modal-viewport {
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 15px auto;
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 16px auto;
   border-radius: 50%;
   background: #000;
-  border: 3px solid rgba(11, 218, 235, 0.7);
-  box-shadow: 0 0 25px rgba(11, 218, 235, 0.5);
+  border: 3px solid rgba(11, 218, 235, 0.8);
+  box-shadow: 0 0 30px rgba(11, 218, 235, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -4437,15 +4450,26 @@ body:not(.light-theme) .bio-card.pasante-card {
 }
 
 .eva-modal-viewport .modelViewPort {
-  width: 20rem;
-  aspect-ratio: 1;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #000;
   overflow: hidden;
-  transform: scale(0.35);
+  position: relative;
+}
+
+.eva-modal-viewport .scannerThing {
+  display: none !important;
+}
+
+.eva-modal-viewport .eva {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -40%) scale(0.50);
   transform-origin: center center;
 }
 
