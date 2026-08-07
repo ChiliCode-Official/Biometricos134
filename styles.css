@@ -4352,7 +4352,7 @@ body:not(.light-theme) .bio-card.pasante-card {
   transform: scale(0.95);
 }
 
-/* Highly visible 3-second speech bubble positioned to the left of EVA */
+/* Highly visible 5-second speech bubble positioned to the left of EVA */
 .eva-speech-bubble {
   position: absolute;
   right: 68px;
@@ -4367,7 +4367,7 @@ body:not(.light-theme) .bio-card.pasante-card {
   border-radius: 14px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
   white-space: nowrap;
-  animation: evaBubblePop 3s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
+  animation: evaBubblePop 5s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
   pointer-events: none;
   border: 1px solid rgba(255, 255, 255, 0.4);
   letter-spacing: 0.3px;
@@ -4406,33 +4406,26 @@ body:not(.light-theme) .bio-card.pasante-card {
   border: 2px solid rgba(11, 218, 235, 0.8);
   background: #000;
   box-shadow: 0 0 18px rgba(11, 218, 235, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .eva-banner-model .modelViewPort {
-  width: 100%;
-  height: 100%;
+  width: 20rem !important;
+  height: 20rem !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.175);
+  transform-origin: center center;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #000;
   overflow: hidden;
-  position: relative;
 }
 
 .eva-banner-model .scannerThing {
   display: none !important;
-}
-
-.eva-banner-model .eva {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -40%) scale(0.24);
-  transform-origin: center center;
 }
 
 /* Modal EVA Viewport */
@@ -4445,34 +4438,27 @@ body:not(.light-theme) .bio-card.pasante-card {
   background: #000;
   border: 3px solid rgba(11, 218, 235, 0.8);
   box-shadow: 0 0 30px rgba(11, 218, 235, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
 }
 
 .eva-modal-viewport .modelViewPort {
-  width: 100%;
-  height: 100%;
+  width: 20rem !important;
+  height: 20rem !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.375);
+  transform-origin: center center;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #000;
   overflow: hidden;
-  position: relative;
 }
 
 .eva-modal-viewport .scannerThing {
   display: none !important;
-}
-
-.eva-modal-viewport .eva {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -40%) scale(0.50);
-  transform-origin: center center;
 }
 
 /* Core EVA CSS Scoped strictly under .eva */
