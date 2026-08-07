@@ -211,23 +211,76 @@
 
         <div class="dashboard-views">
 
-          <!-- 2. USER PORTAL VIEW -->
+          <!-- 2. USER PORTAL VIEW (APPLE CUPERTINO DESIGN) -->
           <section id="user-view" class="view-panel">
-            <!-- App Header moved to topbar -->
+            
+            <div class="content-section" style="position: relative;">
 
-            <div class="content-section">
-              <div class="quick-sequential-box glass">
+              <!-- Ambient Gradient Waves Canvas Background -->
+              <div class="pasante-waves-wrapper">
+                <canvas id="pasante-waves-canvas"></canvas>
+              </div>
+
+              <!-- Apple Cupertino Hero Card for Pasantes -->
+              <div class="quick-sequential-box">
+
+                <!-- 3D Animated MacBook Air (Uiverse.io by Ashon-G) -->
+                <div class="macbook-wrapper">
+                  <div class="macbook">
+                    <div class="inner">
+                      <div class="screen">
+                        <div class="face-one">
+                          <div class="camera"></div>
+                          <div class="display">
+                            <div class="shade"></div>
+                          </div>
+                          <span>MacBook Air</span>
+                        </div>
+                      </div>
+                      <div class="macbody">
+                        <div class="face-one">
+                          <div class="touchpad"></div>
+                          <div class="keyboard">
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key space"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                            <div class="key f"></div><div class="key f"></div><div class="key f"></div><div class="key f"></div>
+                            <div class="key f"></div><div class="key f"></div><div class="key f"></div><div class="key f"></div>
+                            <div class="key f"></div><div class="key f"></div><div class="key f"></div><div class="key f"></div>
+                            <div class="key f"></div><div class="key f"></div><div class="key f"></div><div class="key f"></div>
+                          </div>
+                        </div>
+                        <div class="pad one"></div>
+                        <div class="pad two"></div>
+                        <div class="pad three"></div>
+                        <div class="pad four"></div>
+                      </div>
+                    </div>
+                    <div class="shadow"></div>
+                  </div>
+                </div>
+
                 <h3>Asignación Equitativa de Equipos</h3>
-                <p>Para equilibrar el desgaste de los equipos, el sistema asignará el biométrico de manera rotativa.</p>
+                <p>El sistema asignará el biométrico óptimo de manera rotativa para equilibrar el uso.</p>
 
                 <div id="sequential-suggested-container" class="suggested-bio-badge suggested">
                   Siguiente sugerido: <span id="suggested-bio-name">Cargando...</span>
                 </div>
 
-                <div style="margin-top: 10px;">
-                  <button id="btn-request-sequential" class="btn btn-primary btn-lg hold-to-confirm-btn">
-                    <div class="progress-fill"></div>
-                    <span id="btn-request-sequential-text">🚀 Mantén para Solicitar Equipo</span>
+                <div style="margin-top: 15px; width: 100%; display: flex; justify-content: center;">
+                  <!-- Glowing Gradient Hold Button (Uiverse.io by nima-mollazadeh) -->
+                  <button id="btn-request-sequential" class="uiverse-hold-button">
+                    <div class="hold-progress-bar" id="hold-progress-fill"></div>
+                    <span id="btn-request-sequential-text">Mantén para Solicitar...</span>
                   </button>
                 </div>
               </div>

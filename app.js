@@ -287,10 +287,23 @@ function setupEventListeners() {
   });
 
   const btnRequestSequential = document.getElementById("btn-request-sequential");
+  const holdProgressFill = document.getElementById("hold-progress-fill");
   if (btnRequestSequential) {
     let seqHoldTimer;
-    const holdDuration = 1500;
+    let holdAnimFrame;
+    let holdStartTime;
+    const holdDuration = 1400;
     
+    const updateHoldProgress = () => {
+      const elapsed = Date.now() - holdStartTime;
+      const progress = Math.min(100, (elapsed / holdDuration) * 100);
+      if (holdProgressFill) holdProgressFill.style.width = `${progress}%`;
+      
+      if (progress < 100) {
+        holdAnimFrame = requestAnimationFrame(updateHoldProgress);
+      }
+    };
+
     const startSeqHold = (e) => {
       if (btnRequestSequential.disabled) return;
       const suggestNum = getNextSequentialBiometric();
@@ -298,8 +311,14 @@ function setupEventListeners() {
       
       e.preventDefault();
       btnRequestSequential.classList.add("holding");
+      holdStartTime = Date.now();
+      if (holdProgressFill) holdProgressFill.style.width = "0%";
+      holdAnimFrame = requestAnimationFrame(updateHoldProgress);
+
       seqHoldTimer = setTimeout(() => {
         btnRequestSequential.classList.remove("holding");
+        if (holdProgressFill) holdProgressFill.style.width = "0%";
+        cancelAnimationFrame(holdAnimFrame);
         openRequestModal(suggestNum);
       }, holdDuration);
     };
@@ -308,6 +327,8 @@ function setupEventListeners() {
       if (btnRequestSequential.disabled) return;
       btnRequestSequential.classList.remove("holding");
       clearTimeout(seqHoldTimer);
+      cancelAnimationFrame(holdAnimFrame);
+      if (holdProgressFill) holdProgressFill.style.width = "0%";
     };
 
     btnRequestSequential.addEventListener("mousedown", startSeqHold);
@@ -3494,4 +3515,66 @@ window.saveBiometricHardware = async function() {
     recalculateBiometricStates();
   }
 };
+
+/* ==========================================================================
+   AMBIENT GRADIENT WAVES CANVAS ANIMATION FOR PASANTE VIEW
+   ========================================================================== */
+function initPasanteWavesCanvas() {
+  const canvas = document.getElementById("pasante-waves-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  let animationFrameId;
+  let time = 0;
+
+  function resize() {
+    if (!canvas.parentElement) return;
+    canvas.width = canvas.parentElement.clientWidth || window.innerWidth;
+    canvas.height = canvas.parentElement.clientHeight || 500;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    time += 0.008;
+
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const layers = [
+      { color1: "rgba(82, 39, 255, 0.4)", color2: "rgba(255, 159, 252, 0.3)", speed: 0.6, amp: 30, freq: 0.006, offset: 0 },
+      { color1: "rgba(255, 159, 252, 0.35)", color2: "rgba(255, 255, 255, 0.2)", speed: 0.9, amp: 22, freq: 0.009, offset: 2 },
+      { color1: "rgba(82, 39, 255, 0.25)", color2: "rgba(255, 159, 252, 0.25)", speed: 0.4, amp: 38, freq: 0.004, offset: 4 }
+    ];
+
+    layers.forEach(layer => {
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+
+      for (let x = 0; x <= w; x += 8) {
+        const y = h * 0.45 + Math.sin(x * layer.freq + time * layer.speed + layer.offset) * layer.amp
+                         + Math.cos(x * 0.003 + time * 0.3) * (layer.amp * 0.6);
+        ctx.lineTo(x, y);
+      }
+
+      ctx.lineTo(w, h);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, layer.color1);
+      grad.addColorStop(0.6, layer.color2);
+      grad.addColorStop(1, "rgba(255, 255, 255, 0.1)");
+      ctx.fillStyle = grad;
+      ctx.fill();
+    });
+
+    animationFrameId = requestAnimationFrame(render);
+  }
+
+  render();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(initPasanteWavesCanvas, 300);
+});
 
