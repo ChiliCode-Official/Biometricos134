@@ -1218,6 +1218,22 @@ function createActiveEquipmentChecklist(bio) {
           <button class="btn btn-primary" onclick="confirmDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">✅ Ya lo recibí</button>
           <button class="btn btn-orange" onclick="cancelDelivery('${bio.logId}', '${bio.biometrico}')" style="flex: 1; padding: 12px 5px; font-size: 0.9rem;">❌ Cancelar</button>
         </div>
+
+        <!-- Delivery Van Animation for Active Pending State (Uiverse.io by yeisonordonez) -->
+        <div class="car-anim-wrapper">
+          <div class="car-container">
+            <div class="car">
+              <div class="window"></div>
+              <div class="cargo-details"></div>
+              <div class="door"></div>
+              <div class="lights"></div>
+            </div>
+            <div class="wheels wheels1"></div>
+            <div class="wheels wheels2"></div>
+            <div class="street"></div>
+            <div class="post"></div>
+          </div>
+        </div>
       ` : `
         <div class="checklist-container" id="${checklistId}" style="margin-bottom: 20px; font-size: 0.95rem;">
           <label class="checklist-item" style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
@@ -1245,29 +1261,29 @@ function createActiveEquipmentChecklist(bio) {
             <span>Mantén presionado para Entregar</span>
           </button>
         </div>
-      `}
 
-      <!-- Hamster Wheel Animation for Active Equipment Card (Uiverse.io by Nawsome) -->
-      <div class="hamster-anim-wrapper">
-        <div aria-label="Orange and tan hamster running in a metal wheel" role="img" class="wheel-and-hamster">
-          <div class="wheel"></div>
-          <div class="hamster">
-            <div class="hamster__body">
-              <div class="hamster__head">
-                <div class="hamster__ear"></div>
-                <div class="hamster__eye"></div>
-                <div class="hamster__nose"></div>
+        <!-- Hamster Wheel Animation for Active Equipment Card (Uiverse.io by Nawsome) -->
+        <div class="hamster-anim-wrapper">
+          <div aria-label="Orange and tan hamster running in a metal wheel" role="img" class="wheel-and-hamster">
+            <div class="wheel"></div>
+            <div class="hamster">
+              <div class="hamster__body">
+                <div class="hamster__head">
+                  <div class="hamster__ear"></div>
+                  <div class="hamster__eye"></div>
+                  <div class="hamster__nose"></div>
+                </div>
+                <div class="hamster__limb hamster__limb--fr"></div>
+                <div class="hamster__limb hamster__limb--fl"></div>
+                <div class="hamster__limb hamster__limb--br"></div>
+                <div class="hamster__limb hamster__limb--bl"></div>
+                <div class="hamster__tail"></div>
               </div>
-              <div class="hamster__limb hamster__limb--fr"></div>
-              <div class="hamster__limb hamster__limb--fl"></div>
-              <div class="hamster__limb hamster__limb--br"></div>
-              <div class="hamster__limb hamster__limb--bl"></div>
-              <div class="hamster__tail"></div>
             </div>
+            <div class="spoke"></div>
           </div>
-          <div class="spoke"></div>
         </div>
-      </div>
+      `}
     </div>
   `;
   
