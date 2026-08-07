@@ -3710,7 +3710,6 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ==========================================================================
    EVA WALL-E PWA INSTALLER MODULE
    ========================================================================== */
-let deferredPrompt = null;
 let isIOSDevice = false;
 
 function isPwaStandalone() {
