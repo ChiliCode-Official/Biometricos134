@@ -1423,7 +1423,10 @@ function createBiometricCard(bio, role) {
           <div class="laptop-card-anim">
             <div class="screen">
               <div class="header"></div>
-              <div class="text">Biométrico #${bio.biometrico}</div>
+              <div class="text">
+                Biométrico #${bio.biometrico}
+                <div class="screen-subtitle">${bio.laptop_marca} ${bio.laptop_modelo}</div>
+              </div>
             </div>
             <div class="keyboard"></div>
           </div>
