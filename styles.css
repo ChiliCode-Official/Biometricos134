@@ -3179,73 +3179,73 @@ body:not(.light-theme) .bio-card.pasante-card {
   background-color: #94b7ca; border-radius: 20px 20px 0 0 / 12px 12px 0 0;
 }
 
-.head {
+.astronaut-wrapper .head {
   width: 38px; height: 32px; position: absolute; z-index: 3;
   background: -webkit-linear-gradient(left, #e3e8eb 0%, #e3e8eb 50%, #fbfdfa 50%, #fbfdfa 100%);
   border-radius: 50%; top: 13px; left: calc(50% - 19px);
 }
 
-.head:after {
+.astronaut-wrapper .head:after {
   content: ""; width: 24px; height: 20px; position: absolute;
   top: calc(50% - 10px); left: calc(50% - 12px);
   background: -webkit-linear-gradient(top, #15aece 0%, #15aece 50%, #0391bf 50%, #0391bf 100%);
   border-radius: 6px;
 }
 
-.head:before {
+.astronaut-wrapper .head:before {
   content: ""; width: 5px; height: 10px; position: absolute;
   top: calc(50% - 5px); left: -2px; background-color: #618095;
   border-radius: 2px; box-shadow: 36px 0px 0px #618095;
 }
 
-.body {
+.astronaut-wrapper .body {
   width: 34px; height: 40px; position: absolute; z-index: 2;
   background-color: #fffbff; border-radius: 16px / 8px; top: 42px;
   left: calc(50% - 17px); background: -webkit-linear-gradient(left, #e3e8eb 0%, #e3e8eb 50%, #fbfdfa 50%, #fbfdfa 100%);
 }
 
-.panel {
+.astronaut-wrapper .panel {
   width: 24px; height: 16px; position: absolute; top: 8px;
   left: calc(50% - 12px); background-color: #b7cceb;
 }
 
-.panel:before {
+.astronaut-wrapper .panel:before {
   content: ""; width: 12px; height: 2px; position: absolute;
   top: 3px; left: 3px; background-color: #fbfdfa;
   box-shadow: 0px 4px 0px #fbfdfa, 0px 8px 0px #fbfdfa;
 }
 
-.panel:after {
+.astronaut-wrapper .panel:after {
   content: ""; width: 3px; height: 3px; position: absolute;
   top: 3px; right: 3px; background-color: #fbfdfa;
   border-radius: 50%; box-shadow: 0px 6px 0px 1px #fbfdfa;
 }
 
-.arm { width: 32px; height: 12px; position: absolute; top: 48px; z-index: 2; }
-.arm-left { left: 12px; background-color: #e3e8eb; border-radius: 0 0 0 15px; }
-.arm-right { right: 12px; background-color: #fbfdfa; border-radius: 0 0 15px 0; }
+.astronaut-wrapper .arm { width: 32px; height: 12px; position: absolute; top: 48px; z-index: 2; }
+.astronaut-wrapper .arm-left { left: 12px; background-color: #e3e8eb; border-radius: 0 0 0 15px; }
+.astronaut-wrapper .arm-right { right: 12px; background-color: #fbfdfa; border-radius: 0 0 15px 0; }
 
-.arm-left:before, .arm-right:before {
+.astronaut-wrapper .arm-left:before, .astronaut-wrapper .arm-right:before {
   content: ""; width: 12px; height: 28px; position: absolute; top: -16px;
 }
-.arm-left:before { border-radius: 20px 20px 0px 48px / 20px 20px 0 44px; left: 0; background-color: #e3e8eb; }
-.arm-right:before { border-radius: 20px 20px 48px 0 / 20px 20px 110px 0; right: 0; background-color: #fbfdfa; }
+.astronaut-wrapper .arm-left:before { border-radius: 20px 20px 0px 48px / 20px 20px 0 44px; left: 0; background-color: #e3e8eb; }
+.astronaut-wrapper .arm-right:before { border-radius: 20px 20px 48px 0 / 20px 20px 110px 0; right: 0; background-color: #fbfdfa; }
 
-.arm-left:after, .arm-right:after {
+.astronaut-wrapper .arm-left:after, .astronaut-wrapper .arm-right:after {
   content: ""; width: 12px; height: 4px; position: absolute; top: -10px;
 }
-.arm-left:after { background-color: #6e91a4; left: 0; }
-.arm-right:after { right: 0; background-color: #b6d2e0; }
+.astronaut-wrapper .arm-left:after { background-color: #6e91a4; left: 0; }
+.astronaut-wrapper .arm-right:after { right: 0; background-color: #b6d2e0; }
 
-.leg { width: 12px; height: 16px; position: absolute; z-index: 2; bottom: 28px; }
-.leg-left { left: 30px; background-color: #e3e8eb; transform: rotate(20deg); }
-.leg-right { right: 29px; background-color: #fbfdfa; transform: rotate(-20deg); }
+.astronaut-wrapper .leg { width: 12px; height: 16px; position: absolute; z-index: 2; bottom: 28px; }
+.astronaut-wrapper .leg-left { left: 30px; background-color: #e3e8eb; transform: rotate(20deg); }
+.astronaut-wrapper .leg-right { right: 29px; background-color: #fbfdfa; transform: rotate(-20deg); }
 
-.leg-left:before, .leg-right:before {
+.astronaut-wrapper .leg-left:before, .astronaut-wrapper .leg-right:before {
   content: ""; width: 20px; height: 10px; position: absolute; bottom: -10px;
 }
-.leg-left:before { left: -8px; background-color: #e3e8eb; border-radius: 12px 0 0 0; border-bottom: 4px solid #6d96ac; }
-.leg-right:before { right: -8px; background-color: #fbfdfa; border-radius: 0 12px 0 0; border-bottom: 4px solid #b0cfe4; }
+.astronaut-wrapper .leg-left:before { left: -8px; background-color: #e3e8eb; border-radius: 12px 0 0 0; border-bottom: 4px solid #6d96ac; }
+.astronaut-wrapper .leg-right:before { right: -8px; background-color: #fbfdfa; border-radius: 0 12px 0 0; border-bottom: 4px solid #b0cfe4; }
 
 /* ==========================================================================
    UIVERSE.IO - COFFEE MACHINE ANIMATION (by isfan4ik)
@@ -4333,53 +4333,55 @@ body:not(.light-theme) .bio-card.pasante-card {
    ========================================================================== */
 .eva-pwa-banner {
   position: fixed;
-  top: 14px;
+  top: 70px;
   right: 14px;
   z-index: 10000;
   display: flex;
-  flex-direction: column;
   align-items: center;
   cursor: pointer;
   user-select: none;
-  filter: drop-shadow(0 4px 15px rgba(0, 113, 227, 0.4));
+  filter: drop-shadow(0 6px 20px rgba(0, 113, 227, 0.5));
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .eva-pwa-banner:hover {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
 
 .eva-pwa-banner:active {
   transform: scale(0.95);
 }
 
-/* 3-second speech bubble animation */
+/* Highly visible 3-second speech bubble positioned to the left of EVA */
 .eva-speech-bubble {
   position: absolute;
-  top: -34px;
-  background: linear-gradient(135deg, #0071e3, #6366f1);
+  right: 68px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #0071e3, #5e5ce6);
   color: #ffffff;
   font-family: 'Outfit', -apple-system, sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
   white-space: nowrap;
   animation: evaBubblePop 3s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
   pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3px;
 }
 
 .eva-speech-bubble::after {
   content: "";
   position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 5px 5px 0;
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 0 6px 7px;
   border-style: solid;
-  border-color: #6366f1 transparent;
+  border-color: transparent transparent transparent #5e5ce6;
   display: block;
   width: 0;
 }
@@ -4387,11 +4389,11 @@ body:not(.light-theme) .bio-card.pasante-card {
 @keyframes evaBubblePop {
   0%, 80%, 100% {
     opacity: 0;
-    transform: translateY(6px) scale(0.8);
+    transform: translateY(-50%) translateX(10px) scale(0.8);
   }
   15%, 65% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(-50%) translateX(0) scale(1);
   }
 }
 
@@ -4473,31 +4475,20 @@ body:not(.light-theme) .bio-card.pasante-card {
   transform-origin: center center;
 }
 
-/* Core EVA CSS from Uiverse.io by Subaashbala */
-.modelViewPort {
-  perspective: 1000px;
-  width: 20rem;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #000;
-  overflow: hidden;
-}
+/* Core EVA CSS Scoped strictly under .eva */
 .eva {
   --EVA-ROTATION-DURATION: 4s;
   transform-style: preserve-3d;
   animation: rotateRight var(--EVA-ROTATION-DURATION) linear infinite alternate;
 }
-.head {
+.eva .head {
   position: relative;
   width: 6rem;
   height: 4rem;
   border-radius: 48% 53% 45% 55% / 79% 79% 20% 22%;
   background: linear-gradient(to right, white 45%, gray);
 }
-.eyeChamber {
+.eva .eyeChamber {
   width: 4.5rem;
   height: 2.75rem;
   position: relative;
@@ -4509,13 +4500,13 @@ body:not(.light-theme) .bio-card.pasante-card {
   transform: translate(-50%, -50%);
   animation: moveRight var(--EVA-ROTATION-DURATION) linear infinite alternate;
 }
-.eye {
+.eva .eye {
   width: 1.2rem;
   height: 1.5rem;
   position: absolute;
   border-radius: 50%;
 }
-.eye:first-child {
+.eva .eye:first-child {
   left: 12px;
   top: 50%;
   background: repeating-linear-gradient(
@@ -4527,7 +4518,7 @@ body:not(.light-theme) .bio-card.pasante-card {
   box-shadow: inset 0px 0px 5px #04b8d5, 0px 0px 15px 1px #0bdaeb;
   transform: translate(0, -50%) rotate(-65deg);
 }
-.eye:nth-child(2) {
+.eva .eye:nth-child(2) {
   right: 12px;
   top: 50%;
   background: repeating-linear-gradient(
@@ -4539,7 +4530,7 @@ body:not(.light-theme) .bio-card.pasante-card {
   box-shadow: inset 0px 0px 5px #04b8d5, 0px 0px 15px 1px #0bdaeb;
   transform: translate(0, -50%) rotate(65deg);
 }
-.body {
+.eva .body {
   width: 6rem;
   height: 8rem;
   position: relative;
@@ -4547,7 +4538,7 @@ body:not(.light-theme) .bio-card.pasante-card {
   border-radius: 47% 53% 45% 55% / 12% 9% 90% 88%;
   background: linear-gradient(to right, white 35%, gray);
 }
-.hand {
+.eva .hand {
   position: absolute;
   left: -1.5rem;
   top: 0.75rem;
@@ -4558,18 +4549,18 @@ body:not(.light-theme) .bio-card.pasante-card {
   box-shadow: 5px 0px 5px rgba(0, 0, 0, 0.25);
   transform: rotateY(55deg) rotateZ(10deg);
 }
-.hand:first-child {
+.eva .hand:first-child {
   animation: compensateRotation var(--EVA-ROTATION-DURATION) linear infinite
     alternate;
 }
-.hand:nth-child(2) {
+.eva .hand:nth-child(2) {
   left: 92%;
   background: linear-gradient(to right, white 15%, gray);
   transform: rotateY(55deg) rotateZ(-10deg);
   animation: compensateRotationRight var(--EVA-ROTATION-DURATION) linear
     infinite alternate;
 }
-.scannerThing {
+.eva .scannerThing {
   width: 0;
   height: 0;
   position: absolute;
@@ -4582,7 +4573,7 @@ body:not(.light-theme) .bio-card.pasante-card {
   mask: linear-gradient(to right, white, transparent 35%);
   animation: glow 2s cubic-bezier(0.86, 0, 0.07, 1) infinite;
 }
-.scannerOrigin {
+.eva .scannerOrigin {
   position: absolute;
   width: 8px;
   aspect-ratio: 1;
