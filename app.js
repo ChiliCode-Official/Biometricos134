@@ -184,6 +184,7 @@ async function initApp() {
   if (savedSession) {
     state.currentUser = JSON.parse(savedSession);
     if (state.currentUser && state.currentUser.role === "admin") {
+      document.body.classList.add("admin-mode");
       requestNotificationPermission();
       startNotificationPolling();
     }
@@ -1092,6 +1093,13 @@ async function loginAsAdmin() {
   if (pin === "134134" || (hash && hash === CONFIG.ADMIN_PIN_HASH)) {
     state.currentUser = { name: "Administrador", role: "admin" };
     localStorage.setItem("n134_session", JSON.stringify(state.currentUser));
+    document.body.classList.add("admin-mode");
+
+    // Ultra-optimización: matar inmediatamente cualquier screensaver o banner 3D flotante
+    hideScreensaver();
+    if (idleTimer) clearTimeout(idleTimer);
+    const banner = document.getElementById("eva-pwa-banner");
+    if (banner) banner.style.display = "none";
     
     document.getElementById("display-user-name").style.display = "none";
     const adminBadge = document.getElementById("admin-badge-top");
@@ -1116,6 +1124,7 @@ async function loginAsAdmin() {
 function logout() {
   state.currentUser = null;
   localStorage.removeItem("n134_session");
+  document.body.classList.remove("admin-mode");
   stopNotificationPolling();
   
   // Limpiar campos de login
@@ -1167,6 +1176,26 @@ function _showViewInternal(viewId) {
       if (typeof window.startPasanteWaves === "function") window.startPasanteWaves();
     } else {
       if (typeof window.stopPasanteWaves === "function") window.stopPasanteWaves();
+    }
+
+    // Ultra-optimización específica para Administrador (Cero interferencia con iVMS)
+    const isAdmin = state.currentUser && state.currentUser.role === "admin";
+    const banner = document.getElementById("eva-pwa-banner");
+    const btnWhatsapp = document.getElementById('btn-whatsapp-support');
+    if (btnWhatsapp) {
+      btnWhatsapp.style.display = (!isAdmin && state.currentUser) ? "flex" : "none";
+    }
+
+    if (viewId === "admin-view" || isAdmin) {
+      document.body.classList.add("admin-mode");
+      if (banner) banner.style.display = "none";
+      hideScreensaver();
+      if (idleTimer) clearTimeout(idleTimer);
+    } else {
+      document.body.classList.remove("admin-mode");
+      if (banner && !isPwaStandalone() && !isAdmin) {
+        banner.style.display = "flex";
+      }
     }
     
     // Ocultar sidebar en m\u00f3vil al cambiar vista (en escritorio no hacemos nada)
@@ -3162,9 +3191,9 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// 3. Screensaver (Idle Timer)
+// 3. Screensaver (Idle Timer para pasantes / modo kiosco)
 let idleTimer;
-const IDLE_TIMEOUT = 30 * 1000; // 30 segundos de inactividad para activar el Stand-By
+const IDLE_TIMEOUT = 180 * 1000; // 3 minutos de inactividad (solo para pasantes)
 
 // Variables para DVD Bounce
 let dvdX = 50;
@@ -3203,6 +3232,10 @@ function animateDVD() {
 }
 
 function showScreensaver() {
+  // Ultra-optimización: NUNCA ejecutar salvapantallas en sesión admin (para no competir con software de cámaras iVMS)
+  if (state.currentUser && state.currentUser.role === 'admin') return;
+  if (document.hidden || (typeof document.hasFocus === 'function' && !document.hasFocus())) return;
+
   const ss = document.getElementById('screensaver');
   if (ss && ss.classList.contains('hidden')) {
     ss.classList.remove('hidden');
@@ -3230,6 +3263,9 @@ function hideScreensaver() {
 function resetIdleTimer() {
   hideScreensaver();
   clearTimeout(idleTimer);
+  // Ultra-optimización: Administradores nunca ejecutan el temporizador
+  if (state.currentUser && state.currentUser.role === 'admin') return;
+  if (document.hidden || (typeof document.hasFocus === 'function' && !document.hasFocus())) return;
   idleTimer = setTimeout(showScreensaver, IDLE_TIMEOUT);
 }
 
@@ -3238,6 +3274,28 @@ function resetIdleTimer() {
   document.addEventListener(evt, resetIdleTimer, { passive: true });
 });
 resetIdleTimer();
+
+// ECO-MODE Global: cuando el jefe pasa a iVMS u otro programa (blur), suspender animaciones
+window.addEventListener('blur', () => {
+  document.body.classList.add('app-unfocused');
+  hideScreensaver();
+  if (idleTimer) clearTimeout(idleTimer);
+  if (typeof window.stopPasanteWaves === 'function') window.stopPasanteWaves();
+});
+
+window.addEventListener('focus', () => {
+  document.body.classList.remove('app-unfocused');
+  if (state.currentUser && state.currentUser.role === 'admin') {
+    hideScreensaver();
+    if (idleTimer) clearTimeout(idleTimer);
+    return;
+  }
+  resetIdleTimer();
+  const userView = document.getElementById('user-view');
+  if (userView && userView.classList.contains('active')) {
+    if (typeof window.startPasanteWaves === 'function') window.startPasanteWaves();
+  }
+});
 
 function updateScreensaver(force = false) {
   const ss = document.getElementById('screensaver');
@@ -3481,8 +3539,20 @@ function renderAnalytics() {
     animFrame = requestAnimationFrame(animateParticles);
   }
 
-  document.addEventListener('mousemove', e => { pMouse.x = e.clientX; pMouse.y = e.clientY; });
-  document.addEventListener('touchmove', e => { pMouse.x = e.touches[0].clientX; pMouse.y = e.touches[0].clientY; }, {passive: true});
+  document.addEventListener('mousemove', e => { 
+    const ss = document.getElementById('screensaver');
+    if (ss && !ss.classList.contains('hidden')) {
+      pMouse.x = e.clientX; 
+      pMouse.y = e.clientY; 
+    }
+  }, {passive: true});
+  document.addEventListener('touchmove', e => { 
+    const ss = document.getElementById('screensaver');
+    if (ss && !ss.classList.contains('hidden')) {
+      pMouse.x = e.touches[0].clientX; 
+      pMouse.y = e.touches[0].clientY; 
+    }
+  }, {passive: true});
   document.addEventListener('mouseleave', () => { pMouse.x = null; pMouse.y = null; });
   document.addEventListener('touchend', () => { pMouse.x = null; pMouse.y = null; });
   window.addEventListener('resize', initParticles);
@@ -3511,7 +3581,7 @@ function renderAnalytics() {
 
 
 
-// --- WhatsApp Support Modal Logic ---
+// --- WhatsApp Support Modal Logic (Event-Driven, sin polling setInterval) ---
 document.addEventListener('DOMContentLoaded', () => {
   const btnWhatsapp = document.getElementById('btn-whatsapp-support');
   const modalSupport = document.getElementById('modal-support');
@@ -3520,15 +3590,6 @@ document.addEventListener('DOMContentLoaded', () => {
       modalSupport.classList.add('active');
     });
   }
-
-  // Monitor login state to show/hide the button for users only
-  setInterval(() => {
-    if (typeof state !== 'undefined' && state.currentUser && state.currentUser.role === 'user') {
-      if (btnWhatsapp && btnWhatsapp.style.display !== 'flex') btnWhatsapp.style.display = 'flex';
-    } else {
-      if (btnWhatsapp && btnWhatsapp.style.display !== 'none') btnWhatsapp.style.display = 'none';
-    }
-  }, 1000);
 });
 
 
@@ -3857,6 +3918,12 @@ function initEvaPwaInstaller() {
 }
 
 function showEvaBanner() {
+  // En perfil de administrador NUNCA mostrar el banner para cero impacto en GPU/iVMS
+  if (state.currentUser && state.currentUser.role === 'admin') {
+    const banner = document.getElementById("eva-pwa-banner");
+    if (banner) banner.style.display = "none";
+    return;
+  }
   const banner = document.getElementById("eva-pwa-banner");
   if (banner && !isPwaStandalone()) {
     banner.style.display = "flex";

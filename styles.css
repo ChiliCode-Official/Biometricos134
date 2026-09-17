@@ -1728,14 +1728,17 @@ body.light-theme .skeleton::before {
 }
 
 @keyframes blink-red {
-  0% { background-color: #ff3b30; color: white; border-color: #ff3b30; }
-  50% { background-color: rgba(255, 59, 48, 0.2); color: #ff3b30; border-color: #ff3b30; }
-  100% { background-color: #ff3b30; color: white; border-color: #ff3b30; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.72; transform: scale(0.98); }
 }
 
 .btn-blinking-red {
-  animation: blink-red 1.5s infinite;
+  background-color: #ff3b30;
+  color: white;
+  border-color: #ff3b30;
+  animation: blink-red 1.8s infinite ease-in-out;
   font-weight: 600;
+  will-change: opacity, transform;
 }
 
 .btn-orange {
@@ -1750,16 +1753,17 @@ body.light-theme .skeleton::before {
 }
 
 @keyframes run-animation {
-  0% { transform: translateX(-5px) rotate(-10deg); }
-  50% { transform: translateX(5px) rotate(10deg); }
-  100% { transform: translateX(-5px) rotate(-10deg); }
+  0% { transform: translateX(-4px) rotate(-8deg); }
+  50% { transform: translateX(4px) rotate(8deg); }
+  100% { transform: translateX(-4px) rotate(-8deg); }
 }
 
 .running-icon {
   display: inline-block;
-  animation: run-animation 0.6s infinite ease-in-out;
+  animation: run-animation 0.8s infinite ease-in-out;
   margin-right: 8px;
   font-size: 1.2rem;
+  will-change: transform;
 }
 @media (max-width: 1200px) and (min-width: 769px) { .biometrics-grid { grid-template-columns: repeat(2, 1fr); } }
 .hw-icon-img { width: 22px; height: 22px; object-fit: contain; margin-right: 4px; }
@@ -1823,22 +1827,24 @@ body.light-theme .skeleton::before {
 .led-occupied {
   background-color: #FF3B30;
   color: #FF3B30;
+  box-shadow: 0 0 6px currentColor;
   animation: led-pulse 2s infinite ease-in-out;
+  will-change: opacity;
 }
 @keyframes led-pulse {
-  0% { opacity: 1; box-shadow: 0 0 5px currentColor; }
-  50% { opacity: 0.4; box-shadow: 0 0 2px currentColor; }
-  100% { opacity: 1; box-shadow: 0 0 5px currentColor; }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 .led-pending {
   background-color: #FF9500;
   color: #FF9500;
-  animation: led-pulse-orange 1.2s infinite ease-in-out;
+  box-shadow: 0 0 7px rgba(255,149,0,0.9);
+  animation: led-pulse-orange 1.4s infinite ease-in-out;
+  will-change: opacity;
 }
 @keyframes led-pulse-orange {
-  0% { opacity: 1; box-shadow: 0 0 8px rgba(255,149,0,0.9); }
-  50% { opacity: 0.4; box-shadow: 0 0 2px rgba(255,149,0,0.3); }
-  100% { opacity: 1; box-shadow: 0 0 8px rgba(255,149,0,0.9); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 .card-occupied {
@@ -4671,6 +4677,25 @@ body:not(.light-theme) .bio-card.pasante-card {
   will-change: transform;
   backface-visibility: hidden;
 }
+
+/* 5. Ultra-Optimización exclusiva para Panel de Administrador (Cero impacto GPU para coexistir con iVMS) */
+body.admin-mode #eva-pwa-banner,
+body:has(#admin-view.active) #eva-pwa-banner,
+#admin-view.active ~ #eva-pwa-banner {
+  display: none !important;
+  animation-play-state: paused !important;
+}
+
+/* 6. ECO-MODE: Cuando el jefe pasa a la ventana de iVMS (blur), congelar 100% de animaciones en Admin */
+body.app-unfocused #admin-view * {
+  animation-play-state: paused !important;
+}
+
+/* 7. Contener layout del panel de admin completo para evitar repintados globales */
+#admin-view {
+  contain: layout style;
+}
+
 
 
 
