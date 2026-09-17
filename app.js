@@ -660,17 +660,34 @@ function loadLocalDatabase() {
   }
 }
 
-// Guarda una copia local en localStorage
-function saveLocalBackup() {
-  const dbToSave = {
-    users: state.users,
-    biometrics: state.biometrics,
-    logs: state.logs,
-    inkLogs: state.inkLogs,
-    internetLogs: state.internetLogs
+// Guarda una copia local en localStorage con debounce para evitar bloqueos del hilo principal
+let _saveBackupDebounceTimer = null;
+function saveLocalBackup(immediate = false) {
+  const performSave = () => {
+    try {
+      const dbToSave = {
+        users: state.users,
+        biometrics: state.biometrics,
+        logs: state.logs,
+        inkLogs: state.inkLogs,
+        internetLogs: state.internetLogs
+      };
+      localStorage.setItem("n134_local_db", JSON.stringify(dbToSave));
+    } catch (err) {
+      console.warn("Aviso al guardar backup local en localStorage:", err);
+    }
   };
-  localStorage.setItem("n134_local_db", JSON.stringify(dbToSave));
+
+  if (immediate) {
+    if (_saveBackupDebounceTimer) clearTimeout(_saveBackupDebounceTimer);
+    performSave();
+    return;
+  }
+
+  if (_saveBackupDebounceTimer) clearTimeout(_saveBackupDebounceTimer);
+  _saveBackupDebounceTimer = setTimeout(performSave, 350);
 }
+
 
 // Lógica de desglose rotativo secuencial ("Gasto a la par")
 function getNextSequentialBiometric() {
@@ -1127,6 +1144,7 @@ function _showViewInternal(viewId) {
     document.querySelectorAll(".dashboard-views .view-panel").forEach(panel => {
       panel.classList.remove("active");
     });
+    if (typeof window.stopPasanteWaves === "function") window.stopPasanteWaves();
   } else {
     // SECURITY REDIRECT: Interns (role === "user") cannot view analytics or manage users
     if ((viewId === "analytics-view" || viewId === "manage-users-view") && (!state.currentUser || state.currentUser.role !== "admin")) {
@@ -1143,6 +1161,13 @@ function _showViewInternal(viewId) {
     });
     const targetView = document.getElementById(viewId);
     if (targetView) targetView.classList.add("active");
+
+    // Control de rendimiento: pausar ondas de canvas en vista admin u otras
+    if (viewId === "user-view") {
+      if (typeof window.startPasanteWaves === "function") window.startPasanteWaves();
+    } else {
+      if (typeof window.stopPasanteWaves === "function") window.stopPasanteWaves();
+    }
     
     // Ocultar sidebar en m\u00f3vil al cambiar vista (en escritorio no hacemos nada)
     if (window.innerWidth <= 768) {
@@ -1436,8 +1461,13 @@ function renderBiometrics() {
     }
   }
 
-  // Initialize VanillaTilt for 3D effect
+  // Initialize VanillaTilt for 3D effect (limpiar instancias previas para evitar fuga de memoria)
   if (window.VanillaTilt) {
+    document.querySelectorAll(".bio-card").forEach(el => {
+      if (el.vanillaTilt) {
+        try { el.vanillaTilt.destroy(); } catch (e) {}
+      }
+    });
     VanillaTilt.init(document.querySelectorAll(".bio-card"), {
       max: 15,
       speed: 400,
@@ -1696,90 +1726,103 @@ function togglePasanteCardDetails(event, bioId) {
   }
 }
 
-// Cargar datos en el Panel del Administrador (Métricas, Historial)
+// Cargar datos en el Panel del Administrador (Métricas, Historial con DocumentFragment)
 function renderAdminDashboard() {
   // Actualizar métricas
   const totalUses = state.logs.length;
   const occupiedCount = state.biometrics.filter(b => b.status === "Ocupado" || b.status === "Pendiente").length;
   const availableCount = 8 - occupiedCount;
 
-  document.getElementById("stat-total-uses").innerText = totalUses;
-  document.getElementById("stat-occupied").innerText = occupiedCount;
-  document.getElementById("stat-available").innerText = availableCount;
+  const statTotal = document.getElementById("stat-total-uses");
+  const statOcc = document.getElementById("stat-occupied");
+  const statAvail = document.getElementById("stat-available");
+  if (statTotal) statTotal.innerText = totalUses;
+  if (statOcc) statOcc.innerText = occupiedCount;
+  if (statAvail) statAvail.innerText = availableCount;
 
-  // Renderizar historial de uso completo
+  // Renderizar historial de uso completo con DocumentFragment
   const tbody = document.getElementById("history-tbody");
-  tbody.innerHTML = "";
-
-  if (state.logs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay registros aún</td></tr>`;
-  } else {
-    // Clonar e invertir para ver primero lo más nuevo
-    window.historyLimit = window.historyLimit || 50;
-    const sortedLogs = [...state.logs].reverse().slice(0, window.historyLimit);
-    sortedLogs.forEach(log => {
-      const tr = document.createElement("tr");
-      const isReturned = log.estado === "Entregado";
-      
-      tr.innerHTML = `
-        <td><strong>Bio ${log.biometrico}</strong></td>
-        <td>${log.usuario}</td>
-        <td>${log.fecha_salida}</td>
-        <td>${log.hora_salida_solicitada}</td>
-        <td>${log.hora_salida_real}</td>
-        <td>${log.fecha_entrada || '—'}</td>
-        <td>${log.hora_entrada || '—'}</td>
-        <td>
-          <span class="state-pill ${log.estado === 'Entregado' ? 'available' : (log.estado === 'Pendiente' ? 'pending' : 'occupied')}">
-            ${log.estado}
-          </span>
-        </td>
-        <td>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem;" onclick="triggerPrintResponsive('${log.id}')">Carta</button>
-            ${!isReturned ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem; background-color:#86868B;" onclick="triggerReturn('${log.id}', '${log.biometrico}')">Retorno</button>` : ''}
-          </div>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+  if (tbody) {
+    tbody.innerHTML = "";
+    if (state.logs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay registros aún</td></tr>`;
+    } else {
+      window.historyLimit = window.historyLimit || 50;
+      const sortedLogs = [...state.logs].reverse().slice(0, window.historyLimit);
+      const fragment = document.createDocumentFragment();
+      sortedLogs.forEach(log => {
+        const tr = document.createElement("tr");
+        const isReturned = log.estado === "Entregado";
+        
+        tr.innerHTML = `
+          <td><strong>Bio ${log.biometrico}</strong></td>
+          <td>${log.usuario}</td>
+          <td>${log.fecha_salida}</td>
+          <td>${log.hora_salida_solicitada}</td>
+          <td>${log.hora_salida_real}</td>
+          <td>${log.fecha_entrada || '—'}</td>
+          <td>${log.hora_entrada || '—'}</td>
+          <td>
+            <span class="state-pill ${log.estado === 'Entregado' ? 'available' : (log.estado === 'Pendiente' ? 'pending' : 'occupied')}">
+              ${log.estado}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.8rem;" onclick="triggerPrintResponsive('${log.id}')">Carta</button>
+              ${!isReturned ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem; background-color:#86868B;" onclick="triggerReturn('${log.id}', '${log.biometrico}')">Retorno</button>` : ''}
+            </div>
+          </td>
+        `;
+        fragment.appendChild(tr);
+      });
+      tbody.appendChild(fragment);
+    }
   }
 
-  // Renderizar historial de tintas
+  // Renderizar historial de tintas con DocumentFragment
   const inkTbody = document.getElementById("ink-history-tbody");
-  inkTbody.innerHTML = "";
-  if (state.inkLogs.length === 0) {
-    inkTbody.innerHTML = `<tr><td colspan="4" class="text-center">No hay registros de cambios</td></tr>`;
-  } else {
-    [...state.inkLogs].reverse().forEach(log => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${log.fecha}</td>
-        <td><strong>Bio ${log.biometrico}</strong></td>
-        <td>${log.usuario}</td>
-        <td>${log.observaciones || 'Sin notas'}</td>
-      `;
-      inkTbody.appendChild(tr);
-    });
+  if (inkTbody) {
+    inkTbody.innerHTML = "";
+    if (state.inkLogs.length === 0) {
+      inkTbody.innerHTML = `<tr><td colspan="4" class="text-center">No hay registros de cambios</td></tr>`;
+    } else {
+      const inkFragment = document.createDocumentFragment();
+      [...state.inkLogs].reverse().slice(0, 50).forEach(log => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${log.fecha}</td>
+          <td><strong>Bio ${log.biometrico}</strong></td>
+          <td>${log.usuario}</td>
+          <td>${log.observaciones || 'Sin notas'}</td>
+        `;
+        inkFragment.appendChild(tr);
+      });
+      inkTbody.appendChild(inkFragment);
+    }
   }
 
-  // Renderizar historial de Internet
+  // Renderizar historial de Internet con DocumentFragment
   const netTbody = document.getElementById("net-history-tbody");
-  netTbody.innerHTML = "";
-  if (state.internetLogs.length === 0) {
-    netTbody.innerHTML = `<tr><td colspan="5" class="text-center">No hay renovaciones de datos</td></tr>`;
-  } else {
-    [...state.internetLogs].reverse().forEach(log => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${log.fecha}</td>
-        <td><strong>Bio ${log.biometrico}</strong></td>
-        <td style="color:var(--accent); font-weight:600;">${log.plan}</td>
-        <td>${log.usuario}</td>
-        <td>${log.observaciones || '—'}</td>
-      `;
-      netTbody.appendChild(tr);
-    });
+  if (netTbody) {
+    netTbody.innerHTML = "";
+    if (state.internetLogs.length === 0) {
+      netTbody.innerHTML = `<tr><td colspan="5" class="text-center">No hay renovaciones de datos</td></tr>`;
+    } else {
+      const netFragment = document.createDocumentFragment();
+      [...state.internetLogs].reverse().slice(0, 50).forEach(log => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${log.fecha}</td>
+          <td><strong>Bio ${log.biometrico}</strong></td>
+          <td style="color:var(--accent); font-weight:600;">${log.plan}</td>
+          <td>${log.usuario}</td>
+          <td>${log.observaciones || '—'}</td>
+        `;
+        netFragment.appendChild(tr);
+      });
+      netTbody.appendChild(netFragment);
+    }
   }
 }
 
@@ -3667,61 +3710,107 @@ window.saveBiometricHardware = async function() {
 };
 
 /* ==========================================================================
-   AMBIENT GRADIENT WAVES CANVAS ANIMATION FOR PASANTE VIEW
+   AMBIENT GRADIENT WAVES CANVAS ANIMATION FOR PASANTE VIEW (OPTIMIZADO)
    ========================================================================== */
+let _wavesAnimFrameId = null;
+let _wavesRunning = false;
+let _wavesCanvas = null;
+let _wavesCtx = null;
+let _wavesTime = 0;
+
+function _runWavesRender() {
+  if (!_wavesRunning || !_wavesCanvas || !_wavesCtx) return;
+
+  const canvas = _wavesCanvas;
+  const ctx = _wavesCtx;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  _wavesTime += 0.008;
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const layers = [
+    { color1: "rgba(82, 39, 255, 0.4)", color2: "rgba(255, 159, 252, 0.3)", speed: 0.6, amp: 30, freq: 0.006, offset: 0 },
+    { color1: "rgba(255, 159, 252, 0.35)", color2: "rgba(255, 255, 255, 0.2)", speed: 0.9, amp: 22, freq: 0.009, offset: 2 },
+    { color1: "rgba(82, 39, 255, 0.25)", color2: "rgba(255, 159, 252, 0.25)", speed: 0.4, amp: 38, freq: 0.004, offset: 4 }
+  ];
+
+  layers.forEach(layer => {
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+
+    for (let x = 0; x <= w; x += 8) {
+      const y = h * 0.45 + Math.sin(x * layer.freq + _wavesTime * layer.speed + layer.offset) * layer.amp
+                       + Math.cos(x * 0.003 + _wavesTime * 0.3) * (layer.amp * 0.6);
+      ctx.lineTo(x, y);
+    }
+
+    ctx.lineTo(w, h);
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, layer.color1);
+    grad.addColorStop(0.6, layer.color2);
+    grad.addColorStop(1, "rgba(255, 255, 255, 0.1)");
+    ctx.fillStyle = grad;
+    ctx.fill();
+  });
+
+  _wavesAnimFrameId = requestAnimationFrame(_runWavesRender);
+}
+
+function startPasanteWaves() {
+  const userView = document.getElementById("user-view");
+  if (!userView || !userView.classList.contains("active") || document.hidden) {
+    stopPasanteWaves();
+    return;
+  }
+  if (_wavesRunning) return;
+  _wavesRunning = true;
+  _runWavesRender();
+}
+
+function stopPasanteWaves() {
+  _wavesRunning = false;
+  if (_wavesAnimFrameId) {
+    cancelAnimationFrame(_wavesAnimFrameId);
+    _wavesAnimFrameId = null;
+  }
+}
+
+window.startPasanteWaves = startPasanteWaves;
+window.stopPasanteWaves = stopPasanteWaves;
+
 function initPasanteWavesCanvas() {
-  const canvas = document.getElementById("pasante-waves-canvas");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  let animationFrameId;
-  let time = 0;
+  _wavesCanvas = document.getElementById("pasante-waves-canvas");
+  if (!_wavesCanvas) return;
+  _wavesCtx = _wavesCanvas.getContext("2d");
 
   function resize() {
-    if (!canvas.parentElement) return;
-    canvas.width = canvas.parentElement.clientWidth || window.innerWidth;
-    canvas.height = canvas.parentElement.clientHeight || 500;
+    if (!_wavesCanvas || !_wavesCanvas.parentElement) return;
+    _wavesCanvas.width = _wavesCanvas.parentElement.clientWidth || window.innerWidth;
+    _wavesCanvas.height = _wavesCanvas.parentElement.clientHeight || 500;
   }
   window.addEventListener("resize", resize);
   resize();
 
-  function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    time += 0.008;
-
-    const w = canvas.width;
-    const h = canvas.height;
-
-    const layers = [
-      { color1: "rgba(82, 39, 255, 0.4)", color2: "rgba(255, 159, 252, 0.3)", speed: 0.6, amp: 30, freq: 0.006, offset: 0 },
-      { color1: "rgba(255, 159, 252, 0.35)", color2: "rgba(255, 255, 255, 0.2)", speed: 0.9, amp: 22, freq: 0.009, offset: 2 },
-      { color1: "rgba(82, 39, 255, 0.25)", color2: "rgba(255, 159, 252, 0.25)", speed: 0.4, amp: 38, freq: 0.004, offset: 4 }
-    ];
-
-    layers.forEach(layer => {
-      ctx.beginPath();
-      ctx.moveTo(0, h);
-
-      for (let x = 0; x <= w; x += 8) {
-        const y = h * 0.45 + Math.sin(x * layer.freq + time * layer.speed + layer.offset) * layer.amp
-                         + Math.cos(x * 0.003 + time * 0.3) * (layer.amp * 0.6);
-        ctx.lineTo(x, y);
+  // Pausar automáticamente si la pestaña no está activa para ahorrar 100% de CPU/GPU
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopPasanteWaves();
+    } else {
+      const userView = document.getElementById("user-view");
+      if (userView && userView.classList.contains("active")) {
+        startPasanteWaves();
       }
+    }
+  });
 
-      ctx.lineTo(w, h);
-      ctx.closePath();
-
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, layer.color1);
-      grad.addColorStop(0.6, layer.color2);
-      grad.addColorStop(1, "rgba(255, 255, 255, 0.1)");
-      ctx.fillStyle = grad;
-      ctx.fill();
-    });
-
-    animationFrameId = requestAnimationFrame(render);
+  // Iniciar solo si la vista activa inicial es user-view
+  const userView = document.getElementById("user-view");
+  if (userView && userView.classList.contains("active")) {
+    startPasanteWaves();
   }
-
-  render();
 }
 
 document.addEventListener("DOMContentLoaded", () => {

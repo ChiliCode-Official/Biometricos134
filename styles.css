@@ -4466,6 +4466,8 @@ body:not(.light-theme) .bio-card.pasante-card {
   --EVA-ROTATION-DURATION: 4s;
   transform-style: preserve-3d;
   animation: rotateRight var(--EVA-ROTATION-DURATION) linear infinite alternate;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 .eva .head {
   position: relative;
@@ -4639,6 +4641,37 @@ body:not(.light-theme) .bio-card.pasante-card {
 .eva-btn-install:active {
   transform: scale(0.98);
 }
+
+/* ==========================================================================
+   PERFORMANCE & HARDWARE ACCELERATION OPTIMIZATIONS
+   Preserves 100% UX aesthetics while pausing animations when elements are hidden
+   ========================================================================== */
+
+/* 1. Pause 3D and heavy CSS animations in inactive / hidden panels */
+.view-panel:not(.active) .macbook-wrapper *,
+.view-panel:not(.active) .pasante-folded-anim *,
+.view-panel:not(.active) .astronaut-wrapper *,
+.view-panel:not(.active) .laptop-anim-container * {
+  animation-play-state: paused !important;
+}
+
+/* 2. Pause EVA inside modal when modal is closed */
+.modal:not(.active) .eva-modal-viewport *,
+#eva-install-modal:not(.active) .eva * {
+  animation-play-state: paused !important;
+}
+
+/* 3. Isolate card layouts to prevent whole-page layout thrashing */
+.bio-card, .stat-card, .login-card, .log-form-box, .log-history-box {
+  contain: layout style;
+}
+
+/* 4. GPU compositing hint for 3D elements */
+.macbook, .inner, .screen, .astronaut-wrapper {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
 
 
 
